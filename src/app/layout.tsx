@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "WattSnap - Your Home Electricity Assistant",
   description: "Understand your bills. Save energy. Be ready for brownouts. WattSnap brings bill scanning, appliance estimation, and provider outage advisories into one friendly app.",
   icons: {
-    icon: "/assets/branding/wattsnap-logo.png",
+    icon: { url: "/assets/branding/wattsnap-logo9.png", type: "image/png" },
   },
 };
 
