@@ -1,300 +1,97 @@
 import Image from "next/image";
 import Link from "next/link";
-import {
-  Download,
-  Play,
-  Home,
-  BarChart2,
-  Lightbulb,
-  Sparkles,
-  Bot
-} from "lucide-react";
-import { PhoneMockup } from "./PhoneMockup";
+import { ChevronRight, UserRoundPlus } from "lucide-react";
+import { GlossyIcon, type GlossyIconName } from "./GlossyIcon";
+import { ProductTour } from "./ProductTour";
+
+const benefits: { icon: GlossyIconName; title: string; description: string; mobileDescription: string }[] = [
+  { icon: "home", title: "Understand\nYour Bills", description: "Easy and clear\nexplanations", mobileDescription: "Easy and clear explanations." },
+  { icon: "chart", title: "Monitor\nUsage", description: "Track your monthly\nelectricity trends", mobileDescription: "Track your monthly trends." },
+  { icon: "bulb", title: "Save Energy\nSave Money", description: "Get practical tips\nfor a more efficient home", mobileDescription: "Practical tips for an efficient home." },
+  { icon: "heart", title: "Helpful AI\nGuidance", description: "Understand your usage\nwith personalized tips", mobileDescription: "Personalized tips just for you." },
+];
+
+const callouts: { name: string; icon: GlossyIconName; title: string; description: string; href: string }[] = [
+  { name: "scan", icon: "camera", title: "Scan\nYour Bill", description: "Take a photo and\nget instant insights", href: "#features" },
+  { name: "tips", icon: "bulb", title: "Get\nEnergy Tips", description: "Simple ways\nto save energy\nand money", href: "#features" },
+  { name: "track", icon: "chart", title: "Track Your\nConsumption", description: "See usage trends\nand take control", href: "#features" },
+  { name: "advisory", icon: "bell", title: "Provider\nAdvisories", description: "Stay updated\non maintenance\nand power interruptions", href: "#how-it-works" },
+];
 
 export function HeroSection() {
   return (
-    <section style={{
-      position: "relative",
-      paddingTop: "3.5rem",
-      paddingBottom: "5rem",
-      overflow: "hidden"
-    }}>
-      {/* Background Soft Glow Accents */}
-      <div style={{
-        position: "absolute",
-        top: "-10%",
-        right: "10%",
-        width: "550px",
-        height: "550px",
-        background: "radial-gradient(circle, rgba(14, 165, 233, 0.18) 0%, rgba(253, 224, 71, 0.12) 50%, transparent 70%)",
-        filter: "blur(70px)",
-        pointerEvents: "none",
-        zIndex: 0
-      }} />
-
-      <div className="landing-container" style={{ position: "relative", zIndex: 1 }}>
-        {/* Main 2-Column Hero Grid */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "1.05fr 1fr",
-          alignItems: "center",
-          gap: "3rem",
-          marginBottom: "4.5rem"
-        }} className="hero-grid">
-          {/* Left Column: Headlines & CTAs */}
-          <div>
-            {/* Pill Tag */}
-            <div className="badge-pill" style={{ marginBottom: "1.5rem" }}>
-              <Home size={16} />
-              <span>Smart Energy. Brighter Homes.</span>
-            </div>
-
-            {/* Main Headline */}
-            <h1 style={{
-              fontSize: "clamp(2.75rem, 5vw, 4.25rem)",
-              fontWeight: 800,
-              lineHeight: 1.08,
-              letterSpacing: "-0.03em",
-              color: "#0f172a",
-              marginBottom: "1.25rem"
-            }}>
-              Your Home <br />
-              <span className="gradient-text-blue">Electricity</span> <br />
-              <span className="gradient-text-orange" style={{ position: "relative", display: "inline-block" }}>
-                Assistant
-                {/* Sparkle doodle decor */}
-                <span style={{
-                  position: "absolute",
-                  right: "-26px",
-                  top: "0px",
-                  color: "#f59e0b",
-                  fontSize: "1.25rem",
-                  transform: "rotate(15deg)"
-                }}>
-                  ✨
-                </span>
-              </span>
-            </h1>
-
-            {/* Subheadline */}
-            <p style={{
-              fontSize: "clamp(1.1rem, 2vw, 1.35rem)",
-              color: "#475569",
-              lineHeight: 1.5,
-              fontWeight: 500,
-              maxWidth: "500px",
-              marginBottom: "2rem"
-            }}>
-              Understand your bills. Save energy. <br />
-              Be ready for brownouts.
-            </p>
-
-            {/* Primary Action Buttons */}
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "1.125rem",
-              flexWrap: "wrap",
-              marginBottom: "2rem"
-            }}>
-              <Link href="#download" className="btn-primary" style={{ padding: "0.95rem 2rem", fontSize: "1.05rem" }}>
-                <Download size={20} /> Download for Free
-              </Link>
-
-              <a
-                href="#features"
-                className="btn-secondary"
-                style={{ padding: "0.9rem 1.75rem", fontSize: "1.05rem" }}
-              >
-                <div style={{
-                  width: "24px",
-                  height: "24px",
-                  borderRadius: "50%",
-                  backgroundColor: "var(--primary-blue-light)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "var(--primary-blue)"
-                }}>
-                  <Play size={12} fill="currentColor" />
-                </div>
-                Watch Video
-              </a>
-            </div>
-
-            {/* Quick App Store Pills */}
-            <div style={{ display: "flex", alignItems: "center", gap: "0.875rem" }}>
-              <span style={{ fontSize: "0.85rem", color: "#64748b", fontWeight: 600 }}>Available on:</span>
-              <div style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                padding: "0.35rem 0.75rem",
-                borderRadius: "var(--radius-full)",
-                backgroundColor: "#ffffff",
-                border: "1px solid #e2e8f0",
-                fontSize: "0.8rem",
-                fontWeight: 600,
-                color: "#1e293b"
-              }}>
-                <span>Android & iOS</span>
-              </div>
-            </div>
+    <section id="home" className="wattsnap-hero" aria-label="Your home electricity assistant">
+      <div className="hero-scene" aria-hidden="true" />
+      <div className="hero-veil" aria-hidden="true" />
+      <div className="hero-inner">
+        <div className="hero-copy">
+          <div className="hero-tagline">
+            <GlossyIcon name="home" />
+            <span>Smart Energy. Brighter Homes.</span>
           </div>
-
-          {/* Right Column: Mascot + Interactive Phone */}
-          <div style={{ position: "relative", display: "flex", justifyContent: "center" }}>
-            {/* Flying Mascot Bee with Speech Bubble */}
-            <div
-              className="animate-float"
-              style={{
-                position: "absolute",
-                top: "-50px",
-                left: "-50px",
-                zIndex: 15,
-                pointerEvents: "none"
-              }}
-            >
-              {/* Mascot Speech Bubble */}
-              <div style={{
-                position: "absolute",
-                top: "-15px",
-                right: "-65px",
-                backgroundColor: "#ffffff",
-                color: "#0f172a",
-                fontWeight: 800,
-                fontSize: "0.75rem",
-                padding: "0.4rem 0.8rem",
-                borderRadius: "1rem",
-                boxShadow: "0 6px 16px rgba(0,0,0,0.1)",
-                border: "1px solid #e2e8f0",
-                whiteSpace: "nowrap",
-                display: "flex",
-                alignItems: "center",
-                gap: "4px"
-              }}>
-                Scan Analyze Save! ⚡
-              </div>
-
-              {/* High-res Mascot Image */}
-              <Image
-                src="/assets/branding/wattsnap-mascot.png"
-                alt="WattSnap Mascot"
-                width={200}
-                height={200}
-                priority
-                style={{
-                  objectFit: "contain",
-                  filter: "drop-shadow(0 15px 30px rgba(2, 132, 199, 0.35))"
-                }}
-              />
-            </div>
-
-            {/* Phone Mockup with floating badges */}
-            <PhoneMockup showFloatingBadges={true} />
+          <h1 className="hero-title">
+            <span className="sr-only">Your Home Electricity Assistant</span>
+            <Image
+              src="/assets/branding/hero-headline-logo.png"
+              alt=""
+              width={1804}
+              height={872}
+              sizes="(max-width: 700px) 95vw, (max-width: 1100px) 65vw, 640px"
+              priority
+            />
+          </h1>
+          <p className="hero-description">
+            Understand your bills. Save energy.<br />
+            Be ready for brownouts.
+          </p>
+          <div className="hero-actions">
+            <Link href="/signup" className="btn-primary hero-signup">
+              <UserRoundPlus size={29} aria-hidden="true" /> Create account
+              <ChevronRight className="hero-signup-arrow" size={16} aria-hidden="true" />
+            </Link>
+            <ProductTour />
           </div>
+          <ul className="hero-benefits" aria-label="WattSnap benefits">
+            {benefits.map((benefit) => (
+              <li key={benefit.icon}>
+                <div className="hero-benefit-icon"><GlossyIcon name={benefit.icon} /></div>
+                <h2>{benefit.title}</h2>
+                <p><span className="hero-benefit-desktop-text">{benefit.description}</span><span className="hero-benefit-mobile-text">{benefit.mobileDescription}</span></p>
+              </li>
+            ))}
+          </ul>
         </div>
-
-        {/* 4 Bottom Highlight Cards */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: "1.25rem"
-        }} className="hero-highlights">
-          {/* Card 1 */}
-          <div className="glass-card" style={{ padding: "1.5rem 1.25rem", borderRadius: "1.25rem" }}>
-            <div style={{
-              width: "44px",
-              height: "44px",
-              borderRadius: "12px",
-              backgroundColor: "var(--accent-green-light)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "var(--accent-green-dark)",
-              marginBottom: "1rem"
-            }}>
-              <Home size={22} />
-            </div>
-            <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "#0f172a", marginBottom: "0.35rem" }}>
-              Understand Your Bills
-            </h3>
-            <p style={{ fontSize: "0.875rem", color: "#64748b", lineHeight: 1.45 }}>
-              Easy and clear explanations for every fee and rate breakdown.
-            </p>
-          </div>
-
-          {/* Card 2 */}
-          <div className="glass-card" style={{ padding: "1.5rem 1.25rem", borderRadius: "1.25rem" }}>
-            <div style={{
-              width: "44px",
-              height: "44px",
-              borderRadius: "12px",
-              backgroundColor: "var(--primary-blue-light)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "var(--primary-blue)",
-              marginBottom: "1rem"
-            }}>
-              <BarChart2 size={22} />
-            </div>
-            <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "#0f172a", marginBottom: "0.35rem" }}>
-              Monitor Usage
-            </h3>
-            <p style={{ fontSize: "0.875rem", color: "#64748b", lineHeight: 1.45 }}>
-              Track your electricity consumption in real time with intuitive charts.
-            </p>
-          </div>
-
-          {/* Card 3 */}
-          <div className="glass-card" style={{ padding: "1.5rem 1.25rem", borderRadius: "1.25rem" }}>
-            <div style={{
-              width: "44px",
-              height: "44px",
-              borderRadius: "12px",
-              backgroundColor: "var(--accent-yellow-light)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "var(--accent-amber)",
-              marginBottom: "1rem"
-            }}>
-              <Lightbulb size={22} />
-            </div>
-            <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "#0f172a", marginBottom: "0.35rem" }}>
-              Save Energy Save Money
-            </h3>
-            <p style={{ fontSize: "0.875rem", color: "#64748b", lineHeight: 1.45 }}>
-              Get practical, personalized tips for a more energy-efficient home.
-            </p>
-          </div>
-
-          {/* Card 4 */}
-          <div className="glass-card" style={{ padding: "1.5rem 1.25rem", borderRadius: "1.25rem" }}>
-            <div style={{
-              width: "44px",
-              height: "44px",
-              borderRadius: "12px",
-              backgroundColor: "#e0f2fe",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#0284c7",
-              marginBottom: "1rem"
-            }}>
-              <Bot size={22} />
-            </div>
-            <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "#0f172a", marginBottom: "0.35rem" }}>
-              Helpful AI Guidance
-            </h3>
-            <p style={{ fontSize: "0.875rem", color: "#64748b", lineHeight: 1.45 }}>
-              Ask questions and get instant, tailored energy answers from Gemini AI.
-            </p>
-          </div>
+        <div className="hero-art">
+          <Image
+            className="hero-product-image"
+            src="/assets/branding/wattsnap-mascot-app.png"
+            alt="The friendly WattSnap robot beside a preview of the electricity assistant app"
+            width={1536}
+            height={1024}
+            sizes="(max-width: 700px) 125vw, (max-width: 1100px) 85vw, 1150px"
+            priority
+          />
+          <Image
+            className="hero-mobile-phone"
+            src="/assets/branding/wattsnap-smartphone.png"
+            alt="WattSnap dashboard preview showing electricity bills, appliances, tips, and advisories"
+            width={1024}
+            height={1536}
+            sizes="(max-width: 650px) 60vw, 1px"
+          />
+          <div className="hero-spark hero-spark-one" aria-hidden="true"><i /><i /></div>
+          {callouts.map((callout) => (
+            <a key={callout.name} href={callout.href} className={`hero-callout hero-callout-${callout.name}`}>
+              <div className={`hero-callout-icon hero-callout-icon-${callout.icon}`}><GlossyIcon name={callout.icon} /></div>
+              <div className="hero-callout-copy">
+                <h2>{callout.title}</h2>
+                <p>{callout.description}</p>
+              </div>
+              <ChevronRight className="hero-callout-arrow" size={23} aria-hidden="true" />
+            </a>
+          ))}
         </div>
       </div>
-
     </section>
   );
 }

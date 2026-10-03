@@ -1,0 +1,234 @@
+/* Scoped to the content after the hero so the existing header and hero stay intact. */
+.post-hero {
+  position: relative;
+  color: #071d5d;
+  background: linear-gradient(180deg, #ecfbff 0%, #e3f9ff 32%, #f4fcff 65%, #eafaff 100%);
+  border-radius: 44px 44px 0 0;
+  overflow: clip;
+}
+
+.post-hero .post-container { width: calc(100% - 64px); max-width: 1240px; margin-inline: auto; }
+.post-hero section { position: relative; scroll-margin-top: 88px; }
+.post-hero .post-blue-text { color: #008eff; }
+.post-hero .post-orange-text { color: #ff9d00; }
+.post-hero .post-green-text { color: #00ad68; }
+.post-hero .post-heading { position: relative; margin-bottom: 28px; text-align: center; font-size: clamp(28px, 3vw, 39px); line-height: 1.2; font-weight: 850; letter-spacing: -1.3px; }
+.post-hero .post-heading-spark { display: inline-block; margin-left: 7px; color: #ffcc00; font-size: 37px; vertical-align: top; transform: translateY(-12px) rotate(15deg); }
+.post-hero a:focus-visible, .post-hero button:focus-visible { outline: 3px solid #005eff; outline-offset: 5px; }
+
+.post-hero .post-features { padding: 32px 0 30px; isolation: isolate; }
+.post-hero .post-features .post-container { max-width: 1020px; }
+.post-hero .post-features::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(228, 249, 255, .25), rgba(234, 251, 255, .9) 53%, #edfbff 80%), url('/assets/branding/hero-bg-panorama.png') left bottom / auto 100% no-repeat;
+  opacity: .65;
+  mask-image: linear-gradient(transparent, #000 18%, #000 88%, transparent);
+}
+.post-hero .post-feature-grid { display: grid; grid-template-columns: .85fr 1.15fr; align-items: center; gap: 38px; }
+.post-hero .post-phone-showcase { position: relative; display: grid; place-items: center; min-width: 0; }
+.post-hero .post-phone-glow { position: absolute; width: 88%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, #a3efff, #d6f9ff 55%, transparent 70%); }
+.post-hero .post-phone-render { position: relative; width: 100%; max-width: 400px; height: auto; object-fit: contain; filter: drop-shadow(0 12px 8px rgba(0, 81, 150, .1)); }
+.post-hero .post-feature-title { font-size: clamp(28px, 2.4vw, 34px); line-height: 1.12; font-weight: 850; letter-spacing: -1px; }
+.post-hero .post-feature-intro { max-width: 500px; margin: 10px 0 18px; font-size: 16px; line-height: 1.5; }
+.post-hero .post-feature-list { display: grid; gap: 10px; }
+.post-hero .post-feature-card {
+  display: grid; grid-template-columns: 56px 1fr 20px; gap: 14px; align-items: center;
+  min-height: 85px; padding: 11px 16px 11px 11px; border: 1px solid white; border-radius: 22px;
+  background: rgba(255, 255, 255, .88); box-shadow: 0 7px 20px rgba(29, 164, 215, .07);
+  transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.post-hero .post-feature-card:hover { transform: translateX(4px); background: white; box-shadow: 0 10px 26px rgba(0, 158, 225, .13); }
+.post-hero .post-feature-card h3 { font-size: 16px; line-height: 1.3; font-weight: 800; letter-spacing: -.4px; }
+.post-hero .post-feature-card p { margin-top: 4px; font-size: 13px; line-height: 1.5; color: #49607e; }
+.post-hero .post-feature-card > svg { color: #009bff; }
+.post-hero .post-feature-icon { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 17px; }
+.post-hero .post-feature-icon .glossy-icon { width: 42px; height: 42px; }
+.post-hero .post-feature-icon > svg:not(.glossy-icon) { width: 32px; height: 32px; }
+.post-hero .post-icon-blue { color: #00a2f4; background: linear-gradient(145deg, #e5faff, #bcedff); }
+.post-hero .post-icon-green { background: linear-gradient(145deg, #efffff, #caf8f6); }
+.post-hero .post-icon-yellow { background: linear-gradient(145deg, #fffdef, #fff4bb); }
+.post-hero .post-icon-red { background: linear-gradient(145deg, #fff4f0, #ffe5e2); }
+
+.post-hero .post-workflow { padding: 20px 0 32px; }
+.post-hero .post-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 34px; list-style: none; }
+.post-hero .post-step { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; min-height: 240px; padding: 27px 22px 22px; border-radius: 28px; border: 2px solid white; background: linear-gradient(145deg, #fff, #f2fcff); box-shadow: 0 8px 25px rgba(23, 169, 223, .06); }
+.post-hero .post-step-number { position: absolute; top: -8px; left: 16px; display: grid; place-items: center; width: 39px; height: 39px; border: 4px solid #effcff; border-radius: 50%; color: white; font-size: 21px; font-weight: 800; }
+.post-hero .post-number-blue { background: linear-gradient(140deg, #00c2ff, #0064ff); }
+.post-hero .post-number-green { background: linear-gradient(140deg, #25e78a, #00a363); }
+.post-hero .post-number-orange { background: linear-gradient(140deg, #ffcc00, #ff8a00); }
+.post-hero .post-number-purple { background: linear-gradient(140deg, #b395ff, #6742ff); }
+.post-hero .post-step-icon { display: grid; place-items: center; height: 82px; margin-bottom: 7px; }
+.post-hero .post-step-icon .glossy-icon { width: 68px; height: 68px; }
+.post-hero .post-step-icon-blue { color: #00a0ff; }
+.post-hero .post-step-icon-green { color: #14c774; }
+.post-hero .post-step h3 { font-size: 19px; line-height: 1.3; font-weight: 800; letter-spacing: -.4px; }
+.post-hero .post-step p { margin-top: 10px; max-width: 205px; color: #49607e; font-size: 14px; line-height: 1.5; }
+.post-hero .post-step-arrow { position: absolute; top: 44%; right: -34px; color: #5985b0; }
+
+.post-hero .post-spotlights { padding: 0 0 34px; }
+.post-hero .post-spotlight-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+.post-hero .post-spotlight { position: relative; isolation: isolate; overflow: hidden; min-height: 300px; padding: 28px; border-radius: 28px; border: 2px solid white; background: linear-gradient(135deg, #c3edff, #e4fbff 67%, #b2f1fb); }
+.post-hero .post-spotlight::after { position: absolute; z-index: -1; content: ""; width: 230px; height: 230px; right: -30px; bottom: -100px; border-radius: 50%; background: rgba(255, 255, 255, .4); box-shadow: -90px 0 0 -20px rgba(255,255,255,.24), -160px 30px 0 -30px rgba(255,255,255,.22); }
+.post-hero .post-spotlight-mission { background: linear-gradient(135deg, #d4f7ff, #eafcff 55%, #c2f5f5); }
+.post-hero .post-spotlight-copy { position: relative; z-index: 2; max-width: 62%; }
+.post-hero .post-spotlight h2 { font-size: clamp(23px, 2.2vw, 29px); line-height: 1.12; font-weight: 850; letter-spacing: -1px; }
+.post-hero .post-spotlight h2 svg { display: inline-block; vertical-align: middle; }
+.post-hero .post-spotlight p { max-width: 285px; margin-top: 13px; font-size: 14px; line-height: 1.5; color: #22467a; }
+.post-hero .post-small-link { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 42px; margin-top: 16px; padding: 9px 21px; border: 1px solid #a9e9ff; border-radius: 30px; background: linear-gradient(135deg, #fff, #ecfbff); color: #007cff; font-size: 13px; font-weight: 800; transition: background .2s, transform .2s; }
+.post-hero .post-small-link:hover { transform: translateY(-2px); background: white; }
+.post-hero .post-readiness-art { position: absolute; right: -12px; bottom: -24px; width: 245px; height: 280px; }
+.post-hero .post-readiness-art > img { position: absolute; width: 245px; height: auto; bottom: -10px; right: 0; }
+.post-hero .post-alert-bubble { position: absolute; top: 0; right: 61px; display: grid; place-items: center; width: 76px; height: 71px; border-radius: 22px; background: white; box-shadow: 0 8px 16px #85daff70; }
+.post-hero .post-alert-bubble::after { content: ""; position: absolute; bottom: -9px; left: 25px; border: 10px solid transparent; border-top-color: white; border-bottom: 0; }
+.post-hero .post-alert-bubble > svg { width: 48px; height: 48px; filter: drop-shadow(0 3px 2px #ffba0040); }
+.post-hero .post-megaphone { position: absolute; right: 5px; bottom: 81px; color: #058dff; fill: #6edcff; transform: rotate(-19deg); filter: drop-shadow(0 3px 3px #008de74d); }
+.post-hero .post-eco-art { position: absolute; right: -6px; bottom: -23px; width: 235px; }
+.post-hero .post-eco-art svg { display: block; width: 100%; height: auto; }
+
+.post-hero .post-testimonials { padding: 4px 0 22px; }
+.post-hero .post-review-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.post-hero .post-review { padding: 22px 23px; margin: 0; border-radius: 25px; border: 1px solid white; background: rgba(255,255,255,.85); box-shadow: 0 8px 24px rgba(32,177,227,.05); }
+.post-hero .post-review figcaption { display: flex; align-items: center; gap: 12px; }
+.post-hero .post-avatar { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; overflow: hidden; border: 2px solid white; border-radius: 50%; font-size: 31px; box-shadow: 0 0 0 1px #b9e7fb; }
+.post-hero .post-avatar-blue { background: #d9efff; }
+.post-hero .post-avatar-green { background: #c7f8ed; }
+.post-hero .post-avatar-orange { background: #ffecd4; }
+.post-hero .post-review h3 { font-size: 14px; font-weight: 800; }
+.post-hero .post-stars { display: flex; gap: 2px; margin-top: 4px; color: #ffb900; }
+.post-hero .post-quote-mark { margin-left: auto; color: #d8eefb; }
+.post-hero .post-review blockquote { margin-top: 13px; color: #526780; font-size: 14px; line-height: 1.55; }
+.post-hero .post-review-note { margin-top: 12px; text-align: center; color: #526d87; font-size: 11px; }
+
+.post-hero .post-account-section { padding: 8px 0 32px; }
+.post-hero .post-account-banner { position: relative; isolation: isolate; min-height: 290px; overflow: hidden; padding: 38px 40px; border: 2px solid #c3f6ff; border-radius: 29px; background: linear-gradient(110deg, #08a2ff, #27c7f6 54%, #abf1fb 88%, #eaffd5); box-shadow: inset 0 1px 8px #b3f5ff80, 0 12px 28px #04aef217; }
+.post-hero .post-account-copy { position: relative; z-index: 3; max-width: 62%; color: white; }
+.post-hero .post-account-copy h2 { font-size: clamp(27px, 2.5vw, 35px); font-weight: 850; line-height: 1.2; letter-spacing: -1.1px; }
+.post-hero .post-account-copy h2 > span { display: inline-block; margin-left: 5px; color: #ffe126; transform: translateY(-5px) rotate(15deg); }
+.post-hero .post-account-copy p { margin-top: 11px; font-size: 17px; line-height: 1.5; text-shadow: 0 1px 2px #0070a733; }
+.post-hero .post-account-actions { display: flex; flex-wrap: wrap; gap: 13px; margin-top: 21px; }
+.post-hero .post-account-actions > a { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 49px; padding: 12px 20px; border-radius: 25px; font-size: 15px; font-weight: 800; transition: transform .2s ease, background .2s ease; }
+.post-hero .post-account-actions > a:hover { transform: translateY(-2px); }
+.post-hero .post-account-signup { color: #0068dc; border: 1px solid white; background: white; box-shadow: 0 6px 18px #007aaa26; }
+.post-hero .post-account-login { color: white; border: 1px solid #ffffffba; background: #ffffff1a; }
+.post-hero .post-account-login:hover { background: #ffffff30; }
+.post-hero .post-account-art { position: absolute; z-index: 2; right: 25px; bottom: -26px; width: 420px; height: 345px; }
+.post-hero .post-account-mascot { position: absolute; width: 350px; height: auto; bottom: -8px; left: -4px; transform: rotate(-6deg); }
+.post-hero .post-account-phone { position: absolute; width: 150px; height: auto; right: 6px; bottom: 25px; transform: rotate(12deg); filter: drop-shadow(0 8px 7px #07669d33); }
+.post-hero .post-banner-cloud { position: absolute; z-index: -1; width: 190px; height: 105px; border-radius: 100px; background: #d4faff7d; }
+.post-hero .post-banner-cloud::before, .post-hero .post-banner-cloud::after { position: absolute; content: ""; border-radius: 50%; background: inherit; }
+.post-hero .post-banner-cloud::before { width: 105px; height: 105px; top: -43px; left: 20px; }
+.post-hero .post-banner-cloud::after { width: 75px; height: 75px; top: -19px; right: 17px; }
+.post-hero .post-banner-cloud-one { left: 46%; bottom: -65px; transform: scale(1.5); }
+.post-hero .post-banner-cloud-two { left: 55%; top: 13px; transform: scale(.6); opacity: .55; }
+
+@media (max-width: 1000px) {
+  .post-hero .post-container { width: calc(100% - 48px); }
+  .post-hero .post-feature-grid { gap: 24px; }
+  .post-hero .post-phone-render { max-width: 330px; }
+  .post-hero .post-feature-title { font-size: 30px; }
+  .post-hero .post-feature-intro { font-size: 14px; margin: 9px 0 15px; }
+  .post-hero .post-feature-card { grid-template-columns: 52px 1fr 16px; gap: 11px; min-height: 80px; padding: 10px 12px 10px 10px; border-radius: 20px; }
+  .post-hero .post-feature-icon { width: 52px; height: 52px; border-radius: 16px; }
+  .post-hero .post-feature-icon .glossy-icon { width: 40px; height: 40px; }
+  .post-hero .post-feature-card h3 { font-size: 15px; }
+  .post-hero .post-feature-card p { font-size: 12px; }
+  .post-hero .post-steps { gap: 25px; }
+  .post-hero .post-step { min-height: 205px; padding: 22px 13px 18px; border-radius: 25px; }
+  .post-hero .post-step h3 { font-size: 16px; }
+  .post-hero .post-step p { font-size: 12px; }
+  .post-hero .post-step-arrow { right: -27px; width: 24px; }
+  .post-hero .post-step-icon { height: 73px; }
+  .post-hero .post-step-icon .glossy-icon { width: 60px; height: 60px; }
+  .post-hero .post-spotlight-grid { gap: 16px; }
+  .post-hero .post-spotlight { min-height: 250px; padding: 22px 20px; }
+  .post-hero .post-spotlight-copy { max-width: 69%; }
+  .post-hero .post-spotlight h2 { font-size: 23px; }
+  .post-hero .post-spotlight p { font-size: 12px; }
+  .post-hero .post-small-link { min-height: 38px; padding: 8px 18px; font-size: 12px; }
+  .post-hero .post-readiness-art { right: -26px; width: 185px; height: 220px; }
+  .post-hero .post-readiness-art > img { width: 185px; }
+  .post-hero .post-alert-bubble { right: 51px; top: 11px; width: 62px; height: 58px; border-radius: 18px; }
+  .post-hero .post-alert-bubble > svg { width: 41px; height: 41px; }
+  .post-hero .post-megaphone { right: 5px; bottom: 58px; width: 50px; }
+  .post-hero .post-eco-art { width: 173px; right: -15px; bottom: -20px; }
+  .post-hero .post-review-grid { gap: 18px; }
+  .post-hero .post-review { padding: 16px 17px; }
+  .post-hero .post-review figcaption { gap: 10px; }
+  .post-hero .post-review h3 { font-size: 12px; }
+  .post-hero .post-review blockquote { font-size: 12px; }
+  .post-hero .post-avatar { width: 36px; height: 36px; font-size: 26px; }
+  .post-hero .post-quote-mark { width: 23px; }
+  .post-hero .post-account-banner { min-height: 245px; padding: 29px 29px; }
+  .post-hero .post-account-copy { max-width: 65%; }
+  .post-hero .post-account-copy h2 { font-size: 28px; }
+  .post-hero .post-account-copy p { font-size: 15px; }
+  .post-hero .post-account-actions > a { min-height: 45px; padding: 11px 17px; font-size: 14px; }
+  .post-hero .post-account-art { right: 9px; width: 320px; height: 280px; }
+  .post-hero .post-account-mascot { width: 275px; left: -3px; }
+  .post-hero .post-account-phone { width: 119px; right: 0; bottom: 24px; }
+}
+
+@media (max-width: 650px) {
+  .post-hero { border-radius: 30px 30px 0 0; }
+  .post-hero .post-container { width: calc(100% - 32px); }
+  .post-hero .post-features { padding-top: 22px; padding-bottom: 25px; }
+  .post-hero .post-feature-grid { grid-template-columns: 1fr; gap: 16px; }
+  .post-hero .post-phone-render { max-width: 280px; }
+  .post-hero .post-phone-glow { width: 280px; }
+  .post-hero .post-feature-copy { max-width: 460px; width: 100%; margin-inline: auto; }
+  .post-hero .post-feature-title { font-size: clamp(26px, 6.7vw, 30px); }
+  .post-hero .post-feature-intro { font-size: 14px; }
+  .post-hero .post-feature-card { min-height: 80px; }
+  .post-hero .post-feature-card h3 { font-size: 14px; }
+  .post-hero .post-feature-card p { font-size: 12px; }
+  .post-hero .post-heading { font-size: 27px; letter-spacing: -1px; margin-bottom: 24px; }
+  .post-hero .post-heading-spark { font-size: 25px; margin-left: 3px; transform: translateY(-5px) rotate(15deg); }
+  .post-hero .post-workflow { padding-top: 12px; padding-bottom: 24px; }
+  .post-hero .post-steps { grid-template-columns: repeat(2, 1fr); gap: 20px 22px; }
+  .post-hero .post-step { min-height: 212px; }
+  .post-hero .post-step-number { width: 35px; height: 35px; font-size: 17px; }
+  .post-hero .post-step-arrow { right: -24px; width: 21px; }
+  .post-hero .post-step:nth-child(2) .post-step-arrow { display: none; }
+  .post-hero .post-spotlight-grid { grid-template-columns: 1fr; gap: 17px; }
+  .post-hero .post-spotlight { min-height: 245px; }
+  .post-hero .post-spotlight-copy { max-width: 67%; }
+  .post-hero .post-spotlight h2 { font-size: 24px; }
+  .post-hero .post-spotlight p { font-size: 13px; }
+  .post-hero .post-readiness-art { width: 190px; right: -14px; }
+  .post-hero .post-readiness-art > img { width: 190px; }
+  .post-hero .post-eco-art { width: 185px; }
+  .post-hero .post-review-grid { grid-template-columns: 1fr; gap: 13px; }
+  .post-hero .post-review { padding: 20px; }
+  .post-hero .post-review blockquote { font-size: 14px; }
+  .post-hero .post-review h3 { font-size: 14px; }
+  .post-hero .post-avatar { width: 42px; height: 42px; font-size: 30px; }
+  .post-hero .post-testimonials { padding-top: 0; }
+  .post-hero .post-account-banner { min-height: 470px; padding: 27px 23px 0; }
+  .post-hero .post-account-copy { max-width: none; }
+  .post-hero .post-account-copy h2 { font-size: 27px; }
+  .post-hero .post-account-copy p { font-size: 14px; }
+  .post-hero .post-account-actions { gap: 10px; margin-top: 16px; }
+  .post-hero .post-account-actions > a { padding-inline: 14px; font-size: 13px; }
+  .post-hero .post-account-art { right: 50%; transform: translateX(50%); width: 300px; height: 270px; }
+  .post-hero .post-account-mascot { width: 265px; }
+  .post-hero .post-account-phone { width: 110px; }
+  .post-hero .post-banner-cloud-one { left: 23%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-hero a, .post-hero button { transition: none; }
+}
+
+@media (max-width: 400px) {
+  .post-hero .post-spotlight-copy { max-width: none; }
+  .post-hero .post-spotlight h2 { font-size: 25px; }
+  .post-hero .post-readiness-art { position: relative; right: auto; bottom: auto; width: 190px; height: 180px; margin: 10px -20px -22px auto; }
+  .post-hero .post-readiness-art > img { bottom: -25px; }
+  .post-hero .post-alert-bubble { top: -8px; }
+  .post-hero .post-megaphone { bottom: 45px; }
+  .post-hero .post-eco-art { position: relative; right: auto; bottom: auto; width: 190px; margin: 0 -20px -22px auto; }
+  .post-hero .post-account-banner { min-height: 535px; }
+}

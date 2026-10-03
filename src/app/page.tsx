@@ -4,8 +4,11 @@ import { FeaturesSection } from "@/features/landing/components/FeaturesSection";
 import { HowItWorksSection } from "@/features/landing/components/HowItWorksSection";
 import { SpotlightSection } from "@/features/landing/components/SpotlightSection";
 import { TestimonialsSection } from "@/features/landing/components/TestimonialsSection";
-import { DownloadCtaBanner } from "@/features/landing/components/DownloadCtaBanner";
+import { AccountCtaBanner } from "@/features/landing/components/AccountCtaBanner";
 import { Footer } from "@/features/landing/components/Footer";
+import "@/features/landing/post-hero.css";
+import "@/features/landing/mobile-landing.css";
+import "@/features/landing/footer.css";
 
 export default function LandingPage() {
   return (
@@ -16,11 +19,13 @@ export default function LandingPage() {
       {/* Main Landing Sections */}
       <main style={{ flex: 1 }}>
         <HeroSection />
-        <FeaturesSection />
-        <HowItWorksSection />
-        <SpotlightSection />
-        <TestimonialsSection />
-        <DownloadCtaBanner />
+        <div className="post-hero">
+          <FeaturesSection />
+          <HowItWorksSection />
+          <SpotlightSection />
+          <TestimonialsSection />
+          <AccountCtaBanner />
+        </div>
       </main>
 
       {/* Footer */}

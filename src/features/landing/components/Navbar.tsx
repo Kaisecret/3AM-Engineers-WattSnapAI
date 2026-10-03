@@ -3,188 +3,67 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Download, LayoutDashboard, Menu, X } from "lucide-react";
+import { Menu, UserRoundPlus, X } from "lucide-react";
+
+const links = [
+  { label: "Home", href: "#home" },
+  { label: "Features", href: "#features" },
+  { label: "How It Works", href: "#how-it-works" },
+  { label: "About", href: "#about" },
+];
 
 export function Navbar() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header style={{
-      position: "sticky",
-      top: 0,
-      zIndex: 100,
-      width: "100%",
-      backgroundColor: "rgba(255, 255, 255, 0.85)",
-      backdropFilter: "blur(16px)",
-      WebkitBackdropFilter: "blur(16px)",
-      borderBottom: "1px solid rgba(226, 232, 240, 0.7)",
-      transition: "all 0.2s ease"
-    }}>
-      <div className="landing-container" style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        height: "4.75rem"
-      }}>
-        {/* Logo */}
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+    <header className="landing-header">
+      <div className="landing-nav-inner">
+        <Link href="/" className="landing-brand" aria-label="WattSnap home">
           <Image
             src="/assets/branding/wattsnap-logo.png"
-            alt="WattSnap Logo"
-            width={160}
-            height={50}
+            alt="WattSnap"
+            width={1983}
+            height={793}
+            sizes="(max-width: 600px) 140px, 160px"
             priority
-            style={{ objectFit: "contain", height: "auto" }}
           />
         </Link>
-
-        {/* Desktop Navigation Links */}
-        <nav style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "2.25rem"
-        }} className="desktop-nav">
-          <Link
-            href="/"
-            style={{
-              fontSize: "0.975rem",
-              fontWeight: 700,
-              color: "var(--primary-blue)",
-              position: "relative",
-              padding: "0.25rem 0"
-            }}
-          >
-            Home
-            <span style={{
-              position: "absolute",
-              bottom: "-4px",
-              left: "20%",
-              width: "60%",
-              height: "2.5px",
-              backgroundColor: "var(--primary-blue)",
-              borderRadius: "9999px"
-            }} />
-          </Link>
-          <Link
-            href="#features"
-            className="nav-link"
-          >
-            Features
-          </Link>
-          <Link
-            href="#how-it-works"
-            className="nav-link"
-          >
-            How It Works
-          </Link>
-          <Link
-            href="#about"
-            className="nav-link"
-          >
-            About
-          </Link>
+        <nav className="landing-desktop-links" aria-label="Main navigation">
+          {links.map((link, index) => (
+            <a key={link.href} href={link.href} className={`landing-nav-link${index === 0 ? " is-active" : ""}`}>
+              {link.label}
+            </a>
+          ))}
         </nav>
-
-        {/* Right CTA Actions */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.875rem" }} className="desktop-nav">
-          <Link
-            href="/dashboard"
-            className="dashboard-btn"
-          >
-            <LayoutDashboard size={15} /> Dashboard
-          </Link>
-
-          <Link
-            href="#download"
-            className="btn-primary"
-            style={{
-              padding: "0.65rem 1.35rem",
-              fontSize: "0.925rem"
-            }}
-          >
-            <Download size={16} /> Download App
+        <div className="landing-account-actions">
+          <Link href="/login" className="landing-login-link">Log in</Link>
+          <Link href="/signup" className="btn-primary landing-nav-signup">
+            <UserRoundPlus aria-hidden="true" size={18} /> Create account
           </Link>
         </div>
-
-        {/* Mobile Hamburger Button */}
         <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Toggle menu"
-          className="mobile-toggle"
-          style={{
-            display: "none",
-            padding: "0.5rem",
-            color: "var(--text-primary)"
-          }}
+          type="button"
+          className="landing-menu-toggle"
+          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          aria-expanded={menuOpen}
+          aria-controls="landing-mobile-menu"
+          onClick={() => setMenuOpen(!menuOpen)}
         >
-          {mobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
+          {menuOpen ? <X size={26} /> : <Menu size={26} />}
         </button>
       </div>
-
-      {/* Mobile Drawer */}
-      {mobileMenuOpen && (
-        <div style={{
-          backgroundColor: "#ffffff",
-          borderBottom: "1px solid #e2e8f0",
-          padding: "1.5rem",
-          display: "flex",
-          flexDirection: "column",
-          gap: "1rem"
-        }}>
-          <Link
-            href="/"
-            onClick={() => setMobileMenuOpen(false)}
-            style={{ fontSize: "1rem", fontWeight: 700, color: "var(--primary-blue)" }}
-          >
-            Home
+      {menuOpen && (
+        <nav id="landing-mobile-menu" className="landing-mobile-menu" aria-label="Mobile navigation">
+          {links.map((link) => (
+            <a key={link.href} href={link.href} onClick={() => setMenuOpen(false)}>{link.label}</a>
+          ))}
+          <Link href="/dashboard" onClick={() => setMenuOpen(false)}>Household Dashboard</Link>
+          <Link href="/login" onClick={() => setMenuOpen(false)}>Log in</Link>
+          <Link href="/signup" className="btn-primary" onClick={() => setMenuOpen(false)}>
+            <UserRoundPlus size={20} aria-hidden="true" /> Create account
           </Link>
-          <Link
-            href="#features"
-            onClick={() => setMobileMenuOpen(false)}
-            style={{ fontSize: "1rem", fontWeight: 600, color: "var(--text-secondary)" }}
-          >
-            Features
-          </Link>
-          <Link
-            href="#how-it-works"
-            onClick={() => setMobileMenuOpen(false)}
-            style={{ fontSize: "1rem", fontWeight: 600, color: "var(--text-secondary)" }}
-          >
-            How It Works
-          </Link>
-          <Link
-            href="#about"
-            onClick={() => setMobileMenuOpen(false)}
-            style={{ fontSize: "1rem", fontWeight: 600, color: "var(--text-secondary)" }}
-          >
-            About
-          </Link>
-          <hr style={{ border: "none", borderTop: "1px solid #e2e8f0", margin: "0.5rem 0" }} />
-          <Link
-            href="/dashboard"
-            onClick={() => setMobileMenuOpen(false)}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              fontSize: "0.95rem",
-              fontWeight: 600,
-              color: "var(--primary-blue)"
-            }}
-          >
-            <LayoutDashboard size={18} /> Household Dashboard
-          </Link>
-          <Link
-            href="#download"
-            onClick={() => setMobileMenuOpen(false)}
-            className="btn-primary"
-            style={{ textAlign: "center", marginTop: "0.5rem" }}
-          >
-            <Download size={18} /> Download App
-          </Link>
-        </div>
+        </nav>
       )}
-
     </header>
   );
 }

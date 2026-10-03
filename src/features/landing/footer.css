@@ -1,0 +1,40 @@
+/* Landing footer, continuing the light sky palette of the sections above it. */
+.landing-footer {
+  color: #45619b;
+  background: linear-gradient(180deg, #eafaff 0%, #f6fdff 100%);
+  border-top: 1px solid #d3f1fc;
+}
+.landing-footer-inner { width: calc(100% - 64px); max-width: 1240px; margin-inline: auto; padding: 56px 0 32px; }
+.landing-footer-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr)); gap: 48px; }
+.landing-footer-logo { display: block; width: 168px; }
+.landing-footer-logo img { display: block; width: 100%; height: auto; }
+.landing-footer-brand p { max-width: 320px; margin-top: 14px; font-size: 15px; line-height: 1.6; }
+.landing-footer-group h2 { color: var(--landing-navy); font-size: 16px; font-weight: 800; letter-spacing: -.2px; }
+.landing-footer-group ul { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; list-style: none; font-size: 15px; line-height: 1.35; }
+.landing-footer-group a { color: #45619b; transition: color .2s ease; }
+.landing-footer-group a:hover { color: #0070ff; }
+.landing-footer-group .landing-footer-highlight { color: #0070ff; font-weight: 700; }
+.landing-footer-group .landing-footer-highlight:hover { color: #0050d6; }
+.landing-footer-bottom { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 32px; margin-top: 48px; padding-top: 24px; border-top: 1px solid #d3f1fc; font-size: 13px; line-height: 1.55; }
+.landing-footer-disclaimer { max-width: 620px; color: #7189b5; }
+.landing-footer-copyright { flex-shrink: 0; color: #45619b; font-weight: 600; }
+
+@media (max-width: 1000px) {
+  .landing-footer-inner { width: calc(100% - 48px); }
+  .landing-footer-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 36px 32px; }
+  .landing-footer-brand { grid-column: 1 / -1; }
+  .landing-footer-brand p { max-width: 460px; }
+}
+
+/* Phones: brand on top, Product and Capabilities side by side, Coverage as a 2x2 list. */
+@media (max-width: 650px) {
+  .landing-footer-inner { width: calc(100% - 32px); padding: 36px 0 28px; }
+  .landing-footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 20px; }
+  .landing-footer-logo { width: 140px; }
+  .landing-footer-brand p { margin-top: 12px; font-size: 14px; }
+  .landing-footer-group h2 { font-size: 15px; }
+  .landing-footer-group ul { gap: 10px; margin-top: 12px; font-size: 14px; }
+  .landing-footer-coverage { grid-column: 1 / -1; }
+  .landing-footer-coverage ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 20px; }
+  .landing-footer-bottom { flex-direction: column; align-items: flex-start; gap: 10px; margin-top: 32px; padding-top: 20px; font-size: 12px; }
+}

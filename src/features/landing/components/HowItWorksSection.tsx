@@ -1,185 +1,31 @@
-import {
-  ScanLine,
-  FileSearch,
-  BarChart3,
-  Lightbulb,
-  ArrowRight
-} from "lucide-react";
+import { ArrowRight, FileSearch, ScanLine } from "lucide-react";
+import { GlossyIcon } from "./GlossyIcon";
 
 const steps = [
-  {
-    step: 1,
-    title: "Scan Your Bill",
-    desc: "Take a photo of your electricity bill.",
-    icon: ScanLine,
-    color: "#0284c7",
-    bg: "#e0f2fe",
-  },
-  {
-    step: 2,
-    title: "AI Analysis",
-    desc: "Our AI reads and analyzes the details instantly.",
-    icon: FileSearch,
-    color: "#10b981",
-    bg: "#ecfdf5",
-  },
-  {
-    step: 3,
-    title: "View Insights",
-    desc: "See your consumption, bill breakdown, and trends.",
-    icon: BarChart3,
-    color: "#f59e0b",
-    bg: "#fef3c7",
-  },
-  {
-    step: 4,
-    title: "Take Action",
-    desc: "Get tips and be ready for advisories to save energy and money.",
-    icon: Lightbulb,
-    color: "#8b5cf6",
-    bg: "#f3e8ff",
-  },
+  { title: "Scan Your Bill", description: "Take a photo of your electricity bill.", color: "blue" },
+  { title: "AI Analysis", description: "AI reads the details for you to review and confirm.", color: "green" },
+  { title: "View Insights", description: "See your consumption, bill history, and trends.", color: "orange" },
+  { title: "Take Action", description: "Get tips and prepare for advisories to save energy and money.", color: "purple" },
 ];
 
 export function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="section-wrapper">
-      <div className="landing-container">
-        {/* Section Title */}
-        <div className="section-header-center">
-          <h2 className="section-title">
-            How <span className="gradient-text-blue">WattSnap</span>{" "}
-            <span className="gradient-text-orange" style={{ position: "relative" }}>
-              Works
-              <span style={{
-                position: "absolute",
-                top: "-10px",
-                right: "-20px",
-                color: "#f59e0b",
-                fontSize: "1.25rem"
-              }}>
-                ⚡
-              </span>
-            </span>
-          </h2>
-          <p className="section-subtitle">
-            A simple 4-step journey to smarter electricity management for your household.
-          </p>
-        </div>
-
-        {/* 4 Steps Row with Connecting Arrows */}
-        <div style={{
-          display: "flex",
-          alignItems: "stretch",
-          justifyContent: "space-between",
-          gap: "1rem",
-          position: "relative"
-        }} className="steps-container">
-          {steps.map((item, index) => {
-            const Icon = item.icon;
-            const isLast = index === steps.length - 1;
-
-            return (
-              <div
-                key={item.step}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  flex: 1
-                }}
-                className="step-wrapper"
-              >
-                {/* Step Card */}
-                <div
-                  className="glass-card"
-                  style={{
-                    flex: 1,
-                    padding: "2rem 1.5rem",
-                    borderRadius: "1.5rem",
-                    textAlign: "center",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    position: "relative"
-                  }}
-                >
-                  {/* Number Badge at Top */}
-                  <div style={{
-                    position: "absolute",
-                    top: "-16px",
-                    left: "20px",
-                    width: "32px",
-                    height: "32px",
-                    borderRadius: "50%",
-                    backgroundColor: item.color,
-                    color: "#ffffff",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "0.875rem",
-                    fontWeight: 800,
-                    boxShadow: `0 4px 10px ${item.color}40`
-                  }}>
-                    {item.step}
-                  </div>
-
-                  {/* Icon Container */}
-                  <div style={{
-                    width: "64px",
-                    height: "64px",
-                    borderRadius: "18px",
-                    backgroundColor: item.bg,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: item.color,
-                    marginBottom: "1.25rem",
-                    marginTop: "0.5rem"
-                  }}>
-                    <Icon size={32} />
-                  </div>
-
-                  {/* Step Title */}
-                  <h3 style={{
-                    fontSize: "1.15rem",
-                    fontWeight: 700,
-                    color: "#0f172a",
-                    marginBottom: "0.5rem"
-                  }}>
-                    {item.title}
-                  </h3>
-
-                  {/* Step Description */}
-                  <p style={{
-                    fontSize: "0.875rem",
-                    color: "#64748b",
-                    lineHeight: 1.45
-                  }}>
-                    {item.desc}
-                  </p>
-                </div>
-
-                {/* Connecting Arrow (Desktop) */}
-                {!isLast && (
-                  <div
-                    className="step-arrow"
-                    style={{
-                      padding: "0 0.5rem",
-                      color: "#94a3b8",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center"
-                    }}
-                  >
-                    <ArrowRight size={24} />
-                  </div>
-                )}
+    <section id="how-it-works" className="post-workflow">
+      <div className="post-container">
+        <h2 className="post-heading">How <span className="post-blue-text">WattSnap</span> <span className="post-orange-text">Works</span><span className="post-heading-spark" aria-hidden="true">✦</span></h2>
+        <ol className="post-steps">
+          {steps.map((step, index) => (
+            <li key={step.title} className="post-step">
+              <span className={`post-step-number post-number-${step.color}`}>{index + 1}</span>
+              <div className={`post-step-icon post-step-icon-${step.color}`}>
+                {index === 0 ? <ScanLine size={62} strokeWidth={1.8} aria-hidden="true" /> : index === 1 ? <FileSearch size={62} strokeWidth={1.8} aria-hidden="true" /> : <GlossyIcon name={index === 2 ? "chart" : "bulb"} />}
               </div>
-            );
-          })}
-        </div>
+              <h3>{step.title}</h3><p>{step.description}</p>
+              {index < steps.length - 1 && <ArrowRight className="post-step-arrow" size={27} aria-hidden="true" />}
+            </li>
+          ))}
+        </ol>
       </div>
-
     </section>
   );
 }

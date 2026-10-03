@@ -1,129 +1,49 @@
-import {
-  FileText,
-  BarChart3,
-  Lightbulb,
-  BellRing,
-  ChevronRight
-} from "lucide-react";
-import { PhoneMockup } from "./PhoneMockup";
+import Image from "next/image";
+import { ChevronRight, FileText } from "lucide-react";
+import { GlossyIcon, type GlossyIconName } from "./GlossyIcon";
+import { MobileLandingDetails } from "./MobileLandingDetails";
 
-const features = [
-  {
-    id: "scan",
-    title: "Scan Your Electricity Bill",
-    description: "Take a clear photo and let AI extract the important details for you.",
-    icon: FileText,
-    iconColor: "#0284c7",
-    iconBg: "#e0f2fe",
-  },
-  {
-    id: "track",
-    title: "Track Your Consumption",
-    description: "View daily, weekly, and monthly usage in easy-to-read charts.",
-    icon: BarChart3,
-    iconColor: "#10b981",
-    iconBg: "#ecfdf5",
-  },
-  {
-    id: "tips",
-    title: "Get Energy-Saving Tips",
-    description: "Receive personalized recommendations to help you save.",
-    icon: Lightbulb,
-    iconColor: "#f59e0b",
-    iconBg: "#fef3c7",
-  },
-  {
-    id: "updates",
-    title: "Stay Updated",
-    description: "Get real-time advisories and announcements from your electricity provider.",
-    icon: BellRing,
-    iconColor: "#ef4444",
-    iconBg: "#fee2e2",
-  },
+const features: { title: string; description: string; icon: GlossyIconName | "bill"; color: string }[] = [
+  { title: "Scan Your Electricity Bill", description: "Take a clear photo and let AI extract the important details for you to review.", icon: "bill", color: "blue" },
+  { title: "Track Your Consumption", description: "View confirmed monthly usage and consumption trends in easy-to-read charts.", icon: "chart", color: "green" },
+  { title: "Get Energy-Saving Tips", description: "Receive personalized recommendations to help you save.", icon: "bulb", color: "yellow" },
+  { title: "Stay Updated", description: "Understand advisories and announcements from your electricity provider.", icon: "bell", color: "red" },
 ];
 
 export function FeaturesSection() {
   return (
-    <section id="features" className="section-wrapper" style={{ backgroundColor: "rgba(255, 255, 255, 0.6)" }}>
-      <div className="landing-container">
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "0.9fr 1.1fr",
-          alignItems: "center",
-          gap: "4rem"
-        }} className="features-grid">
-          {/* Left Column: Phone Mockup */}
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <PhoneMockup showFloatingBadges={false} />
+    <section id="features" className="post-features">
+      <div className="post-container">
+        <MobileLandingDetails />
+        <div className="post-feature-grid">
+          <div className="post-phone-showcase">
+            <div className="post-phone-glow" aria-hidden="true" />
+            <Image
+              className="post-phone-render"
+              src="/assets/branding/wattsnap-smartphone.png"
+              alt="WattSnap Energy App smartphone preview showing bill scanning, appliance estimates, tips, and provider advisories"
+              width={1024}
+              height={1536}
+              sizes="(max-width: 650px) 280px, (max-width: 1000px) 330px, 400px"
+            />
           </div>
-
-          {/* Right Column: Features List */}
-          <div>
-            <h2 className="section-title" style={{ textAlign: "left", marginBottom: "0.75rem" }}>
-              Smart Features <br />
-              for a <span className="gradient-text-orange">Brighter Home</span>
-            </h2>
-            <p style={{
-              fontSize: "1.1rem",
-              color: "var(--text-secondary)",
-              marginBottom: "2.5rem",
-              lineHeight: 1.6
-            }}>
-              Everything you need to manage your electricity usage — all in one app.
-            </p>
-
-            {/* Stack of 4 Cards */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "1.125rem" }}>
-              {features.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <div
-                    key={item.id}
-                    className="glass-card feature-card-interactive"
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "1.25rem" }}>
-                      <div style={{
-                        width: "52px",
-                        height: "52px",
-                        borderRadius: "14px",
-                        backgroundColor: item.iconBg,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: item.iconColor,
-                        flexShrink: 0
-                      }}>
-                        <Icon size={26} />
-                      </div>
-                      <div>
-                        <h3 style={{ fontSize: "1.125rem", fontWeight: 700, color: "#0f172a", marginBottom: "0.25rem" }}>
-                          {item.title}
-                        </h3>
-                        <p style={{ fontSize: "0.9rem", color: "#64748b", lineHeight: 1.4 }}>
-                          {item.description}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div style={{
-                      color: item.iconColor,
-                      padding: "0.5rem",
-                      borderRadius: "50%",
-                      backgroundColor: "rgba(255, 255, 255, 0.8)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center"
-                    }}>
-                      <ChevronRight size={20} />
-                    </div>
+          <div className="post-feature-copy">
+            <h2 className="post-feature-title"><span className="post-blue-text">Smart Features</span><br />for a <span className="post-orange-text">Brighter Home</span></h2>
+            <p className="post-feature-intro">Everything you need to manage your electricity usage — all in one app.</p>
+            <div className="post-feature-list">
+              {features.map((feature) => (
+                <a key={feature.title} href="/dashboard" className="post-feature-card">
+                  <div className={`post-feature-icon post-icon-${feature.color}`}>
+                    {feature.icon === "bill" ? <FileText size={38} strokeWidth={2.5} aria-hidden="true" /> : <GlossyIcon name={feature.icon} />}
                   </div>
-                );
-              })}
+                  <div><h3>{feature.title}</h3><p>{feature.description}</p></div>
+                  <ChevronRight size={21} aria-hidden="true" />
+                </a>
+              ))}
             </div>
           </div>
         </div>
       </div>
-
     </section>
   );
 }
