@@ -39,7 +39,7 @@ export function Navbar() {
         <div className="landing-account-actions">
           <Link href="/login" className="landing-login-link">Log in</Link>
           <Link href="/signup" className="btn-primary landing-nav-signup landing-create-account">
-            <CreateAccountLabel iconSize={18} />
+            <CreateAccountLabel />
           </Link>
         </div>
         <button

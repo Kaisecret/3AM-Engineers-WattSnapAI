@@ -47,7 +47,7 @@ export function HeroSection() {
           </p>
           <div className="hero-actions">
             <Link href="/signup" className="btn-primary hero-signup landing-create-account">
-              <CreateAccountLabel iconSize={29} />
+              <CreateAccountLabel />
             </Link>
             <ProductTour />
           </div>
