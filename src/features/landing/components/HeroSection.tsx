@@ -1,8 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronRight, UserRoundPlus } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { GlossyIcon, type GlossyIconName } from "./GlossyIcon";
 import { ProductTour } from "./ProductTour";
+import { CreateAccountLabel } from "./CreateAccountLabel";
 
 const benefits: { icon: GlossyIconName; title: string; description: string; mobileDescription: string }[] = [
   { icon: "home", title: "Understand\nYour Bills", description: "Easy and clear\nexplanations", mobileDescription: "Easy and clear explanations." },
@@ -45,9 +46,8 @@ export function HeroSection() {
             Be ready for brownouts.
           </p>
           <div className="hero-actions">
-            <Link href="/signup" className="btn-primary hero-signup">
-              <UserRoundPlus size={29} aria-hidden="true" /> Create account
-              <ChevronRight className="hero-signup-arrow" size={16} aria-hidden="true" />
+            <Link href="/signup" className="btn-primary hero-signup landing-create-account">
+              <CreateAccountLabel iconSize={29} />
             </Link>
             <ProductTour />
           </div>

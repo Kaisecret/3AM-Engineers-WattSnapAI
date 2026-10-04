@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { LogIn, UserRoundPlus } from "lucide-react";
+import { LogIn } from "lucide-react";
+import { CreateAccountLabel } from "./CreateAccountLabel";
 
 export function AccountCtaBanner() {
   return (
@@ -11,7 +12,7 @@ export function AccountCtaBanner() {
             <h2>Get Started with WattSnap<span aria-hidden="true">✦</span></h2>
             <p>Manage your electricity and save money.<br />Your brighter home starts in your browser.</p>
             <div className="post-account-actions">
-              <Link href="/signup" className="post-account-signup"><UserRoundPlus size={20} aria-hidden="true" /> Create account</Link>
+              <Link href="/signup" className="post-account-signup landing-create-account"><CreateAccountLabel /></Link>
               <Link href="/login" className="post-account-login"><LogIn size={20} aria-hidden="true" /> Log in</Link>
             </div>
           </div>

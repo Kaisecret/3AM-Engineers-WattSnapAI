@@ -1,22 +1,18 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Home, Zap, BarChart3, Bell, Settings } from "lucide-react";
+import "./dashboard.css";
 
 export default function HouseholdDashboardPage() {
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f8fafc", color: "#0f172a", fontFamily: "var(--font-sans, system-ui)" }}>
+    <div className="household-dashboard">
       {/* Top Header */}
-      <header style={{
-        backgroundColor: "#ffffff",
-        borderBottom: "1px solid #e2e8f0",
-        padding: "1rem 2rem",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between"
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+      <header className="dashboard-header">
+        <div className="dashboard-brand">
           <Link
             href="/"
+            className="dashboard-back"
+            aria-label="Back to Landing Page"
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -30,7 +26,7 @@ export default function HouseholdDashboardPage() {
               textDecoration: "none"
             }}
           >
-            <ArrowLeft size={16} /> Back to Landing Page
+            <ArrowLeft size={16} /> <span>Back to Landing Page</span>
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <Image
@@ -43,9 +39,9 @@ export default function HouseholdDashboardPage() {
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+        <div className="dashboard-household">
           <span style={{ fontSize: "0.875rem", color: "#64748b" }}>Household: <strong>Maria's Home</strong> (ANTECO)</span>
-          <div style={{
+          <div className="dashboard-avatar" style={{
             width: "36px",
             height: "36px",
             borderRadius: "50%",
@@ -63,34 +59,20 @@ export default function HouseholdDashboardPage() {
       </header>
 
       {/* Main Content Container */}
-      <main style={{ maxWidth: "1200px", margin: "2rem auto", padding: "0 1.5rem" }}>
-        <div style={{
-          backgroundColor: "#ffffff",
-          borderRadius: "1rem",
-          padding: "2rem",
-          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)",
-          marginBottom: "2rem"
-        }}>
-          <h1 style={{ fontSize: "1.75rem", fontWeight: 700, color: "#0f172a", marginBottom: "0.5rem" }}>
+      <main className="dashboard-main">
+        <div className="dashboard-intro">
+          <Image className="dashboard-mobile-art" src="/assets/branding/actions-1.png" alt="" width={200} height={200} sizes="260px" />
+          <h1 className="dashboard-title">
             Household Dashboard
           </h1>
-          <p style={{ color: "#64748b", fontSize: "0.95rem" }}>
+          <p className="dashboard-description">
             Welcome to your household energy portal. Manage bills, appliances, and advisories in one place.
           </p>
         </div>
 
         {/* Dashboard Grid */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: "1.5rem"
-        }}>
-          <div style={{
-            backgroundColor: "#ffffff",
-            padding: "1.5rem",
-            borderRadius: "1rem",
-            border: "1px solid #e2e8f0"
-          }}>
+        <div className="dashboard-grid">
+          <div className="dashboard-summary">
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
               <div style={{ width: "40px", height: "40px", borderRadius: "10px", backgroundColor: "#e0f2fe", display: "flex", alignItems: "center", justifyContent: "center", color: "#0284c7" }}>
                 <Zap size={22} />
@@ -103,12 +85,7 @@ export default function HouseholdDashboardPage() {
             <p style={{ fontSize: "0.85rem", color: "#16a34a", fontWeight: 600 }}>↓ 8% lower than last billing period</p>
           </div>
 
-          <div style={{
-            backgroundColor: "#ffffff",
-            padding: "1.5rem",
-            borderRadius: "1rem",
-            border: "1px solid #e2e8f0"
-          }}>
+          <div className="dashboard-summary">
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
               <div style={{ width: "40px", height: "40px", borderRadius: "10px", backgroundColor: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", color: "#d97706" }}>
                 <BarChart3 size={22} />
@@ -121,12 +98,7 @@ export default function HouseholdDashboardPage() {
             <p style={{ fontSize: "0.85rem", color: "#64748b" }}>On track for monthly budget of 200 kWh</p>
           </div>
 
-          <div style={{
-            backgroundColor: "#ffffff",
-            padding: "1.5rem",
-            borderRadius: "1rem",
-            border: "1px solid #e2e8f0"
-          }}>
+          <div className="dashboard-summary">
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
               <div style={{ width: "40px", height: "40px", borderRadius: "10px", backgroundColor: "#ecfdf5", display: "flex", alignItems: "center", justifyContent: "center", color: "#059669" }}>
                 <Bell size={22} />

@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Menu, UserRoundPlus, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import { CreateAccountLabel } from "./CreateAccountLabel";
 
 const links = [
   { label: "Home", href: "#home" },
@@ -37,8 +38,8 @@ export function Navbar() {
         </nav>
         <div className="landing-account-actions">
           <Link href="/login" className="landing-login-link">Log in</Link>
-          <Link href="/signup" className="btn-primary landing-nav-signup">
-            <UserRoundPlus aria-hidden="true" size={18} /> Create account
+          <Link href="/signup" className="btn-primary landing-nav-signup landing-create-account">
+            <CreateAccountLabel iconSize={18} />
           </Link>
         </div>
         <button
@@ -59,8 +60,8 @@ export function Navbar() {
           ))}
           <Link href="/dashboard" onClick={() => setMenuOpen(false)}>Household Dashboard</Link>
           <Link href="/login" onClick={() => setMenuOpen(false)}>Log in</Link>
-          <Link href="/signup" className="btn-primary" onClick={() => setMenuOpen(false)}>
-            <UserRoundPlus size={20} aria-hidden="true" /> Create account
+          <Link href="/signup" className="btn-primary landing-create-account" onClick={() => setMenuOpen(false)}>
+            <CreateAccountLabel />
           </Link>
         </nav>
       )}

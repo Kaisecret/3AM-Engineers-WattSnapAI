@@ -1,5 +1,5 @@
 /* The phone reference applies only to narrow screens. */
-.hero-mobile-phone, .hero-signup-arrow, .hero-benefit-mobile-text, .mobile-landing-details { display: none; }
+.hero-mobile-phone, .hero-benefit-mobile-text, .mobile-landing-details, .landing-create-mobile { display: none; }
 
 @media (max-width: 650px) {
   .landing-header { --landing-header-height: 64px; height: 64px; background: rgba(247, 254, 255, .96); }
@@ -19,7 +19,11 @@
   .wattsnap-hero .hero-actions { order: 4; position: relative; z-index: 3; width: 100%; max-width: 420px; margin-top: 18px; display: flex; flex-direction: row; justify-content: center; align-items: stretch; gap: 10px; }
   .wattsnap-hero .hero-signup, .wattsnap-hero .hero-watch { flex: 1 1 0; min-width: 0; min-height: 48px; padding: 11px 9px; gap: 7px; justify-content: center; font-size: clamp(13px, 3.6vw, 16px); }
   .wattsnap-hero .hero-signup > svg { width: 18px; height: 18px; flex-shrink: 0; }
-  .wattsnap-hero .hero-signup .hero-signup-arrow { display: block; width: 12px; }
+  .landing-create-account .landing-create-desktop { display: none; }
+  .landing-create-account .landing-create-mobile { display: block; flex-shrink: 0; }
+  .landing-create-account span.landing-create-mobile { line-height: 1.2; white-space: nowrap; }
+  .wattsnap-hero .hero-signup, .post-hero .post-account-actions .post-account-signup, .landing-header .landing-create-account { min-height: 48px; padding-inline: 16px; gap: 9px; font-size: 14px; font-weight: 600; line-height: 1.2; letter-spacing: 0; }
+  .landing-create-account svg.landing-create-mobile { width: 18px; height: 18px; }
   .wattsnap-hero .hero-play-icon { width: 23px; height: 23px; }
   .wattsnap-hero .hero-play-icon svg { width: 12px; height: 12px; }
   /* Art sizes in cqw so mascot, phone and callout keep their arrangement at any width. */
@@ -74,7 +78,6 @@
 }
 
 @media (max-width: 360px) {
-  .wattsnap-hero .hero-signup .hero-signup-arrow { display: none; }
   .wattsnap-hero .hero-callout-track { min-width: 0; }
   .mobile-features-grid { gap: 8px; }
   .mobile-feature-card { grid-template-columns: 30px minmax(0, 1fr) 9px; padding: 11px 8px; gap: 6px; }
