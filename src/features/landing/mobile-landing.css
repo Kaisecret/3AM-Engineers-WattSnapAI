@@ -77,6 +77,36 @@
   .mobile-feature-card > svg { color: #0097ff; width: 13px; }
 }
 
+@media (max-width: 699px) {
+  /* Mobile content sits directly on the page instead of floating in cards. */
+  .wattsnap-hero .hero-callout-track,
+  .wattsnap-hero .hero-benefits,
+  .mobile-home-banner,
+  .mobile-feature-card,
+  .post-hero .post-feature-card,
+  .post-hero .post-step,
+  .post-hero .post-spotlight,
+  .post-hero .post-review,
+  .post-hero .post-account-banner {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .wattsnap-hero .hero-callout-track,
+  .wattsnap-hero .hero-benefits,
+  .mobile-feature-card,
+  .post-hero .post-feature-card,
+  .post-hero .post-step,
+  .post-hero .post-review { background: transparent; }
+  .wattsnap-hero .hero-callout-track,
+  .wattsnap-hero .hero-callout-track:hover,
+  .mobile-feature-card:hover,
+  .post-hero .post-feature-card:hover { transform: none; translate: none; box-shadow: none; }
+  .mobile-feature-card,
+  .post-hero .post-feature-card,
+  .post-hero .post-review { border-bottom: 1px solid #d6e8ff; }
+}
+
 @media (max-width: 360px) {
   .wattsnap-hero .hero-callout-track { min-width: 0; }
   .mobile-features-grid { gap: 8px; }

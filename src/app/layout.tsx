@@ -3,9 +3,13 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "WattSnap - Your Home Electricity Assistant",
+  applicationName: "WattSnap",
+  manifest: "/manifest.webmanifest",
   description: "Understand your bills. Save energy. Be ready for brownouts. WattSnap brings bill scanning, appliance estimation, and provider outage advisories into one friendly app.",
   icons: {
     icon: { url: "/assets/branding/wattsnap-logo9.png", type: "image/png" },
+    shortcut: "/assets/branding/wattsnap-icon-192.png",
+    apple: { url: "/assets/branding/wattsnap-apple-icon-180.png", sizes: "180x180", type: "image/png" },
   },
 };
 
