@@ -1,5 +1,6 @@
 /* The phone reference applies only to narrow screens. */
 .hero-mobile-phone, .hero-benefit-mobile-text, .mobile-landing-details { display: none; }
+.hero-callouts { display: contents; }
 .landing-create-account .landing-create-label { line-height: 1.2; white-space: nowrap; }
 .landing-create-account .landing-create-arrow { flex-shrink: 0; width: 18px; height: 18px; }
 .wattsnap-hero .hero-signup, .post-hero .post-account-actions .post-account-signup, .landing-header .landing-create-account { gap: 9px; font-size: 16px; font-weight: 600; line-height: 1.2; letter-spacing: 0; }
@@ -26,17 +27,11 @@
   .wattsnap-hero .hero-signup, .post-hero .post-account-actions .post-account-signup, .landing-header .landing-create-account { min-height: 48px; padding-inline: 16px; gap: 9px; font-size: 14px; font-weight: 600; line-height: 1.2; letter-spacing: 0; }
   .wattsnap-hero .hero-play-icon { width: 23px; height: 23px; }
   .wattsnap-hero .hero-play-icon svg { width: 12px; height: 12px; }
-  /* Art sizes in cqw so mascot, phone and callout keep their arrangement at any width. */
+  /* Art sizes in cqw so the mascot and phone keep their arrangement at any width. */
   .wattsnap-hero .hero-art { order: 5; position: relative; z-index: 1; inset: auto; width: 100%; max-width: 440px; height: auto; max-height: none; aspect-ratio: 10 / 9; margin: 8px 0 0; container-type: inline-size; pointer-events: none; }
   .wattsnap-hero .hero-product-image { width: 130cqw; max-width: none; left: -10cqw; top: 4cqw; height: auto; clip-path: polygon(0 0, 47% 0, 46% 18%, 43% 35%, 40% 62%, 0 62%); animation: none; filter: drop-shadow(0 5px 9px #04a7db12); }
   .wattsnap-hero .hero-mobile-phone { display: block; position: absolute; z-index: 2; width: 60cqw; max-width: none; height: auto; right: 5cqw; top: 2cqw; transform: rotate(8deg); filter: drop-shadow(0 7px 6px #056b9726); }
   .wattsnap-hero .hero-spark { display: none; }
-  .wattsnap-hero .hero-callout-track { display: flex; z-index: 3; left: 0; top: 60cqw; width: 48cqw; min-width: 140px; max-width: 220px; padding: 11px 10px; gap: 7px; border-width: 1px; border-radius: 18px; text-align: left; transform: rotate(-7deg); pointer-events: auto; }
-  .wattsnap-hero .hero-callout-track .hero-callout-icon { width: 31px; height: 36px; border-radius: 9px; }
-  .wattsnap-hero .hero-callout-track .glossy-icon { width: 31px; height: 31px; }
-  .wattsnap-hero .hero-callout-track h2 { font-size: clamp(10px, 2.8vw, 15px); line-height: 1.15; letter-spacing: -.3px; }
-  .wattsnap-hero .hero-callout-track p { font-size: clamp(9px, 2.4vw, 12px); line-height: 1.3; margin-top: 5px; }
-  .wattsnap-hero .hero-callout-track .hero-callout-arrow { display: none; }
   .wattsnap-hero .hero-benefits { order: 6; position: relative; z-index: 4; width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; max-width: none; margin: 4px 0 0; padding: 15px 8px; border: 1px solid white; border-radius: 25px; background: linear-gradient(145deg, #fffffffa, #f3fcfff5); box-shadow: 0 7px 22px #27b8e915; }
   .wattsnap-hero .hero-benefit-icon { width: 100%; height: 43px; margin-bottom: 7px; border: 0; border-radius: 0; background: none; }
   .wattsnap-hero .hero-benefit-icon .glossy-icon { width: clamp(35px, 10vw, 50px); height: clamp(35px, 10vw, 50px); }
@@ -77,6 +72,20 @@
   .mobile-feature-card > svg { color: #0097ff; width: 13px; }
 }
 
+@media (max-width: 850px) {
+  /* Reserve the illustration's space, then show every callout in normal flow. */
+  .wattsnap-hero .hero-art { display: flex; flex-direction: column; height: auto; max-height: none; aspect-ratio: auto; }
+  .wattsnap-hero .hero-art::before { content: ""; display: block; flex-shrink: 0; width: 100%; aspect-ratio: 10 / 9; }
+  .wattsnap-hero .hero-callouts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; width: 100vw; margin-top: 12px; margin-inline: calc((100% - 100vw) / 2); padding-inline: max(18px, env(safe-area-inset-left)) max(18px, env(safe-area-inset-right)); background: #e7faff; }
+  .wattsnap-hero .hero-callout { position: relative; display: flex; align-items: flex-start; inset: auto; width: auto; min-width: 0; max-width: none; padding: 16px 0; gap: 9px; border: 0; border-radius: 0; background: transparent; box-shadow: none; transform: none; translate: none; text-align: left; pointer-events: auto; }
+  .wattsnap-hero .hero-callout:hover { transform: none; translate: none; box-shadow: none; }
+  .wattsnap-hero .hero-callout-icon { width: 34px; height: 38px; border-radius: 9px; }
+  .wattsnap-hero .hero-callout-icon .glossy-icon { width: 34px; height: 34px; }
+  .wattsnap-hero .hero-callout h2 { font-size: clamp(13px, 3.5vw, 17px); line-height: 1.25; letter-spacing: -.3px; white-space: normal; }
+  .wattsnap-hero .hero-callout p { margin-top: 6px; font-size: clamp(12px, 3vw, 14px); line-height: 1.45; white-space: normal; }
+  .wattsnap-hero .hero-callout-arrow { display: none; }
+}
+
 @media (max-width: 699px) {
   /* Mobile content sits directly on the page instead of floating in cards. */
   .wattsnap-hero .hero-callout-track,
@@ -108,7 +117,6 @@
 }
 
 @media (max-width: 360px) {
-  .wattsnap-hero .hero-callout-track { min-width: 0; }
   .mobile-features-grid { gap: 8px; }
   .mobile-feature-card { grid-template-columns: 30px minmax(0, 1fr) 9px; padding: 11px 8px; gap: 6px; }
   .mobile-feature-icon, .mobile-feature-icon .glossy-icon { width: 30px; }

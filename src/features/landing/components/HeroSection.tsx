@@ -80,16 +80,18 @@ export function HeroSection() {
             sizes="(max-width: 650px) 60vw, 1px"
           />
           <div className="hero-spark hero-spark-one" aria-hidden="true"><i /><i /></div>
-          {callouts.map((callout) => (
-            <a key={callout.name} href={callout.href} className={`hero-callout hero-callout-${callout.name}`}>
-              <div className={`hero-callout-icon hero-callout-icon-${callout.icon}`}><GlossyIcon name={callout.icon} /></div>
-              <div className="hero-callout-copy">
-                <h2>{callout.title}</h2>
-                <p>{callout.description}</p>
-              </div>
-              <ChevronRight className="hero-callout-arrow" size={23} aria-hidden="true" />
-            </a>
-          ))}
+          <div className="hero-callouts">
+            {callouts.map((callout) => (
+              <a key={callout.name} href={callout.href} className={`hero-callout hero-callout-${callout.name}`}>
+                <div className={`hero-callout-icon hero-callout-icon-${callout.icon}`}><GlossyIcon name={callout.icon} /></div>
+                <div className="hero-callout-copy">
+                  <h2>{callout.title}</h2>
+                  <p>{callout.description}</p>
+                </div>
+                <ChevronRight className="hero-callout-arrow" size={23} aria-hidden="true" />
+              </a>
+            ))}
+          </div>
         </div>
       </div>
     </section>
