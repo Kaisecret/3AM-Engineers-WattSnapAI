@@ -230,8 +230,13 @@
 
 /* Home: monthly states and the WattSnap AI entry card */
 .ws-savings.is-higher { color: #ea580c; }
-.ws-consumption-empty { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-top: 14px; color: #6f879c; font-size: 12px; line-height: 1.5; }
-.ws-consumption-empty p { flex: 1 1 180px; }
+.ws-consumption-empty .ui-primary { min-height: 36px; margin-top: 10px; padding: 8px 12px; font-size: 12px; }
+.ws-chart-day.is-example .ws-bar { opacity: 1; border: 1.5px dashed #9fd6ea; border-bottom: 0; background: repeating-linear-gradient(135deg, #eef9fd 0 5px, #dcf2fa 5px 10px); }
+.ws-chart-day.is-example .ws-day-label { color: #a2b4c2; }
+.ws-chart-day.is-example.is-selected .ws-bar { border-color: #36b6e0; background: repeating-linear-gradient(135deg, #d6f1fb 0 5px, #bfe8f7 5px 10px); }
+.ws-chart-note { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-top: 12px; padding-top: 10px; border-top: 1px dashed #e3eef4; color: #7a93a8; font-size: 10.5px; line-height: 1.4; }
+.ws-chart-note i { width: 14px; height: 10px; border-radius: 2px; border: 1px dashed #9fd6ea; background: repeating-linear-gradient(135deg, #eef9fd 0 3px, #d6f0f9 3px 6px); }
+.ws-chart-note a { color: #0a8fd0; font-weight: 700; text-decoration: underline; }
 .ws-assistant-card { position: relative; isolation: isolate; overflow: hidden; padding: 16px; border-radius: 18px; color: #fff; background: linear-gradient(135deg, #0b2a5b 0%, #0a58b0 55%, #08b4ea 100%); box-shadow: 0 10px 24px #0b3d7a2e; transition: transform .2s, box-shadow .2s; }
 .ws-assistant-card::before { content: ""; position: absolute; z-index: -1; width: 220px; height: 220px; right: -70px; top: -90px; border-radius: 50%; background: radial-gradient(circle, #5fe0ff59, transparent 70%); }
 .ws-assistant-copy > :not(.ws-assistant-input, .ws-assistant-prompts) { max-width: 66%; }
@@ -273,5 +278,6 @@
   .ws-assistant-prompts { flex-wrap: wrap; margin-right: 0; padding-right: 0; overflow: visible; }
   .ws-assistant-prompts a { font-size: 13px; padding: 8px 14px; }
   .ws-assistant-mascot { top: auto; right: 8%; bottom: -34px; width: clamp(170px, 15vw, 240px); }
-  .ws-home-screen .ws-consumption-empty { font-size: 15px; }
+  .ws-home-screen .ws-chart-note { font-size: 13px; }
+  .ws-home-screen .ws-consumption-empty .ui-primary { min-height: 42px; font-size: 14px; }
 }

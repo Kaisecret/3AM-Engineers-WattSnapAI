@@ -68,16 +68,6 @@
 .ui-appliance-row p { color: #8196aa; font-size: 9px; margin-top: 4px; }
 .ui-appliance-row > strong { flex: 0 0 auto; text-align: right; font-size: 14px; }
 .ui-appliance-row small { display: block; color: #91a3b3; font-size: 8px; font-weight: 400; }
-.ui-budget-overview { display: flex; flex-direction: column; align-items: flex-start; }
-.ui-budget-overview > h2 { margin-top: 17px; }
-.ui-budget-overview > strong { font-size: 37px; margin: 15px 0 8px; font-weight: 800; letter-spacing: -1.1px; }
-.ui-budget-overview > p { color: #7c95a9; font-size: 12px; line-height: 1.6; }
-.ui-budget-progress { width: 100%; height: 12px; border-radius: 12px; margin: 24px 0 10px; background: #e5eff4; overflow: hidden; }
-.ui-budget-progress > span { display: block; height: 100%; border-radius: inherit; background: #22cf65; }
-.ui-budget-labels { display: flex; justify-content: space-between; gap: 8px; width: 100%; font-size: 11px; color: #6d8a9e; }
-.ui-profile-summary { display: flex; align-items: center; gap: 17px; margin-bottom: 25px; }
-.ui-profile-summary .ws-avatar { width: 58px; height: 58px; }
-.ui-profile-summary p { font-size: 12px; color: #8197aa; margin-top: 5px; }
 .ui-page-note { color: #8ba0b3; font-size: 10px; text-align: right; margin-top: 3px; }
 @media (min-width: 600px) and (max-width: 899px) { .ui-stats strong { font-size: 20px; } .ui-stats span { font-size: 11px; } }
 @media (min-width: 900px) {
@@ -165,7 +155,6 @@
   .ui-appliance-row p { font-size: 10px; }
   .ui-appliance-row > strong { font-size: 16px; }
   .ui-appliance-row small { font-size: 9px; }
-  .ui-settings { max-width: 650px; }
   .ui-page-note { font-size: 11px; }
 }
 @media (min-width: 900px) and (max-width: 1199px) {

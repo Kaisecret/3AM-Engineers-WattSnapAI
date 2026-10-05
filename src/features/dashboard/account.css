@@ -1,0 +1,63 @@
+/* Account: photo avatars, profile menu actions, and the log out confirmation */
+.ws-avatar .ws-user-photo { display: block; width: 100%; height: 100%; object-fit: cover; }
+.ws-panel-user { display: flex; align-items: center; gap: 12px; padding-right: 26px; }
+.ws-panel-user .ws-avatar { flex: 0 0 auto; width: 46px; height: 46px; }
+.ws-panel-user > div { min-width: 0; }
+.ws-header-panel .ws-panel-user strong { padding-right: 0; overflow-wrap: anywhere; }
+.ws-header-panel .ws-panel-user p { margin-top: 1px; font-size: 12px; overflow-wrap: anywhere; }
+.ws-header-panel .ws-panel-user + a { margin-top: 14px; padding-top: 14px; border-top: 1px solid #edf3f6; }
+.ws-header-panel .ws-panel-logout { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 14px; padding: 12px 0 0; border-top: 1px solid #edf3f6; color: #d64545; font: inherit; font-weight: 700; text-align: left; }
+
+.lo-dialog { position: fixed; inset: auto 0 0; width: 100%; max-width: 100%; max-height: 92dvh; margin: 0; padding: 0; overflow-y: auto; border: 0; border-radius: 28px 28px 0 0; color: #0d142c; background: #fff; box-shadow: 0 -16px 50px #0b2a4a40; font-family: var(--font-sans); }
+.lo-dialog::backdrop { background: #0b2a4a73; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+.lo-body { display: flex; flex-direction: column; align-items: center; padding: 10px 20px max(22px, env(safe-area-inset-bottom)); text-align: center; }
+.lo-body::before { content: ""; display: block; width: 42px; height: 5px; margin-bottom: 10px; border-radius: 5px; background: #d6e5ee; }
+.lo-art { position: relative; width: 132px; height: 132px; }
+.lo-art span { position: absolute; inset: 12%; border-radius: 50%; background: radial-gradient(circle, #7fdcff80, transparent 70%); }
+.lo-art img { position: relative; display: block; width: 100%; height: auto; }
+.lo-body h2 { margin-top: 4px; font-size: 22px; font-weight: 800; letter-spacing: -.6px; }
+.lo-body > p { margin-top: 6px; color: #6f879c; font-size: 14px; line-height: 1.5; }
+.lo-check { position: relative; display: flex; align-items: flex-start; gap: 12px; width: 100%; margin-top: 18px; padding: 13px 14px; border: 1px solid #e3eef4; border-radius: 16px; background: #f5fafc; text-align: left; cursor: pointer; transition: background .2s, border-color .2s; }
+.lo-check input { position: absolute; opacity: 0; pointer-events: none; }
+.lo-box { flex: 0 0 auto; display: grid; place-items: center; width: 22px; height: 22px; margin-top: 1px; border: 2px solid #b8cfdb; border-radius: 7px; color: transparent; background: #fff; transition: background .2s, border-color .2s; }
+.lo-box svg { width: 14px; height: 14px; stroke-width: 3.2; }
+.lo-check strong { display: block; font-size: 13.5px; font-weight: 800; }
+.lo-check small { display: block; margin-top: 2px; color: #7a93a8; font-size: 12px; line-height: 1.45; }
+.lo-check:has(input:checked) { border-color: #f6c1c1; background: #fff6f6; }
+.lo-check input:checked + .lo-box { border-color: #e5484d; color: #fff; background: #e5484d; }
+.lo-check input:focus-visible + .lo-box { outline: 2px solid #008acb; outline-offset: 2px; }
+.lo-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 18px; }
+.lo-actions button { min-height: 50px; border-radius: 14px; font-size: 14px; }
+.lo-confirm { display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: #fff; background: linear-gradient(110deg, #f05252, #d92d2d); font-weight: 800; box-shadow: 0 8px 18px #e5484d40; transition: background .2s, transform .15s; }
+.lo-confirm svg { width: 18px; height: 18px; }
+.lo-confirm:disabled { cursor: wait; opacity: .9; }
+.lo-dialog :focus-visible { outline: 2px solid #008acb; outline-offset: 2px; }
+@media (min-width: 900px) {
+  .lo-dialog { inset: 0; width: min(420px, calc(100% - 48px)); max-height: calc(100dvh - 48px); margin: auto; border: 1px solid #e3eef4; border-radius: 26px; box-shadow: 0 24px 70px #0b2a4a40; }
+  .lo-body { padding: 26px 28px 28px; }
+  .lo-body::before { display: none; }
+}
+@media (hover: hover) {
+  .ws-header-panel .ws-panel-logout:hover { color: #b91c1c; }
+  .lo-confirm:not(:disabled):hover { background: linear-gradient(110deg, #e53e3e, #c41f1f); }
+  .lo-check:hover { border-color: #cfe1ea; }
+}
+@keyframes lo-sheet { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes lo-spin { to { transform: rotate(360deg); } }
+@keyframes lo-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.lo-spin { animation: lo-spin .8s linear infinite; }
+@media (prefers-reduced-motion: no-preference) {
+  .lo-dialog[open] { animation: lo-sheet .35s cubic-bezier(.2, .9, .25, 1) both; }
+  .lo-art img { animation: lo-float 3.2s ease-in-out infinite; }
+}
+@media (prefers-reduced-motion: no-preference) and (min-width: 900px) {
+  .lo-dialog[open] { animation: ws-arrive .2s ease-out both; }
+}
+
+/* Toast confirmations shared by account and budget screens */
+.ws-toast-region { position: fixed; z-index: 70; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom)); transform: translateX(-50%); pointer-events: none; }
+.ws-toast { display: inline-flex; align-items: center; gap: 8px; padding: 11px 16px; border-radius: 999px; color: #fff; background: #0d2440; box-shadow: 0 12px 28px #0b2a4a40; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.ws-toast svg { width: 18px; height: 18px; color: #4ade80; }
+@media (min-width: 900px) { .ws-toast-region { left: auto; right: 32px; bottom: 28px; transform: none; } }
+@keyframes ws-toast { from { opacity: 0; transform: translateY(10px) scale(.96); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: no-preference) { .ws-toast { animation: ws-toast .3s cubic-bezier(.2, .9, .3, 1.2) both; } }

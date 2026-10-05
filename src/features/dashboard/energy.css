@@ -46,6 +46,13 @@
 .en-bar b { position: absolute; z-index: 2; left: 50%; bottom: calc(100% + 5px); transform: translateX(-50%); padding: 0 3px; border-radius: 4px; background: #ffffffd9; color: #6c8aa1; font-size: 10.5px; font-weight: 700; white-space: nowrap; }
 .en-bar.is-selected { background: linear-gradient(180deg, #08c8ef, #0090ea); box-shadow: 0 8px 16px #0ea5e933; }
 .en-bar.is-selected b { color: var(--ws-ink); font-size: 12px; font-weight: 800; }
+.en-bar.is-example { border: 1.5px dashed #9fd6ea; border-bottom: 0; background: repeating-linear-gradient(135deg, #f0fafd 0 6px, #dcf2fa 6px 12px); }
+.en-bar.is-example b { color: #9ab0bf; }
+.en-bar.is-example.is-selected { border-color: #36b6e0; background: repeating-linear-gradient(135deg, #d9f2fb 0 6px, #bfe8f7 6px 12px); box-shadow: none; }
+.en-labels .is-example { color: #a6b8c5; }
+.en-focus.is-example { background: #fbfdfe; border-style: dashed; }
+.en-focus .en-example-tag { display: inline-block; margin-left: 7px; padding: 1px 7px; border-radius: 999px; color: #5f7d93; background: #e8f1f6; font-size: 10px; font-weight: 800; vertical-align: middle; }
+.en-focus-scan { display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; padding: 8px 12px; border-radius: 11px; color: #fff; background: linear-gradient(110deg, #00c1e9, #00a8eb); font-size: 12.5px; font-weight: 800; }
 .en-average { position: absolute; z-index: 1; left: 0; right: 0; height: 0; border-top: 1.5px dashed #f2a238; pointer-events: none; }
 .en-average em { position: absolute; right: 0; bottom: 3px; padding: 1px 6px; border-radius: 6px; color: #b86b00; background: #fff4dfee; font-size: 9.5px; font-style: normal; font-weight: 700; }
 .en-labels { display: flex; gap: 10px; padding-top: 8px; }

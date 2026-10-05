@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowDown, ArrowUp, ChartColumnBig, ChevronRight, Info, ReceiptText, ScanText, Trash2, TrendingDown, TrendingUp } from "lucide-react";
 import PageShell from "./PageShell";
 import { usePreviewHousehold } from "../use-preview-household";
-import { averageKwh, billMonth, compareWithPrevious, dueDateLabel, monthName, monthlySeries, pesos, sampleBills, shortMonth, sortBillsByMonth, type PreviewBill } from "../preview-data";
+import { averageKwh, billMonth, chartMonths, compareWithPrevious, dueDateLabel, monthName, monthlySeries, pesos, sampleBills, shortMonth, sortBillsByMonth, type PreviewBill } from "../preview-data";
 
 const sourceLabels = { scan: "Scanned", manual: "Manual", sample: "Sample" };
 
@@ -28,10 +28,13 @@ export default function EnergyScreen() {
   const latest = history[0];
   const latestChange = latest ? compareWithPrevious(household.bills, latest.month) : null;
   const series = monthlySeries(household.bills, 6);
-  const focus = series.find(bill => bill.month === selected) ?? series[series.length - 1];
-  const focusChange = focus ? compareWithPrevious(household.bills, focus.month) : null;
+  const bars = chartMonths(household.bills, 6);
+  const hasExamples = bars.some(bar => bar.example);
+  const focus = bars.find(bar => bar.month === selected) ?? bars[bars.length - 1];
+  const focusChange = focus && !focus.example ? compareWithPrevious(household.bills, focus.month) : null;
   const value = (bill: PreviewBill) => unit === "kwh" ? bill.kwh : bill.amount;
-  const max = Math.max(...series.map(value), 1) * 1.18;
+  const max = Math.max(...bars.map(value), 1) * 1.18;
+  // The average line only uses saved bills, never example months.
   const average = series.length ? series.reduce((sum, bill) => sum + value(bill), 0) / series.length : 0;
   const lowest = series.reduce<PreviewBill | undefined>((low, bill) => !low || bill.kwh < low.kwh ? bill : low, undefined);
   const highest = series.reduce<PreviewBill | undefined>((high, bill) => !high || bill.kwh > high.kwh ? bill : high, undefined);
@@ -89,18 +92,18 @@ export default function EnergyScreen() {
       </div>
 
       <section className="ui-panel en-chart-panel" aria-labelledby="en-chart-title">
-        <div className="ui-panel-heading"><div><h2 id="en-chart-title">Monthly consumption</h2><p>Tap a month to compare it with the one before.</p></div><div className="ui-segment" aria-label="Chart unit"><button type="button" aria-pressed={unit === "kwh"} onClick={() => setUnit("kwh")}>kWh</button><button type="button" aria-pressed={unit === "amount"} onClick={() => setUnit("amount")}>Pesos</button></div></div>
+        <div className="ui-panel-heading"><div><h2 id="en-chart-title">Monthly consumption</h2><p>{hasExamples ? "Striped bars are examples until you add more bills." : "Tap a month to compare it with the one before."}</p></div><div className="ui-segment" aria-label="Chart unit"><button type="button" aria-pressed={unit === "kwh"} onClick={() => setUnit("kwh")}>kWh</button><button type="button" aria-pressed={unit === "amount"} onClick={() => setUnit("amount")}>Pesos</button></div></div>
         <div className="en-chart">
           <div className="en-plot" role="group" aria-label={`Monthly ${unit === "kwh" ? "energy use in kilowatt hours" : "bill amount in pesos"}`}>
-            <span className="en-average" style={{ bottom: `${average / max * 100}%` }}><em>Avg {format(average)}</em></span>
-            {series.map(bill => <div key={bill.id} className="en-col"><button type="button" className={`en-bar${bill.month === focus?.month ? " is-selected" : ""}`} style={{ height: `${value(bill) / max * 100}%` }} aria-pressed={bill.month === focus?.month} aria-label={`${billMonth(bill.month)}: ${bill.kwh} kilowatt hours, ${pesos(bill.amount)}`} onClick={() => setSelected(bill.month)}><b>{format(value(bill))}</b></button></div>)}
+            {series.length > 1 && <span className="en-average" style={{ bottom: `${average / max * 100}%` }}><em>Avg {format(average)}</em></span>}
+            {bars.map(bill => <div key={bill.id} className="en-col"><button type="button" className={`en-bar${bill.month === focus?.month ? " is-selected" : ""}${bill.example ? " is-example" : ""}`} style={{ height: `${value(bill) / max * 100}%` }} aria-pressed={bill.month === focus?.month} aria-label={`${bill.example ? "Example month, " : ""}${billMonth(bill.month)}: ${bill.kwh} kilowatt hours, ${pesos(bill.amount)}`} onClick={() => setSelected(bill.month)}><b>{format(value(bill))}</b></button></div>)}
           </div>
-          <div className="en-labels" aria-hidden="true">{series.map(bill => <span key={bill.id} className={bill.month === focus?.month ? "is-selected" : ""}>{shortMonth(bill.month)}</span>)}</div>
+          <div className="en-labels" aria-hidden="true">{bars.map(bill => <span key={bill.id} className={`${bill.month === focus?.month ? "is-selected" : ""}${bill.example ? " is-example" : ""}`}>{shortMonth(bill.month)}</span>)}</div>
         </div>
-        {focus && <div className="en-focus" aria-live="polite">
+        {focus && <div className={`en-focus${focus.example ? " is-example" : ""}`} aria-live="polite">
           <MonthTile month={focus.month} />
-          <div><strong>{billMonth(focus.month)}</strong><span>{focus.kwh} kWh · {pesos(focus.amount)}</span></div>
-          {focusChange ? <div className="en-focus-change"><Change percent={focusChange.kwhPercent} /><small>vs {monthName(focusChange.previous.month)}</small></div> : <small className="en-focus-first">First recorded month</small>}
+          <div><strong>{billMonth(focus.month)}{focus.example && <span className="en-example-tag">Example</span>}</strong><span>{focus.example ? "Example values. Scan this month’s bill to add your real reading." : `${focus.kwh} kWh · ${pesos(focus.amount)}`}</span></div>
+          {focus.example ? <Link href="/bills/new" className="en-focus-scan"><ScanText size={16} aria-hidden="true" /> Scan</Link> : focusChange ? <div className="en-focus-change"><Change percent={focusChange.kwhPercent} /><small>vs {monthName(focusChange.previous.month)}</small></div> : <small className="en-focus-first">First recorded month</small>}
         </div>}
       </section>
     </> : <section className="ui-panel"><div className="ui-empty"><ReceiptText /><h3>Scan your first electricity bill</h3><p>Each bill you add becomes a month in your history, so you can compare your use month by month.</p><div className="en-empty-actions"><Link href="/bills/new" className="ui-primary"><ScanText size={18} aria-hidden="true" /> Scan a bill</Link><button type="button" className="ui-secondary" disabled={!ready} onClick={() => update({ bills: sampleBills })}>Load sample history</button></div></div></section>}

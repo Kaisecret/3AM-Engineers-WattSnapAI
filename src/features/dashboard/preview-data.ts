@@ -2,10 +2,19 @@ export type BillSource = "scan" | "manual" | "sample";
 export type ApplianceKind = "fan" | "aircon" | "fridge" | "tv" | "rice-cooker" | "washer" | "lights" | "laptop" | "phone" | "microwave" | "iron" | "other";
 export interface PreviewBill { id: string; month: string; amount: number; kwh: number; dueDate?: string; source?: BillSource; }
 export interface PreviewAppliance { id: string; name: string; watts: number; hours: number; quantity: number; kind?: ApplianceKind; }
-export interface PreviewHousehold { bills: PreviewBill[]; appliances: PreviewAppliance[]; budget: number; name: string; }
+export interface NotificationPrefs { brownouts: boolean; billReminders: boolean; tips: boolean; }
+export interface PreviewHousehold {
+  bills: PreviewBill[]; appliances: PreviewAppliance[]; budget: number; name: string;
+  /** Square JPEG/PNG/WebP data URL, resized in the browser before saving. */
+  photo?: string; email?: string; location?: string; provider?: string; notifications?: NotificationPrefs;
+}
 
 export const emptyPreview: PreviewHousehold = { bills: [], appliances: [], budget: 3500, name: "Kris" };
 export const previewStorageKey = "wattsnap-ui-preview-v1";
+export const defaultLocation = "San Jose de Buenavista, Antique";
+export const defaultProvider = "anteco";
+export const defaultNotifications: NotificationPrefs = { brownouts: true, billReminders: true, tips: false };
+export const maxPhotoLength = 600_000;
 /** Used when a peso estimate needs a rate and no bill history exists yet. */
 export const fallbackRate = 11.45;
 
@@ -76,10 +85,35 @@ export function validateBill(bill: Omit<PreviewBill, "id">) {
   if (bill.dueDate !== undefined && bill.dueDate !== "" && !/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(bill.dueDate)) return "Choose a valid due date.";
   return null;
 }
+export const isPhotoDataUrl = (value: unknown): value is string =>
+  typeof value === "string" && value.length <= maxPhotoLength && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(value);
+export const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+export function validateProfile(profile: { name: string; email: string; location: string }) {
+  if (!profile.name.trim()) return "Enter your name.";
+  if (profile.name.trim().length > 50) return "Use 50 characters or fewer for your name.";
+  if (profile.email.trim() && !isEmail(profile.email.trim())) return "Enter a valid email address, like maria@gmail.com.";
+  if (!profile.location.trim()) return "Enter your municipality and province.";
+  return null;
+}
+function normalizeNotifications(value: unknown): NotificationPrefs | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const data = value as Partial<NotificationPrefs>;
+  return {
+    brownouts: typeof data.brownouts === "boolean" ? data.brownouts : defaultNotifications.brownouts,
+    billReminders: typeof data.billReminders === "boolean" ? data.billReminders : defaultNotifications.billReminders,
+    tips: typeof data.tips === "boolean" ? data.tips : defaultNotifications.tips,
+  };
+}
 export function normalizePreview(value: unknown): PreviewHousehold {
   if (!value || typeof value !== "object") return emptyPreview;
   const data = value as Partial<PreviewHousehold>;
+  const notifications = normalizeNotifications(data.notifications);
   return {
+    ...(isPhotoDataUrl(data.photo) ? { photo: data.photo } : {}),
+    ...(typeof data.email === "string" && isEmail(data.email.trim()) ? { email: data.email.trim() } : {}),
+    ...(typeof data.location === "string" && data.location.trim() ? { location: data.location.trim().slice(0, 120) } : {}),
+    ...(data.provider === defaultProvider ? { provider: data.provider } : {}),
+    ...(notifications ? { notifications } : {}),
     bills: Array.isArray(data.bills) ? data.bills.filter(item => item && typeof item.id === "string" && typeof item.month === "string" && !validateBill(item)) : [],
     appliances: Array.isArray(data.appliances) ? data.appliances.filter(item => item && typeof item.id === "string" && typeof item.name === "string" && !validateAppliance(item)) : [],
     budget: typeof data.budget === "number" && Number.isFinite(data.budget) && data.budget > 0 ? data.budget : 3500,
@@ -96,6 +130,25 @@ export function latestBill(bills: PreviewBill[]): PreviewBill | undefined {
 }
 export function monthlySeries(bills: PreviewBill[], count = 6) {
   return sortBillsByMonth(bills).slice(-count);
+}
+export interface ChartMonth extends PreviewBill { example: boolean; }
+const exampleShape = [1.07, 1.15, 1.1, 1.22, 1.17, 1.12];
+/**
+ * Bars for a monthly chart. With fewer than `count` saved bills, earlier months are
+ * filled with clearly marked example bars so the chart never looks empty. Saved
+ * bills are never altered, and comparisons elsewhere use saved bills only.
+ */
+export function chartMonths(bills: PreviewBill[], count = 6): ChartMonth[] {
+  const saved = monthlySeries(bills, count).map(bill => ({ ...bill, example: false }));
+  if (!saved.length) return sampleBills.slice(-count).map(bill => ({ ...bill, id: `example-${bill.month}`, example: true }));
+  const first = saved[0];
+  const rate = first.amount / first.kwh;
+  const examples = Array.from({ length: count - saved.length }, (_, index) => {
+    const month = shiftMonth(first.month, -(index + 1));
+    const kwh = Math.round(first.kwh * exampleShape[index % exampleShape.length]);
+    return { id: `example-${month}`, month, kwh, amount: Math.round(kwh * rate * 100) / 100, example: true };
+  }).reverse();
+  return [...examples, ...saved];
 }
 export interface MonthComparison { previous: PreviewBill; kwhChange: number; kwhPercent: number; amountChange: number; amountPercent: number; }
 /** Compares a bill with the closest earlier recorded bill. */
@@ -146,3 +199,29 @@ export const billMonth = (month: string) => new Intl.DateTimeFormat("en-US", { m
 export const shortMonth = (month: string) => new Intl.DateTimeFormat("en-US", { month: "short", timeZone: "UTC" }).format(new Date(`${month}-01T00:00:00Z`));
 export const monthName = (month: string) => new Intl.DateTimeFormat("en-US", { month: "long", timeZone: "UTC" }).format(new Date(`${month}-01T00:00:00Z`));
 export const dueDateLabel = (date: string) => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`));
+
+/** Quick amounts offered when setting a monthly budget, like an e-wallet cash-in screen. */
+export const budgetPresets = [1000, 1500, 2000, 2500, 3000, 5000];
+export const maxBudget = 100_000;
+export type BudgetStatus = "on-track" | "near" | "over";
+export function budgetStatus(spent: number, budget: number): BudgetStatus {
+  const used = spent / budget;
+  return used > 1 ? "over" : used >= 0.85 ? "near" : "on-track";
+}
+/** Recent average bill plus 5% headroom, rounded up to the next ₱100. */
+export function suggestedBudget(bills: PreviewBill[]) {
+  const recent = monthlySeries(bills, 6);
+  if (!recent.length) return null;
+  const average = recent.reduce((sum, bill) => sum + bill.amount, 0) / recent.length;
+  return Math.ceil(average * 1.05 / 100) * 100;
+}
+/** Accepts typed amounts such as "1,600", "₱ 2500" or "1500.50". */
+export function parseAmount(text: string) {
+  const cleaned = text.replace(/[₱,\s]/g, "");
+  return /^\d+(\.\d{1,2})?$/.test(cleaned) ? Number(cleaned) : NaN;
+}
+export function validateBudget(amount: number) {
+  if (!Number.isFinite(amount) || amount <= 0) return "Enter a budget greater than zero.";
+  if (amount > maxBudget) return "Enter a budget of ₱100,000 or less.";
+  return null;
+}

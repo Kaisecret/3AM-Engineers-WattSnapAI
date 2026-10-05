@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { compareWithPrevious, dailyApplianceKwh, guessApplianceKind, latestBill, monthlySeries, normalizePreview, sampleAppliances, sampleBills, sampleScanReading, shiftMonth, validateAppliance, validateBill } from "./preview-data.ts";
+import { budgetStatus, chartMonths, compareWithPrevious, parseAmount, suggestedBudget, validateBudget, dailyApplianceKwh, guessApplianceKind, isPhotoDataUrl, validateProfile, latestBill, monthlySeries, normalizePreview, sampleAppliances, sampleBills, sampleScanReading, shiftMonth, validateAppliance, validateBill } from "./preview-data.ts";
 
 test("appliance estimate converts watts into kWh and accounts for quantity", () => {
   assert.equal(dailyApplianceKwh({ watts: 100, hours: 8, quantity: 2 }), 1.6);
@@ -63,4 +63,46 @@ test("sample household records are valid and appliance kinds are guessed from na
   assert.equal(guessApplianceKind("Kitchen Refrigerator"), "fridge");
   assert.equal(guessApplianceKind("Water pump"), "other");
   assert.ok(validateBill({ month: "2026-10", amount: 10, kwh: 1, dueDate: "2026-13-40" }));
+});
+test("profile fields survive storage only when valid", () => {
+  const photo = "data:image/jpeg;base64,/9j/4AAQSkZJRg==";
+  const kept = normalizePreview({ name: "Maria", photo, email: " maria@gmail.com ", location: " Sibalom, Antique ", provider: "anteco", notifications: { brownouts: false } });
+  assert.equal(kept.photo, photo);
+  assert.equal(kept.email, "maria@gmail.com");
+  assert.equal(kept.location, "Sibalom, Antique");
+  assert.deepEqual(kept.notifications, { brownouts: false, billReminders: true, tips: false });
+  const dropped = normalizePreview({ name: "Maria", photo: "javascript:alert(1)", email: "not-an-email", provider: "someone-else" });
+  assert.equal(dropped.photo, undefined);
+  assert.equal(dropped.email, undefined);
+  assert.equal(dropped.provider, undefined);
+  assert.equal(isPhotoDataUrl("data:image/svg+xml;base64,PHN2Zz4="), false);
+});
+test("profile validation needs a name and location, and a real email when given", () => {
+  assert.equal(validateProfile({ name: "Kris", email: "", location: "San Jose, Antique" }), null);
+  assert.ok(validateProfile({ name: " ", email: "", location: "San Jose" }));
+  assert.ok(validateProfile({ name: "Kris", email: "kris@", location: "San Jose" }));
+  assert.ok(validateProfile({ name: "Kris", email: "", location: "" }));
+});
+test("monthly charts fill earlier months with marked examples until there are enough bills", () => {
+  const one = chartMonths([{ id: "oct", month: "2026-10", amount: 1225.59, kwh: 107 }]);
+  assert.equal(one.length, 6);
+  assert.deepEqual(one.map(bar => bar.month), ["2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10"]);
+  assert.deepEqual(one.map(bar => bar.example), [true, true, true, true, true, false]);
+  assert.equal(one[5].id, "oct");
+  assert.ok(one.slice(0, 5).every(bar => bar.kwh > 0 && bar.amount > 0));
+  assert.ok(chartMonths([]).every(bar => bar.example));
+  assert.ok(chartMonths(sampleBills).every(bar => !bar.example));
+});
+test("budget helpers suggest, parse, validate, and classify spending", () => {
+  assert.equal(suggestedBudget(sampleBills), 1700);
+  assert.equal(suggestedBudget([]), null);
+  assert.equal(parseAmount("₱ 1,600"), 1600);
+  assert.equal(parseAmount("1500.50"), 1500.5);
+  assert.ok(Number.isNaN(parseAmount("12a")));
+  assert.ok(validateBudget(0));
+  assert.ok(validateBudget(250000));
+  assert.equal(validateBudget(1600), null);
+  assert.equal(budgetStatus(1200, 1600), "on-track");
+  assert.equal(budgetStatus(1400, 1600), "near");
+  assert.equal(budgetStatus(1700, 1600), "over");
 });

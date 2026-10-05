@@ -16,3 +16,10 @@
 - [x] WattSnap AI: a Home card opens the separate `/assistant` screen (full screen on phones, with a snapshot column on wide PCs). The landing page has a floating chat that answers questions about the app.
 
 **Verification:** Node tests cover monthly comparison, sample scan readings, appliance kind guessing, and assistant replies. Typecheck and production build pass. Browser checks at 320, 375, 768, 1024, and 1920 px found no horizontal overflow on app routes, confirmed active navigation per route, and exercised the scan (fake camera and no camera), appliance dialog, advisory checklist, assistant, and landing chat flows.
+
+## Follow-up: account, budget, and chart examples
+
+- [x] Account settings: profile hero with photo upload (drag-and-zoom circular crop, saved as a small square JPEG), profile form with email validation and unsaved-changes state, provider card, notification switches, sample-data clearing, and shortcuts. The uploaded photo also appears in the header menus.
+- [x] Log out: available from Settings and both header menus, always behind a confirmation dialog with an option to remove this browser's saved data; it then opens the login screen.
+- [x] Smart Energy Budget: an e-wallet style balance card (hide/show amounts, remaining amount, status), a large peso amount field with quick-amount cards and a suggested budget from recent bills, a bills-versus-budget list with a budget marker, and saving tips.
+- [x] Charts: with fewer than six saved bills, Home and Energy fill earlier months with striped, labelled example bars. Comparisons and averages use saved bills only.

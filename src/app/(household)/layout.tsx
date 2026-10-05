@@ -1,6 +1,7 @@
 import "./dashboard/dashboard.css";
 import "@/features/dashboard/app-ui.css";
 import "@/features/dashboard/navigation.css";
+import "@/features/dashboard/account.css";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
