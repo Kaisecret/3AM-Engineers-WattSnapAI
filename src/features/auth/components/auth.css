@@ -251,6 +251,11 @@
   .auth-otp-input { height: 48px; font-size: 21px; }
   .auth-btn-google { font-size: 14px; }
 }
+/* While a phone keyboard covers the page, add matching space so every field and button can scroll above it. */
+@media (max-width: 699px) {
+  .auth-page { padding-bottom: var(--auth-keyboard, 0px); }
+  .auth-input, .auth-otp-input, .auth-btn { scroll-margin: 96px 0 120px; }
+}
 /* Short phones give the form priority while keeping controls comfortable to tap. */
 @media (max-width: 699px) and (max-height: 740px) {
   .auth-panel { padding-top: max(12px, env(safe-area-inset-top)); padding-bottom: max(14px, env(safe-area-inset-bottom)); }

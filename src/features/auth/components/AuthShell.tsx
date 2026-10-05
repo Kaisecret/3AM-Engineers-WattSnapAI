@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { ChevronLeft } from "lucide-react";
 import "./auth.css";
 
@@ -40,6 +40,45 @@ type AuthShellProps = {
   stepKey?: string;
 };
 
+/**
+ * Keeps the focused field above an on-screen keyboard. Keyboards that overlay the
+ * page (iOS Safari and others) shrink only the visual viewport, so the page gets
+ * matching bottom space to scroll into, and the field is moved into view.
+ */
+function useKeyboardSpace() {
+  const page = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    const element = page.current;
+    if (!viewport || !element) return;
+    let timer = 0;
+    const reveal = () => {
+      const field = document.activeElement;
+      if (!(field instanceof HTMLElement) || !element.contains(field) || !field.matches("input, textarea, select")) return;
+      const box = field.getBoundingClientRect();
+      const visibleTop = viewport.offsetTop;
+      const visibleBottom = viewport.offsetTop + viewport.height;
+      if (box.top >= visibleTop + 16 && box.bottom <= visibleBottom - 24) return;
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      window.scrollBy({ top: box.top - (visibleTop + viewport.height * 0.32), behavior: reduced ? "auto" : "smooth" });
+    };
+    const update = () => {
+      const covered = viewport.scale > 1.01 ? 0 : Math.max(0, Math.round(window.innerHeight - viewport.height));
+      const open = covered > 120;
+      element.style.setProperty("--auth-keyboard", `${open ? covered : 0}px`);
+      element.classList.toggle("is-keyboard-open", open);
+      window.clearTimeout(timer);
+      if (open) timer = window.setTimeout(reveal, 60);
+    };
+    const onFocus = () => { window.clearTimeout(timer); timer = window.setTimeout(reveal, 320); };
+    viewport.addEventListener("resize", update);
+    element.addEventListener("focusin", onFocus);
+    update();
+    return () => { viewport.removeEventListener("resize", update); element.removeEventListener("focusin", onFocus); window.clearTimeout(timer); };
+  }, []);
+  return page;
+}
+
 export function AuthShell({
   children,
   art,
@@ -50,9 +89,10 @@ export function AuthShell({
   stepKey,
 }: AuthShellProps) {
   const backIcon = <ChevronLeft size={22} strokeWidth={2.5} />;
+  const page = useKeyboardSpace();
 
   return (
-    <main className={`auth-page auth-page-${stepKey ?? "form"}`}>
+    <main ref={page} className={`auth-page auth-page-${stepKey ?? "form"}`}>
       <div className={`auth-panel${artPosition === "left" ? " auth-panel-art-left" : ""}`}>
         <header className="auth-header">
           {onBack ? (
