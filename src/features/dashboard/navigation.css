@@ -1,0 +1,65 @@
+/* App navigation: one line-icon style everywhere. Active items turn blue by
+   colouring the icon's container, never by filling the outline icon itself. */
+.ws-bottom-nav { position: fixed; z-index: 30; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: end; min-height: 76px; padding: 8px 6px max(12px, env(safe-area-inset-bottom)); border-radius: 28px 28px 0 0; background: #ffffffee; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 -6px 26px #427e9914; }
+.ws-nav-item { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; min-width: 0; min-height: 54px; padding: 2px 0; color: #6c8499; font-size: 10px; font-weight: 600; letter-spacing: -.1px; white-space: nowrap; -webkit-tap-highlight-color: transparent; transition: color .2s, transform .2s; }
+.ws-nav-icon { display: grid; place-items: center; width: 48px; height: 31px; border-radius: 999px; color: inherit; transition: background .25s, color .25s, box-shadow .25s, transform .25s; }
+.ws-nav-icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.1; }
+.ws-nav-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.ws-nav-item.is-active { color: #0094df; font-weight: 800; }
+.ws-nav-item.is-active .ws-nav-icon { color: #fff; background: linear-gradient(130deg, #06ceef, #0094ec); box-shadow: 0 5px 12px #00a8ed42, inset 0 1px 2px #ffffff5c; }
+.ws-nav-scan { margin-top: -28px; color: #2c4660; }
+.ws-nav-scan .ws-nav-icon { width: 58px; height: 58px; border-radius: 50%; color: #fff; background: linear-gradient(130deg, #06ceef, #0094ec); box-shadow: 0 0 0 6px #fff, 0 9px 20px #00a8ed45, inset 0 1px 3px #ffffff66; }
+.ws-nav-scan .ws-nav-icon svg { width: 27px; height: 27px; stroke-width: 2.2; }
+.ws-nav-scan.is-active .ws-nav-icon { background: linear-gradient(130deg, #00baf2, #006fe3); box-shadow: 0 0 0 6px #fff, 0 0 0 9px #bdeefc, 0 11px 24px #0090e55c, inset 0 1px 3px #ffffff66; }
+.ws-sidebar-assistant { display: none; }
+.ws-home :is(.ws-nav-item, .ws-sidebar-assistant):focus-visible { outline: 2px solid #008acb; outline-offset: 2px; border-radius: 14px; }
+@media (hover: hover) {
+  .ws-nav-item:not(.is-active):hover { color: #0096d6; }
+  .ws-nav-item:not(.is-active):hover .ws-nav-icon { background: #e8f7fd; }
+  .ws-nav-scan:not(.is-active):hover .ws-nav-icon { background: linear-gradient(130deg, #00c3ef, #0082e8); transform: translateY(-2px); }
+}
+@media (max-width: 359px) {
+  .ws-nav-item { font-size: 9px; }
+  .ws-nav-icon { width: 42px; }
+  .ws-nav-scan .ws-nav-icon { width: 52px; height: 52px; }
+}
+@media (min-width: 900px) {
+  .ws-bottom-nav { left: 0; top: 0; bottom: 0; transform: none; width: var(--ws-sidebar-width); max-width: none; min-height: 0; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 8px; padding: 24px 18px 20px; overflow-y: auto; border-radius: 0; background: #ffffffee; box-shadow: 1px 0 0 #e1f0f6; }
+  .ws-nav-item { flex-direction: row; justify-content: flex-start; gap: 15px; min-height: 58px; padding: 9px 14px; border-radius: 16px; color: #54708d; font-size: clamp(14px, 1.08vw, 18px); font-weight: 600; transition: background .2s, color .2s, box-shadow .2s; }
+  .ws-nav-icon { width: 40px; height: 40px; flex: 0 0 auto; border-radius: 12px; color: #2e8fc0; background: #eef8fc; }
+  .ws-nav-icon svg { width: 21px; height: 21px; }
+  .ws-nav-item.is-active { color: #fff; font-weight: 700; background: linear-gradient(115deg, #08c4ec, #0091ea); box-shadow: 0 10px 22px #0ea5e938; }
+  .ws-nav-item.is-active .ws-nav-icon { color: #fff; background: #ffffff2b; box-shadow: inset 0 1px 2px #ffffff45; }
+  .ws-nav-scan { margin-top: 0; color: #54708d; }
+  .ws-nav-scan .ws-nav-icon { width: 40px; height: 40px; border-radius: 12px; box-shadow: 0 5px 12px #00a8ed38, inset 0 1px 2px #ffffff5c; }
+  .ws-nav-scan .ws-nav-icon svg { width: 21px; height: 21px; }
+  .ws-nav-scan.is-active .ws-nav-icon { background: #ffffff2b; box-shadow: inset 0 1px 2px #ffffff45; }
+  .ws-sidebar-assistant { position: relative; isolation: isolate; display: flex; align-items: center; gap: 10px; margin-top: auto; padding: 12px 12px 12px 8px; overflow: hidden; border-radius: 18px; color: #fff; background: linear-gradient(140deg, #0b2a5b, #0a5fb4 58%, #08b9ec); box-shadow: 0 12px 24px #0b3d7a2e; transition: transform .2s, box-shadow .2s; }
+  .ws-sidebar-assistant::before { content: ""; position: absolute; z-index: -1; width: 120px; height: 120px; left: -40px; top: -50px; border-radius: 50%; background: radial-gradient(circle, #5fe0ff66, transparent 70%); }
+  .ws-sidebar-assistant.is-active { box-shadow: 0 0 0 3px #9ce9ff, 0 12px 24px #0b3d7a2e; }
+  .ws-sidebar-assistant-art { flex: 0 0 auto; width: 56px; height: 56px; }
+  .ws-sidebar-assistant-art img { display: block; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 4px 6px #00163a55); }
+  .ws-sidebar-assistant-copy { flex: 1; min-width: 0; }
+  .ws-sidebar-assistant strong { display: block; font-size: 14px; font-weight: 800; letter-spacing: -.3px; }
+  .ws-sidebar-assistant :is(strong, small) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ws-sidebar-assistant small { display: block; margin-top: 2px; color: #cdeeff; font-size: 12px; }
+  .ws-sidebar-assistant > svg { width: 18px; flex: 0 0 auto; color: #bfeeff; }
+}
+@media (min-width: 900px) and (hover: hover) {
+  .ws-nav-item:not(.is-active):hover { color: #0a8fd0; background: #eef9fd; }
+  .ws-nav-item:not(.is-active):hover .ws-nav-icon { background: #dff4fc; }
+  .ws-nav-scan:not(.is-active):hover .ws-nav-icon { background: linear-gradient(130deg, #00c3ef, #0082e8); transform: none; }
+  .ws-sidebar-assistant:hover { transform: translateY(-2px); box-shadow: 0 16px 28px #0b3d7a3d; }
+}
+@media (min-width: 900px) and (max-width: 1199px) {
+  .ws-sidebar-assistant { padding-right: 10px; }
+  .ws-sidebar-assistant-art { width: 44px; height: 44px; }
+  .ws-sidebar-assistant > svg { display: none; }
+}
+@media (min-width: 900px) and (max-height: 640px) {
+  .ws-sidebar-assistant { display: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ws-sidebar-assistant-art img { animation: ws-float 3.2s ease-in-out infinite; }
+}
+@keyframes ws-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }

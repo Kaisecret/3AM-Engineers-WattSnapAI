@@ -34,6 +34,37 @@ export function PlugArtwork() {
   );
 }
 
+/** Generic electricity bill used by the scanner when no photo is available. */
+export function BillArt({ period = "Sep 2026", kwh = "109", amount = "₱1,248.50", due = "Oct 10, 2026" }: { period?: string; kwh?: string; amount?: string; due?: string }) {
+  return (
+    <svg className="bill-art" viewBox="0 0 240 320" aria-hidden="true">
+      <defs><linearGradient id="bill-head" x2="1" y2="1"><stop stopColor="#14c3ee" /><stop offset="1" stopColor="#0a7fdc" /></linearGradient></defs>
+      <rect width="240" height="320" rx="14" fill="#fff" />
+      <path d="M0 14Q0 0 14 0h212q14 0 14 14v44H0z" fill="url(#bill-head)" />
+      <circle cx="30" cy="29" r="15" fill="#ffffff33" />
+      <path d="m32 18-9 13h7l-2 10 9-13h-7z" fill="#ffe14d" />
+      <text x="52" y="27" fill="#fff" fontSize="13" fontWeight="800">ELECTRIC BILL</text>
+      <text x="52" y="41" fill="#d8f5ff" fontSize="8.5">Statement of account</text>
+      <g fill="#e4eef4"><rect x="18" y="72" width="98" height="7" rx="3.5" /><rect x="18" y="86" width="70" height="7" rx="3.5" /><rect x="150" y="72" width="72" height="7" rx="3.5" /><rect x="170" y="86" width="52" height="7" rx="3.5" /></g>
+      <text x="18" y="117" fill="#7d93a8" fontSize="8" fontWeight="700">BILLING PERIOD</text>
+      <text x="18" y="132" fill="#0d2440" fontSize="12" fontWeight="800">{period}</text>
+      <text x="146" y="117" fill="#7d93a8" fontSize="8" fontWeight="700">DUE DATE</text>
+      <text x="146" y="132" fill="#0d2440" fontSize="11" fontWeight="800">{due}</text>
+      <rect x="18" y="146" width="204" height="74" rx="10" fill="#eefaff" stroke="#c9ecf8" />
+      <text x="32" y="166" fill="#5b7d96" fontSize="8" fontWeight="700">kWh USED</text>
+      <text x="32" y="199" fill="#0d2440" fontSize="25" fontWeight="800">{kwh}</text>
+      <path d="M117 158v50" stroke="#c9ecf8" />
+      <text x="130" y="166" fill="#5b7d96" fontSize="8" fontWeight="700">AMOUNT DUE</text>
+      <text x="130" y="197" fill="#0a8ad8" fontSize="16" fontWeight="800">{amount}</text>
+      <g fill="#c4ebf8"><rect x="22" y="258" width="11" height="22" rx="2" /><rect x="38" y="250" width="11" height="30" rx="2" /><rect x="54" y="254" width="11" height="26" rx="2" /><rect x="70" y="262" width="11" height="18" rx="2" /><rect x="86" y="266" width="11" height="14" rx="2" /></g>
+      <rect x="102" y="268" width="11" height="12" rx="2" fill="#0aa6e6" />
+      <text x="18" y="244" fill="#7d93a8" fontSize="8" fontWeight="700">MONTHLY USAGE</text>
+      <g fill="#e4eef4"><rect x="134" y="240" width="88" height="7" rx="3.5" /><rect x="134" y="254" width="70" height="7" rx="3.5" /><rect x="134" y="268" width="80" height="7" rx="3.5" /></g>
+      <g fill="#20374f">{[0, 4, 6, 11, 14, 16, 21, 23, 27, 31, 33, 38, 41, 43, 47, 52, 54, 58, 61, 66, 68, 72, 75, 79].map(x => <rect key={x} x={18 + x * 2.6} y="292" width={x % 3 ? 2 : 4} height="14" />)}</g>
+    </svg>
+  );
+}
+
 export function PowerLinesArtwork() {
   return (
     <svg viewBox="0 0 160 100" aria-hidden="true">

@@ -61,7 +61,6 @@
 .ws-chart-day { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; color: #748898; }
 .ws-bar-track { height: 67px; width: 100%; display: flex; align-items: flex-end; border-bottom: 1px solid #eff5f7; }
 .ws-bar { position: relative; display: block; width: 100%; border-radius: 3px 3px 0 0; background: linear-gradient(180deg, #b2e7f5, #c7ebf8); transition: background .2s, height .3s; }
-.ws-chart-day:nth-child(1) .ws-bar, .ws-chart-day:nth-child(5) .ws-bar, .ws-chart-day:nth-child(7) .ws-bar { opacity: .65; }
 .ws-chart-day.is-selected .ws-bar { opacity: 1; background: linear-gradient(180deg, #03c5ec, #0097ee); }
 .ws-bar-value { position: absolute; bottom: calc(100% + 5px); left: 50%; transform: translateX(-50%); color: var(--ws-ink); font-size: 12px; font-weight: 800; letter-spacing: -.6px; }
 .ws-day-label { font-size: 9px; }
@@ -95,17 +94,6 @@
 .ws-tip p { font-size: 10.5px; line-height: 1.48; letter-spacing: -.2px; color: #26314b; }
 .ws-plug-art { position: absolute; right: 8px; bottom: -8px; width: 124px; }
 .ws-plug-art svg { display: block; width: 100%; height: auto; }
-.ws-bottom-nav { position: fixed; z-index: 10; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: end; min-height: 78px; padding: 8px 8px max(14px, env(safe-area-inset-bottom)); border-radius: 34px 34px 0 0; background: #ffffffed; backdrop-filter: blur(16px); box-shadow: 0 -5px 24px #427e9910; }
-.ws-nav-item { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; padding: 3px 0; font-size: 10px; color: #698297; white-space: nowrap; transition: color .2s, transform .2s; }
-.ws-nav-icon { display: grid; place-items: center; height: 27px; }
-.ws-nav-icon svg { width: 24px; height: 24px; stroke-width: 3; }
-.ws-nav-item.is-active { color: #009ce6; font-weight: 800; }
-.ws-nav-item.is-active::before { content: ""; position: absolute; z-index: -1; width: 64px; height: 54px; top: -5px; border-radius: 50%; background: radial-gradient(ellipse, #e2f7ff, #eefaff40 70%); }
-.ws-nav-item.is-active::after { content: ""; position: absolute; width: 27px; height: 3px; bottom: -3px; background: #049de7; border-radius: 3px; }
-.ws-nav-item.is-active .ws-nav-icon svg { fill: #02b3eb; stroke: #02b3eb; stroke-width: 2; }
-.ws-nav-scan { color: var(--ws-ink); margin-top: -22px; }
-.ws-nav-scan .ws-nav-icon { width: 54px; height: 54px; margin-bottom: 1px; border-radius: 50%; color: white; background: linear-gradient(130deg, #06ceef, #00a3ed); box-shadow: 0 0 0 7px #ffffff, inset 0 1px 3px #ffffff55; }
-.ws-nav-scan .ws-nav-icon svg { width: 29px; height: 29px; stroke-width: 2.5; }
 .ws-header-panel { position: absolute; z-index: 20; right: 18px; top: 72px; width: min(300px, calc(100% - 36px)); padding: 20px; border: 1px solid #dceef3; border-radius: 16px; background: white; box-shadow: 0 12px 35px #214c6821; }
 .ws-header-panel strong { display: block; padding-right: 16px; font-size: 14px; }
 .ws-header-panel p { margin-top: 8px; color: #768b9b; font-size: 12px; line-height: 1.6; }
@@ -115,7 +103,6 @@
 .ws-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 @media (hover: hover) {
   .ws-bill:hover, .ws-budget:hover { transform: translateY(-2px); box-shadow: 0 7px 18px #4a849516; }
-  .ws-nav-item:hover { color: #00a8e2; transform: translateY(-2px); }
   .ws-advisory-link:hover { background: #ffd13e; }
   .ws-chart-day:hover .ws-bar { background: #69d8ef; }
 }
@@ -156,7 +143,6 @@
   .ws-tip p { font-size: 9px; }
   .ws-tip h2 { font-size: 12px; }
   .ws-plug-art { width: 108px; right: 3px; }
-  .ws-nav-item { font-size: 9px; }
 }
 @media (min-width: 900px) {
   .ws-home { --ws-gap: 20px; padding: 0 38px 40px 258px; background: radial-gradient(ellipse at 100% 0%, #dff6fa66, transparent 65%), #f1f9fc; }
@@ -213,13 +199,6 @@
   .ws-tip h2 { font-size: 16px; margin-bottom: 10px; }
   .ws-tip p { font-size: 11px; line-height: 1.6; }
   .ws-plug-art { width: 129px; right: 0; }
-  .ws-bottom-nav { left: 0; top: 0; bottom: 0; transform: none; width: 220px; max-width: none; padding: 139px 19px 24px; display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; gap: 15px; border-radius: 0; border-right: 1px solid #e3f1f5; background: #ffffffbc; box-shadow: none; }
-  .ws-nav-item { flex-direction: row; justify-content: flex-start; gap: 16px; padding: 14px 17px; border-radius: 13px; font-size: 14px; }
-  .ws-nav-item.is-active { background: #e5f7fd; }
-  .ws-nav-item.is-active::before, .ws-nav-item.is-active::after { display: none; }
-  .ws-nav-scan { margin-top: 0; color: #009ed6; }
-  .ws-nav-scan .ws-nav-icon { width: 27px; height: 27px; margin: 0; box-shadow: none; border-radius: 7px; }
-  .ws-nav-scan .ws-nav-icon svg { width: 20px; height: 20px; }
   .ws-header-panel { top: 85px; right: 0; }
 }
 @media (min-width: 900px) and (max-width: 1199px) {
@@ -231,7 +210,6 @@
 }
 @media (min-width: 1200px) {
   .ws-home { padding-inline: 294px 64px; }
-  .ws-bottom-nav { width: 240px; padding-inline: 23px; }
   .ws-advisory { min-height: 132px; }
   .ws-tip { min-height: 132px; padding: 24px; }
   .ws-tip p { font-size: 12px; }
@@ -248,4 +226,52 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .ws-home *, .ws-home *::before, .ws-home *::after { animation: none !important; transition: none !important; }
+}
+
+/* Home: monthly states and the WattSnap AI entry card */
+.ws-savings.is-higher { color: #ea580c; }
+.ws-consumption-empty { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-top: 14px; color: #6f879c; font-size: 12px; line-height: 1.5; }
+.ws-consumption-empty p { flex: 1 1 180px; }
+.ws-assistant-card { position: relative; isolation: isolate; overflow: hidden; padding: 16px; border-radius: 18px; color: #fff; background: linear-gradient(135deg, #0b2a5b 0%, #0a58b0 55%, #08b4ea 100%); box-shadow: 0 10px 24px #0b3d7a2e; transition: transform .2s, box-shadow .2s; }
+.ws-assistant-card::before { content: ""; position: absolute; z-index: -1; width: 220px; height: 220px; right: -70px; top: -90px; border-radius: 50%; background: radial-gradient(circle, #5fe0ff59, transparent 70%); }
+.ws-assistant-copy > :not(.ws-assistant-input, .ws-assistant-prompts) { max-width: 66%; }
+.ws-assistant-tag { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 999px; background: #ffffff1f; color: #c6f1ff; font-size: 10px; font-weight: 800; letter-spacing: .2px; }
+.ws-assistant-tag svg { width: 13px; height: 13px; color: #ffe066; }
+.ws-assistant-card h2 { margin-top: 8px; font-size: 17px; font-weight: 800; line-height: 1.25; letter-spacing: -.5px; }
+.ws-assistant-link::after { content: ""; position: absolute; z-index: 1; inset: 0; border-radius: inherit; }
+.ws-assistant-card p { margin-top: 4px; color: #d3efff; font-size: 11.5px; line-height: 1.45; }
+.ws-assistant-input { position: relative; display: flex; align-items: center; justify-content: space-between; height: 42px; margin-top: 13px; padding: 0 5px 0 15px; border-radius: 999px; background: #fff; color: #8aa0b2; font-size: 12px; box-shadow: 0 6px 14px #00163a33; }
+.ws-assistant-input span { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: #fff; background: linear-gradient(130deg, #06ceef, #0094ec); }
+.ws-assistant-input svg { width: 16px; height: 16px; }
+.ws-assistant-prompts { position: relative; z-index: 2; display: flex; gap: 6px; margin: 10px -16px -2px 0; padding-right: 16px; overflow-x: auto; scrollbar-width: none; }
+.ws-assistant-prompts::-webkit-scrollbar { display: none; }
+.ws-assistant-prompts a { flex: 0 0 auto; padding: 7px 11px; border-radius: 999px; border: 1px solid #ffffff38; background: #ffffff1a; color: #fff; font-size: 11px; font-weight: 700; white-space: nowrap; transition: background .2s; }
+.ws-assistant-mascot { position: absolute; z-index: 0; right: -6px; top: -4px; width: 124px; height: auto; filter: drop-shadow(0 10px 14px #00163a66); }
+.ws-assistant-card :focus-visible { outline-color: #9ce9ff; }
+@media (hover: hover) {
+  .ws-assistant-card:hover { transform: translateY(-2px); box-shadow: 0 14px 28px #0b3d7a3d; }
+  .ws-assistant-prompts a:hover { background: #ffffff33; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ws-assistant-mascot { animation: ws-float 3.2s ease-in-out infinite; }
+}
+@media (min-width: 430px) and (max-width: 899px) {
+  .ws-assistant-card { padding: 18px; }
+  .ws-assistant-card h2 { font-size: 19px; }
+  .ws-assistant-card p { font-size: 13px; }
+  .ws-assistant-mascot { width: 150px; }
+}
+@media (min-width: 900px) {
+  .ws-assistant-card { grid-column: 1 / -1; display: flex; align-items: center; min-height: 190px; padding: 26px 32px; border-radius: 22px; }
+  .ws-assistant-copy { width: min(62%, 640px); }
+  .ws-assistant-copy > :not(.ws-assistant-input, .ws-assistant-prompts) { max-width: none; }
+  .ws-assistant-tag { font-size: 12px; padding: 5px 11px; }
+  .ws-assistant-card h2 { font-size: clamp(20px, 1.6vw, 28px); }
+  .ws-assistant-card p { font-size: clamp(13px, 1vw, 16px); }
+  .ws-assistant-input { max-width: 520px; height: 48px; font-size: 14px; }
+  .ws-assistant-input span { width: 38px; height: 38px; }
+  .ws-assistant-prompts { flex-wrap: wrap; margin-right: 0; padding-right: 0; overflow: visible; }
+  .ws-assistant-prompts a { font-size: 13px; padding: 8px 14px; }
+  .ws-assistant-mascot { top: auto; right: 8%; bottom: -34px; width: clamp(170px, 15vw, 240px); }
+  .ws-home-screen .ws-consumption-empty { font-size: 15px; }
 }

@@ -1,14 +1,18 @@
 "use client";
 import { useEffect, useState } from "react";
-import { emptyPreview, normalizePreview, previewStorageKey, type PreviewHousehold } from "./preview-data";
+import { normalizePreview, previewStorageKey, samplePreview, type PreviewHousehold } from "./preview-data";
 
 export function usePreviewHousehold() {
-  const [household, setHousehold] = useState(emptyPreview);
+  const [household, setHousehold] = useState(samplePreview);
   const [ready, setReady] = useState(false);
   const [storageError, setStorageError] = useState("");
   useEffect(() => {
     function read() {
-      try { setHousehold(normalizePreview(JSON.parse(localStorage.getItem(previewStorageKey) || "null"))); }
+      try {
+        const saved = localStorage.getItem(previewStorageKey);
+        // A first visit starts with example history; anything saved afterwards wins.
+        setHousehold(saved === null ? samplePreview : normalizePreview(JSON.parse(saved)));
+      }
       catch { setStorageError("Browser storage is unavailable. Changes cannot be saved."); }
       setReady(true);
     }

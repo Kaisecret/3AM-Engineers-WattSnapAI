@@ -1,0 +1,255 @@
+/* Snap AI scanner. Phones get a full-screen camera; PCs get a scan stage beside a details panel. */
+.scan-page .ui-mobile-heading { display: none; }
+.scan-app { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; overflow: hidden; color: #fff; background: #041427; font-family: var(--font-sans); }
+.scan-stage { position: relative; isolation: isolate; flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: radial-gradient(120% 80% at 50% 28%, #0d4373 0%, #071f3b 55%, #031021 100%); }
+.scan-video, .scan-photo { position: absolute; z-index: -1; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.scan-video { opacity: 0; transition: opacity .45s; }
+.scan-video.is-live { opacity: 1; }
+.scan-photo.is-contain { object-fit: contain; background: #061a30; }
+.scan-dots { position: absolute; z-index: -1; inset: 0; pointer-events: none; background-image: radial-gradient(#ffffff17 1px, transparent 1.2px); background-size: 22px 22px; mask-image: radial-gradient(circle at 50% 45%, #000 20%, transparent 75%); }
+.camera-live .scan-dots, .has-photo .scan-dots { display: none; }
+
+.scan-topbar { position: relative; z-index: 6; display: flex; align-items: center; gap: 12px; padding: max(14px, env(safe-area-inset-top)) 16px 10px; background: linear-gradient(#020b18b8, transparent); }
+.scan-round { flex: 0 0 auto; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; color: #fff; background: #ffffff1f; border: 1px solid #ffffff2b; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: background .2s; }
+.scan-round svg { width: 20px; height: 20px; }
+.scan-round.is-on { color: #0d2440; background: #ffe066; }
+.scan-round.is-ghost { color: #ffe066; }
+.scan-title { flex: 1; min-width: 0; text-align: center; }
+.scan-title strong { display: block; font-size: 16px; font-weight: 800; letter-spacing: -.3px; }
+.scan-title span { display: block; margin-top: 1px; color: #b9dcf0; font-size: 11px; }
+
+.scan-frame-wrap { position: relative; z-index: 2; flex: 1; min-height: 0; display: grid; place-items: center; padding: 10px 0; }
+.scan-frame { --scan-accent: #3fe0ff; position: relative; width: min(70vw, 320px, calc((100dvh - 280px) * .72)); aspect-ratio: 3 / 4.1; border-radius: 18px; box-shadow: 0 0 0 200vmax #020c1a8f; }
+.phase-review .scan-frame, .phase-saved .scan-frame { --scan-accent: #4be38a; }
+.scan-frame-bill { position: absolute; inset: 6%; display: grid; place-items: center; }
+.bill-art { display: block; width: 100%; height: 100%; filter: drop-shadow(0 14px 22px #00122e70); }
+.scan-frame-bill .bill-art { transform: rotate(-2deg); }
+.scan-corner { position: absolute; width: 34px; height: 34px; border: 4px solid var(--scan-accent); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--scan-accent) 70%, transparent)); transition: border-color .3s; }
+.scan-corner.is-tl { top: -3px; left: -3px; border-right: 0; border-bottom: 0; border-top-left-radius: 18px; }
+.scan-corner.is-tr { top: -3px; right: -3px; border-left: 0; border-bottom: 0; border-top-right-radius: 18px; }
+.scan-corner.is-bl { bottom: -3px; left: -3px; border-right: 0; border-top: 0; border-bottom-left-radius: 18px; }
+.scan-corner.is-br { bottom: -3px; right: -3px; border-left: 0; border-top: 0; border-bottom-right-radius: 18px; }
+
+/* The mascot rides the scan line, shining a light cone onto the bill. */
+.scan-track { position: absolute; z-index: 3; left: 0; right: 0; top: 3%; height: 0; }
+.scan-beam { position: absolute; left: 3%; right: 3%; top: -2px; height: 4px; border-radius: 4px; opacity: 0; background: linear-gradient(90deg, transparent, #7ff0ff, #fff, #7ff0ff, transparent); box-shadow: 0 0 18px 4px #38d9ff99; transition: opacity .3s; }
+.scan-beam::before, .scan-beam::after { content: ""; position: absolute; left: 0; right: 0; height: 56px; }
+.scan-beam::before { bottom: 100%; background: linear-gradient(to top, #38d9ff3d, transparent); }
+.scan-beam::after { top: 100%; background: linear-gradient(to bottom, #38d9ff24, transparent); }
+.scan-cone { position: absolute; left: 4%; right: 1%; top: -36px; height: 72px; opacity: 0; clip-path: polygon(100% 42%, 100% 58%, 0 100%, 0 0); background: linear-gradient(270deg, #ffe38ad9, #ffe38a40 55%, transparent); mix-blend-mode: screen; transition: opacity .3s; }
+.scan-bot { position: absolute; z-index: 2; right: -15%; top: 0; width: 36%; max-width: 128px; transform: translateY(-40%); }
+.scan-bot img { display: block; width: 100%; height: auto; filter: drop-shadow(0 12px 14px #00122e85); }
+.scan-bubble { position: absolute; right: 74%; top: -18%; padding: 6px 10px; border-radius: 12px 12px 3px 12px; color: #0d2440; background: #fff; box-shadow: 0 8px 18px #00122e45; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.phase-scanning .scan-beam, .phase-scanning .scan-cone { opacity: 1; }
+.phase-scanning .scan-bubble { color: #fff; background: linear-gradient(110deg, #0bc3ec, #0090ea); }
+.phase-review .scan-bubble, .phase-saved .scan-bubble { color: #fff; background: #22c55e; }
+
+.scan-sparkle { position: absolute; z-index: 4; width: 16px; height: 16px; background: #ffe066; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+.scan-sparkle.is-one { left: -5%; top: 8%; }
+.scan-sparkle.is-two { right: 10%; bottom: -4%; width: 12px; height: 12px; background: #7ff0ff; }
+.scan-sparkle.is-three { left: 40%; top: -5%; width: 10px; height: 10px; }
+.scan-chip { position: absolute; z-index: 5; left: -9%; display: flex; align-items: center; gap: 8px; padding: 7px 12px 7px 7px; border-radius: 13px; color: #0d2440; background: #ffffffef; box-shadow: 0 10px 22px #00122e4d; }
+.scan-chip > span:first-child { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: #fff; background: #22c55e; }
+.scan-chip > span:first-child svg { width: 15px; height: 15px; stroke-width: 3; }
+.scan-chip small { display: block; color: #6e8aa3; font-size: 9px; font-weight: 600; }
+.scan-chip strong { display: block; font-size: 13px; font-weight: 800; letter-spacing: -.3px; }
+.scan-chip.is-month { top: 16%; }
+.scan-chip.is-kwh { top: 43%; }
+.scan-chip.is-amount { top: 70%; }
+.scan-done-badge { position: absolute; z-index: 5; left: 50%; top: 50%; display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; color: #fff; background: #22c55e; box-shadow: 0 0 0 8px #22c55e40, 0 12px 26px #00122e66; transform: translate(-50%, -50%); }
+.scan-done-badge svg { width: 36px; height: 36px; }
+
+.scan-hint, .scan-toast { position: relative; z-index: 6; align-self: center; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 10px; max-width: calc(100% - 32px); margin: 0 16px 10px; padding: 9px 15px; border-radius: 999px; background: #0a1d33b3; border: 1px solid #ffffff21; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); font-size: 12px; font-weight: 600; text-align: center; }
+.scan-hint button { color: #7ff0ff; font-size: 12px; font-weight: 800; text-decoration: underline; }
+.scan-toast { color: #fff; background: #c0392bd9; }
+.scan-controls { position: relative; z-index: 6; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; justify-items: center; gap: 10px; padding: 8px 24px max(22px, env(safe-area-inset-bottom)); }
+.scan-side { display: grid; justify-items: center; gap: 6px; color: #fff; font-size: 11px; font-weight: 700; }
+.scan-side > span { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; background: #ffffff1f; border: 1px solid #ffffff2b; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: background .2s; }
+.scan-side svg { width: 22px; height: 22px; }
+.scan-stop-camera { display: none; }
+.scan-shutter { position: relative; display: grid; place-items: center; width: 80px; height: 80px; border-radius: 50%; border: 5px solid #fff; background: transparent; box-shadow: 0 0 0 6px #3fe0ff38; transition: transform .15s; }
+.scan-shutter > span { width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(145deg, #fff, #d5f5ff); }
+.scan-shutter:active { transform: scale(.93); }
+.scan-progress { position: relative; z-index: 6; margin: 0 16px max(22px, env(safe-area-inset-bottom)); padding: 14px 16px; border-radius: 18px; background: #0a1d33cc; border: 1px solid #ffffff26; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.scan-progress-top { display: flex; align-items: center; gap: 8px; }
+.scan-progress-top svg { width: 18px; height: 18px; color: #ffe066; flex: 0 0 auto; }
+.scan-progress-top strong { flex: 1; min-width: 0; font-size: 14px; letter-spacing: -.2px; }
+.scan-progress-top span { color: #7ff0ff; font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.scan-progress-bar { height: 7px; margin: 10px 0 8px; overflow: hidden; border-radius: 7px; background: #ffffff21; }
+.scan-progress-bar span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #22d3ee, #3b82f6); box-shadow: 0 0 10px #22d3ee99; transition: width .1s linear; }
+.scan-progress small { color: #a8c9df; font-size: 11px; }
+.scan-flash { position: absolute; z-index: 20; inset: 0; pointer-events: none; background: #fff; opacity: 0; animation: scan-flash .5s ease-out; }
+.scan-placeholder { display: none; color: var(--ws-ink); }
+
+/* Details panel: a bottom sheet on phones once there is something to review. */
+.scan-panel { display: none; color: var(--ws-ink); }
+.phase-review .scan-panel, .phase-saved .scan-panel { position: absolute; z-index: 10; left: 0; right: 0; bottom: 0; display: block; max-height: 86dvh; overflow-y: auto; padding: 10px 18px max(20px, env(safe-area-inset-bottom)); border-radius: 26px 26px 0 0; background: #f6fcff; box-shadow: 0 -12px 40px #00122e66; }
+.phase-review .scan-panel::before, .phase-saved .scan-panel::before { content: ""; display: block; width: 42px; height: 5px; margin: 0 auto 14px; border-radius: 5px; background: #cfe2ec; }
+.phase-review .scan-controls, .phase-saved .scan-controls { display: none; }
+.scan-steps, .scan-intro, .scan-reading { display: none; }
+.scan-review-head { display: flex; align-items: flex-start; gap: 12px; }
+.scan-review-icon { flex: 0 0 auto; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px; color: #fff; background: linear-gradient(135deg, #10c8ee, #0090ea); box-shadow: 0 6px 14px #00a8ed40; }
+.scan-review-icon svg { width: 22px; height: 22px; }
+.scan-review-head h2, .scan-saved h2 { font-size: 20px; font-weight: 800; line-height: 1.25; letter-spacing: -.6px; }
+.scan-review-head p { margin-top: 3px; color: #6f879c; font-size: 12.5px; line-height: 1.5; }
+.scan-sample-note { display: flex; gap: 8px; margin-top: 14px; padding: 10px 12px; border-radius: 12px; color: #5d6f2a; background: #fff8dc; border: 1px solid #f6e7a5; font-size: 11.5px; line-height: 1.5; }
+.scan-sample-note svg { flex: 0 0 auto; width: 16px; height: 16px; color: #d8a10a; margin-top: 1px; }
+.scan-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; margin-top: 16px; }
+.scan-fields label { display: grid; gap: 7px; min-width: 0; color: #3d566e; font-size: 12px; font-weight: 700; }
+.scan-label { display: flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+.scan-label small { color: #94a8b8; font-size: 11px; font-weight: 500; }
+.scan-fields input { width: 100%; min-width: 0; height: 48px; padding: 0 12px; border: 1.5px solid #cfe5f0; border-radius: 12px; background: #fff; color: #10243c; font: inherit; font-size: 15px; font-weight: 700; transition: border-color .2s, box-shadow .2s; }
+.scan-fields input:focus { outline: none; border-color: #12b5e6; box-shadow: 0 0 0 4px #12b5e626; }
+.scan-unit { position: relative; display: block; }
+.scan-unit em { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); color: #7a93a8; font-size: 12px; font-style: normal; font-weight: 700; pointer-events: none; }
+.scan-unit input { padding-right: 46px; }
+.scan-unit.is-prefix em { right: auto; left: 13px; }
+.scan-unit.is-prefix input { padding: 0 12px 0 28px; }
+.scan-compare { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 14px; padding: 11px 13px; border-radius: 12px; background: #fff; border: 1px solid #e0eff6; color: #6f879c; font-size: 11.5px; }
+.scan-change { display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; letter-spacing: -.2px; }
+.scan-change svg { width: 14px; height: 14px; stroke-width: 3; }
+.scan-change.is-lower { color: #15803d; background: #e5f9ec; }
+.scan-change.is-higher { color: #c2410c; background: #fff0e5; }
+.scan-warning { margin-top: 12px; padding: 10px 12px; border-radius: 12px; color: #9a5b00; background: #fff4df; font-size: 12px; line-height: 1.5; }
+.scan-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; margin-top: 18px; }
+.scan-actions .ui-primary, .scan-actions .ui-secondary { min-height: 50px; border-radius: 14px; font-size: 14px; }
+.scan-saved { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.scan-saved-art { width: 130px; height: auto; margin: -6px 0 2px; }
+.scan-saved > p { margin: 5px 0 14px; color: #6f879c; font-size: 13px; line-height: 1.5; }
+.scan-saved-card { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; width: 100%; overflow: hidden; border-radius: 16px; background: #e0eff6; border: 1px solid #e0eff6; margin-bottom: 12px; }
+.scan-saved-card > div { padding: 11px 13px; background: #fff; text-align: left; }
+.scan-saved-card small { display: block; color: #7a93a8; font-size: 10.5px; font-weight: 600; }
+.scan-saved-card strong { display: block; margin-top: 2px; font-size: 15px; font-weight: 800; letter-spacing: -.3px; }
+.scan-saved .scan-actions { width: 100%; grid-template-columns: 1fr; }
+.scan-saved .scan-actions .ui-primary { order: -1; }
+
+@media (max-width: 899px) {
+  html:has(.scan-app), body:has(.scan-app) { overflow: hidden; }
+}
+@media (max-width: 359px) {
+  .scan-fields { grid-template-columns: 1fr; }
+  .scan-chip { left: -4%; padding-right: 9px; }
+  .scan-chip strong { font-size: 12px; }
+  .scan-controls { padding-inline: 14px; }
+}
+@media (max-height: 620px) and (max-width: 899px) {
+  .scan-shutter { width: 68px; height: 68px; }
+  .scan-shutter > span { width: 48px; height: 48px; }
+  .scan-side > span { width: 44px; height: 44px; }
+}
+
+@media (min-width: 900px) {
+  .scan-app { position: relative; inset: auto; z-index: auto; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(360px, 1fr); gap: 22px; align-items: start; overflow: visible; color: var(--ws-ink); background: none; }
+  .scan-stage { color: #fff; min-height: clamp(560px, calc(100vh - 190px), 760px); border-radius: 26px; border: 1px solid #cfe9f4; box-shadow: 0 12px 32px #4a84951a; }
+  .scan-topbar { display: none; }
+  .scan-frame { width: clamp(220px, 22vw, 330px); }
+  .scan-bot { max-width: 140px; }
+  .phase-camera:not(.camera-live) .scan-stage { background: linear-gradient(160deg, #f6fcff, #e1f5fc); }
+  .phase-camera:not(.camera-live) :is(.scan-frame-wrap, .scan-hint, .scan-controls, .scan-dots) { display: none; }
+  .scan-placeholder { position: relative; z-index: 3; flex: 1; margin: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; border: 2px dashed #a8def0; border-radius: 20px; text-align: center; transition: background .2s, border-color .2s; }
+  .scan-placeholder > * { flex-shrink: 0; }
+  .scan-placeholder.is-dragging { border-color: #00b5e6; background: #d9f3fc; }
+  .scan-placeholder-art { position: relative; width: 250px; height: 250px; margin-bottom: 14px; }
+  .scan-placeholder-bill { position: absolute; left: 22px; top: 18px; width: 158px; transform: rotate(-6deg); }
+  .scan-placeholder-bill .bill-art { height: auto; filter: drop-shadow(0 16px 24px #1b6c9433); }
+  .scan-placeholder-bill i { position: absolute; left: -4%; right: -4%; top: 20%; height: 4px; border-radius: 4px; background: linear-gradient(90deg, transparent, #22d3ee, transparent); box-shadow: 0 0 14px #22d3ee; }
+  .scan-placeholder-bot { position: absolute; right: -6px; top: -4px; width: 128px; height: auto; filter: drop-shadow(0 14px 16px #0b4a7a40); }
+  .scan-placeholder h2 { font-size: 24px; font-weight: 800; letter-spacing: -.5px; }
+  .scan-placeholder > p { max-width: 46ch; margin-top: 8px; color: #6a8399; font-size: 14px; line-height: 1.6; }
+  .scan-placeholder-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 22px; }
+  .scan-placeholder-actions .ui-primary, .scan-placeholder-actions .ui-secondary { min-width: 168px; min-height: 48px; border-radius: 14px; }
+  .scan-text-button { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; padding: 8px 10px; color: #0a8fd0; font-size: 14px; font-weight: 700; }
+  .scan-file-note { margin-top: 6px; color: #8aa0b2; font-size: 12px; }
+  .scan-inline-note { margin-top: 10px; color: #9a5b00; font-size: 12px; }
+  .scan-controls { grid-template-columns: repeat(4, auto); justify-content: center; gap: 22px; padding-bottom: 24px; }
+  .scan-controls .scan-side:nth-of-type(1) { order: 1; }
+  .scan-controls .scan-shutter { order: 2; }
+  .scan-controls .scan-side:nth-of-type(2) { order: 3; }
+  .scan-stop-camera { display: grid; order: 4; }
+  .scan-progress { width: min(440px, calc(100% - 48px)); align-self: center; margin-bottom: 24px; }
+
+  .scan-panel, .phase-review .scan-panel, .phase-saved .scan-panel { position: sticky; top: 20px; display: block; max-height: none; overflow: visible; padding: 24px; border-radius: 24px; background: #ffffffed; border: 1px solid #deeff6; box-shadow: 0 6px 20px #4a84950f; }
+  .phase-review .scan-panel::before, .phase-saved .scan-panel::before { display: none; }
+  .scan-steps { display: flex; gap: 6px; margin-bottom: 22px; list-style: none; }
+  .scan-steps li { position: relative; flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; color: #8aa0b2; font-size: 13px; font-weight: 700; white-space: nowrap; }
+  .scan-steps li > span { flex: 0 0 auto; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; color: #8aa0b2; background: #eef6fa; font-size: 12px; }
+  .scan-steps li > span svg { width: 15px; height: 15px; stroke-width: 3; }
+  .scan-steps .is-current { color: #0b87c9; }
+  .scan-steps .is-current > span { color: #fff; background: linear-gradient(135deg, #10c8ee, #0090ea); box-shadow: 0 4px 10px #00a8ed45; }
+  .scan-steps .is-done { color: #15803d; }
+  .scan-steps .is-done > span { color: #fff; background: #22c55e; }
+  .scan-intro, .scan-reading { display: block; }
+  .scan-intro h2, .scan-reading h2 { font-size: 20px; font-weight: 800; letter-spacing: -.6px; }
+  .scan-how { display: grid; gap: 14px; margin-top: 16px; list-style: none; }
+  .scan-how li { display: flex; gap: 13px; align-items: flex-start; }
+  .scan-how li > span { flex: 0 0 auto; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; color: #0b99d6; background: #e5f7fd; }
+  .scan-how li > span svg { width: 20px; height: 20px; }
+  .scan-how strong { font-size: 14px; }
+  .scan-how p { margin-top: 2px; color: #6f879c; font-size: 13px; line-height: 1.5; }
+  .scan-tips { margin-top: 20px; padding: 14px 16px; border-radius: 16px; background: #fffbea; border: 1px solid #f5e7aa; }
+  .scan-tips h3 { display: flex; align-items: center; gap: 7px; color: #7a4b0c; font-size: 13px; }
+  .scan-tips h3 svg { width: 17px; height: 17px; color: #f0a40b; }
+  .scan-tips ul { display: grid; gap: 4px; margin: 8px 0 0 22px; color: #6b5a33; font-size: 12.5px; line-height: 1.5; }
+  .scan-manual { width: 100%; margin-top: 16px; min-height: 46px; border-radius: 14px; }
+  .scan-recent { margin-top: 22px; padding-top: 18px; border-top: 1px solid #e6f1f6; }
+  .scan-recent-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .scan-recent-head h3 { font-size: 14px; }
+  .scan-recent-head a { display: inline-flex; align-items: center; gap: 2px; color: #0a8fd0; font-size: 13px; font-weight: 700; }
+  .scan-recent-row { display: flex; align-items: center; gap: 11px; padding: 9px 0; }
+  .scan-recent-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 11px; color: #0b99d6; background: #eef9fd; }
+  .scan-recent-icon svg { width: 18px; height: 18px; }
+  .scan-recent-row > div { flex: 1; min-width: 0; }
+  .scan-recent-row strong { display: block; font-size: 13px; }
+  .scan-recent-row small { color: #7a93a8; font-size: 12px; }
+  .scan-source { padding: 3px 8px; border-radius: 999px; font-size: 10.5px; font-style: normal; font-weight: 700; }
+  .scan-source.is-scan { color: #0369a1; background: #e0f2fe; }
+  .scan-source.is-manual { color: #6d28d9; background: #f1e9ff; }
+  .scan-source.is-sample { color: #6b7d8f; background: #eef2f5; }
+  .scan-reading ul { display: grid; gap: 12px; margin-top: 18px; list-style: none; }
+  .scan-reading li { display: flex; align-items: center; gap: 11px; color: #8aa0b2; font-size: 14px; font-weight: 600; transition: color .2s; }
+  .scan-reading li > span { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #eef6fa; }
+  .scan-reading li > span i { width: 8px; height: 8px; border-radius: 50%; background: #c3d6e2; }
+  .scan-reading li > span svg { width: 15px; height: 15px; stroke-width: 3; }
+  .scan-reading .is-current { color: #0b87c9; }
+  .scan-reading .is-current > span { background: #e0f5fd; }
+  .scan-reading .is-current > span i { background: #0ab4e6; animation: scan-pulse 1s ease-in-out infinite; }
+  .scan-reading .is-done { color: #15803d; }
+  .scan-reading .is-done > span { color: #fff; background: #22c55e; }
+  .scan-review-head h2, .scan-saved h2 { font-size: 22px; }
+  .scan-saved-art { width: 150px; }
+}
+@media (min-width: 900px) and (max-width: 1199px) {
+  .scan-app { grid-template-columns: 1fr; }
+  .scan-stage { min-height: 560px; }
+  .scan-panel, .phase-review .scan-panel, .phase-saved .scan-panel { position: static; }
+}
+@media (hover: hover) {
+  .scan-side:hover > span, .scan-round:hover { background: #ffffff33; }
+  .scan-text-button:hover { color: #006fae; text-decoration: underline; }
+}
+
+@keyframes scan-flash { from { opacity: .95; } to { opacity: 0; } }
+@keyframes scan-hover { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-9px) rotate(3deg); } }
+@keyframes scan-sweep { from { top: 4%; } to { top: 96%; } }
+@keyframes scan-corner-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+@keyframes scan-twinkle { 0%, 100% { opacity: 0; transform: scale(.4) rotate(0); } 50% { opacity: 1; transform: scale(1) rotate(45deg); } }
+@keyframes scan-pop { from { opacity: 0; transform: translateX(-10px) scale(.85); } to { opacity: 1; transform: none; } }
+@keyframes scan-sheet { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes scan-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.5); } }
+@keyframes scan-glide { 0%, 100% { top: 14%; } 50% { top: 82%; } }
+@keyframes scan-badge { from { opacity: 0; transform: translate(-50%, -50%) scale(.4); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+@media (prefers-reduced-motion: no-preference) {
+  .scan-bot img, .scan-placeholder-bot { animation: scan-hover 2.8s ease-in-out infinite; }
+  .phase-camera .scan-corner { animation: scan-corner-pulse 1.8s ease-in-out infinite; }
+  .phase-scanning .scan-track { animation: scan-sweep 1.9s ease-in-out infinite alternate; }
+  .scan-sparkle { animation: scan-twinkle 1.6s ease-in-out infinite; }
+  .scan-sparkle.is-two { animation-delay: .5s; }
+  .scan-sparkle.is-three { animation-delay: 1s; }
+  .scan-chip { animation: scan-pop .4s cubic-bezier(.2, .9, .3, 1.3) both; }
+  .scan-done-badge { animation: scan-badge .45s cubic-bezier(.2, .9, .3, 1.4) both; }
+  .phase-review .scan-panel, .phase-saved .scan-panel { animation: scan-sheet .45s cubic-bezier(.2, .9, .25, 1) both; }
+  .scan-placeholder-bill i { animation: scan-glide 3.2s ease-in-out infinite; }
+}
+@media (prefers-reduced-motion: no-preference) and (min-width: 900px) {
+  .phase-review .scan-panel, .phase-saved .scan-panel { animation: ws-arrive .3s ease-out both; }
+}

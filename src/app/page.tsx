@@ -6,9 +6,11 @@ import { SpotlightSection } from "@/features/landing/components/SpotlightSection
 import { TestimonialsSection } from "@/features/landing/components/TestimonialsSection";
 import { AccountCtaBanner } from "@/features/landing/components/AccountCtaBanner";
 import { Footer } from "@/features/landing/components/Footer";
+import { LandingChatWidget } from "@/features/assistant/components/LandingChatWidget";
 import "@/features/landing/post-hero.css";
 import "@/features/landing/mobile-landing.css";
 import "@/features/landing/footer.css";
+import "@/features/assistant/assistant.css";
 
 export default function LandingPage() {
   return (
@@ -30,6 +32,9 @@ export default function LandingPage() {
 
       {/* Footer */}
       <Footer />
+
+      {/* Floating WattSnap AI chat */}
+      <LandingChatWidget />
     </div>
   );
 }
