@@ -51,6 +51,7 @@ export default function AdvisoriesScreen() {
   const [locationError, setLocationError] = useState("");
   const [selected, setSelected] = useState<PreviewAdvisory | null>(null);
   const [checked, setChecked] = useState<string[]>([]);
+  const [showReadyConfirmation, setShowReadyConfirmation] = useState(false);
   const editDialog = useRef<HTMLDialogElement>(null);
   const detailDialog = useRef<HTMLDialogElement>(null);
   const tabButtons = useRef<Partial<Record<AdvisoryTab, HTMLButtonElement | null>>>({});
@@ -69,7 +70,16 @@ export default function AdvisoriesScreen() {
 
   function openAdvisory(advisory: PreviewAdvisory) {
     setSelected(advisory);
+    setShowReadyConfirmation(false);
     detailDialog.current?.showModal();
+  }
+
+  function finishChecklist() {
+    if (selected?.tab === "active" && isInterruption(selected) && checklist.every(item => checked.includes(item))) {
+      setShowReadyConfirmation(true);
+      return;
+    }
+    detailDialog.current?.close();
   }
 
   return (
@@ -132,8 +142,15 @@ export default function AdvisoriesScreen() {
           </div>
         </dialog>
 
-        <dialog ref={detailDialog} className="adv-dialog adv-detail" aria-labelledby="adv-detail-title" onClick={event => { if (event.target === event.currentTarget) detailDialog.current?.close(); }}>
-          {selected && <div className={`adv-dialog-content adv-type-${selected.type}`}>
+        <dialog ref={detailDialog} className={`adv-dialog adv-detail${showReadyConfirmation ? " adv-complete" : ""}`} aria-labelledby={showReadyConfirmation ? "adv-ready-title" : "adv-detail-title"} aria-describedby={showReadyConfirmation ? "adv-ready-description" : undefined} onClick={event => { if (event.target === event.currentTarget) detailDialog.current?.close(); }}>
+          {selected && (showReadyConfirmation ? <div className="adv-dialog-content adv-complete-content">
+            <button type="button" className="adv-dialog-close" aria-label="Close readiness confirmation" onClick={() => detailDialog.current?.close()}><X /></button>
+            <span className="adv-complete-badge"><ShieldCheck aria-hidden="true" /> Brownout ready</span>
+            <Image className="adv-complete-art" src="/assets/branding/all-set-bee.png" alt="WattSnap robot bee giving a thumbs-up with a You're All Set sticker" width={1280} height={1280} sizes="(min-width: 360px) 300px, 260px" />
+            <h2 id="adv-ready-title">You&apos;re all set!</h2>
+            <p id="adv-ready-description">All {checklist.length} preparation steps are complete.<br />Keep your essentials nearby for the interruption.</p>
+            <button type="button" autoFocus className="adv-primary adv-dialog-done" onClick={() => detailDialog.current?.close()}>Back to advisories</button>
+          </div> : <div className={`adv-dialog-content adv-type-${selected.type}`}>
             <div className="adv-detail-head">
               <button type="button" autoFocus className="adv-dialog-close" aria-label="Close advisory details" onClick={() => detailDialog.current?.close()}><X /></button>
               <span className="adv-event-mark">{(() => { const Icon = typeIcons[selected.type]; return <Icon aria-hidden="true" />; })()}</span>
@@ -152,8 +169,8 @@ export default function AdvisoriesScreen() {
               <ul>{checklist.map(item => <li key={item}><label><input type="checkbox" checked={checked.includes(item)} onChange={() => setChecked(current => current.includes(item) ? current.filter(entry => entry !== item) : [...current, item])} /><span className="adv-check" aria-hidden="true"><Check /></span>{item}</label></li>)}</ul>
             </div>}
             <p className="adv-preview-note">Example advisory for this preview. Check your electricity provider for current interruption information.</p>
-            <button type="button" className="adv-primary adv-dialog-done" onClick={() => detailDialog.current?.close()}>Done</button>
-          </div>}
+            <button type="button" className="adv-primary adv-dialog-done" onClick={finishChecklist}>Done</button>
+          </div>)}
         </dialog>
       </div>
     </div>
