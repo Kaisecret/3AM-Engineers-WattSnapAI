@@ -136,6 +136,40 @@ async function flow(browser, viewport, name) {
   const affected = page.locator('.adv-card-button').filter({ has: page.locator('.adv-status-affected') }).first();
   await affected.click(); await checklist(page).waitFor(); assert.equal(await checklist(page).getByRole('checkbox', { checked: true }).count(), 0, 'Gallery samples have separate progress');
   await modal(page).getByRole('button', { name: 'Done', exact: true }).click(); await closedWithoutPopup(page);
+  await affected.click(); await checklist(page).waitFor();
+  const savedProgressBeforeSample = await page.evaluate(key => JSON.parse(localStorage.getItem(key)).entries, progressKey);
+  await checklist(page).getByRole('checkbox').nth(2).check(); await checklist(page).getByRole('checkbox').nth(3).check();
+  assert.match(await checklist(page).locator('h3').innerText(), /2\/5/);
+  await modal(page).getByRole('button', { name: 'Done', exact: true }).click(); await closedWithoutPopup(page);
+  await home(page); assert.match(await homeCard().innerText(), /2\/5 Done/); assert.match(await homeCard().innerText(), /Sample/);
+  assert.match(await homeCard().getAttribute('href'), /sample=sample-gallery-scheduled.*checklist=1/);
+  const cardBounds = await homeCard().boundingBox(), greetingBounds = await page.locator('.ws-greeting').boundingBox(), consumptionBounds = await page.locator('.ws-consumption').boundingBox();
+  assert.ok(cardBounds.y >= greetingBounds.y + greetingBounds.height && cardBounds.y + cardBounds.height <= consumptionBounds.y, 'The checklist progress card appears directly below the greeting');
+  await artwork(page); await page.screenshot({ path: path.join(screenshots, `${name}-sample-home-overview.png`), animations: 'disabled' });
+  await page.reload(); await homeCard().waitFor(); assert.match(await homeCard().innerText(), /2\/5 Done/, 'Gallery progress survives leaving Advisories and reloading Home');
+  await homeCard().click(); await ready(page); await checklist(page).waitFor();
+  assert.equal(await page.getByRole('group', { name: 'Advisory source view' }).getByRole('button', { name: 'Samples', exact: true }).getAttribute('aria-pressed'), 'true');
+  assert.equal(await checklist(page).getByRole('checkbox', { checked: true }).count(), 2);
+  assert.equal(await checklist(page).getByRole('checkbox').nth(0).evaluate(input => input === document.activeElement), true, 'Home resumes the sample at its first unchecked item');
+  if (name === 'mobile') {
+    const beforeFailure = await page.evaluate(key => localStorage.getItem(key), progressKey);
+    await page.evaluate(key => { const original = Storage.prototype.setItem; window.restoreSampleStorage = () => { Storage.prototype.setItem = original; }; Storage.prototype.setItem = function(name, value) { if (name === key) throw new Error('Sample storage blocked'); return original.call(this, name, value); }; }, progressKey);
+    await checklist(page).getByRole('checkbox').nth(1).click(); await modal(page).getByRole('alert').filter({ hasText: 'could not be saved' }).waitFor();
+    assert.equal(await checklist(page).getByRole('checkbox').nth(1).isChecked(), false);
+    assert.equal(await page.evaluate(key => localStorage.getItem(key), progressKey), beforeFailure);
+    await modal(page).getByRole('button', { name: 'Done', exact: true }).click(); await closedWithoutPopup(page);
+    await page.evaluate(() => window.restoreSampleStorage());
+    await home(page); assert.match(await homeCard().innerText(), /2\/5 Done/);
+    await homeCard().click(); await ready(page); await checklist(page).waitFor();
+  }
+  for (const title of titles) await checklist(page).getByRole('checkbox', { name: title, exact: true }).check();
+  await modal(page).getByRole('button', { name: 'Done', exact: true }).click(); await modal(page).getByRole('heading', { name: "You're all set!", exact: true }).waitFor();
+  await modal(page).getByRole('button', { name: 'Back to advisories', exact: true }).click();
+  await page.goto(`${baseURL}/dashboard`); await page.locator('.ws-advisory h2').filter({ hasText: 'Review advisory matches' }).waitFor({ state: 'attached' });
+  assert.equal(await homeCard().count(), 0, 'A completed sample no longer shows an incomplete progress card');
+  assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)).entries, progressKey), savedProgressBeforeSample, 'Sample checks do not overwrite saved advisory progress');
+  await page.goto(`${baseURL}/advisories`); await ready(page);
+  await page.getByRole('group', { name: 'Advisory source view' }).getByRole('button', { name: 'Samples', exact: true }).click();
   for (const status of ['possibly-affected', 'not-listed']) {
     await page.locator('.adv-card-button').filter({ has: page.locator(`.adv-status-${status}`) }).first().click();
     assert.equal(await checklist(page).count(), 0, `${status} does not claim an affected-user preparation flow`);

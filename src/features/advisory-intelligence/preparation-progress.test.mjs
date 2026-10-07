@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { registerHooks } from 'node:module';
 registerHooks({ resolve(specifier, context, nextResolve) { try { return nextResolve(specifier, context); } catch (error) { if (error.code === 'ERR_MODULE_NOT_FOUND' && specifier.startsWith('.') && !/\.[a-z]+$/i.test(specifier)) return nextResolve(`${specifier}.ts`, context); throw error; } } });
-const { parsePreparationProgress, pendingPreparation, preparationEligible, preparationKey } = await import('./preparation-progress.ts');
+const { parsePreparationProgress, parsePreparationState, pendingPreparation, pendingHomePreparation, preparationEligible, preparationKey } = await import('./preparation-progress.ts');
 const { captureMatch, sampleAdvisory, sampleMatchHousehold: home } = await import('./review-preview.ts');
 const now = new Date('2026-10-07T04:00:00Z'), input = sampleAdvisory('scheduled', now);
 const record = { version: 'advisory-ui-v1', id: 'first', revision: 1, createdAt: now.toISOString(), reviewedAt: now.toISOString(), ...input, match: captureMatch(input.details, home, now) };
@@ -42,4 +42,30 @@ test('the Home reminder prefers the most recently updated incomplete checklist',
   const second = { ...record, id: 'second' };
   const secondProgress = { ...progress, key: preparationKey(second, home), updatedAt: '2026-10-07T04:01:00Z' };
   assert.equal(pendingPreparation([record, second], [progress, secondProgress], home, now).record.id, 'second');
+});
+const sample = { record: { ...record, id: 'sample-gallery-scheduled' }, checked: ['unplug', 'fridge'], updatedAt: '2026-10-07T04:01:00Z' };
+test('sample storage preserves legacy reviews and validates its separate advisory snapshot', () => {
+  assert.deepEqual(parsePreparationState(raw([progress])), { entries: [progress], sample: null });
+  const state = JSON.stringify({ version: 1, entries: [progress], sampleChecklist: sample });
+  assert.deepEqual(parsePreparationState(state), { entries: [progress], sample });
+  for (const invalid of [{ ...sample, checked: ['unplug', 'unplug'] }, { ...sample, checked: ['unknown'] }, { ...sample, record }, { ...sample, record: { ...sample.record, original: { ...sample.record.original, kind: 'text' } } }, { ...sample, updatedAt: 'invalid' }]) {
+    assert.throws(() => parsePreparationState(JSON.stringify({ version: 1, entries: [progress], sampleChecklist: invalid })));
+  }
+});
+test('Home shows the checked sample even for a different household, and hides unused/completed/elapsed samples', () => {
+  const otherHome = { ...home, provider: 'akelco' };
+  const pending = pendingHomePreparation([], [], otherHome, sample, now);
+  assert.equal(pending.checked.length, 2);
+  assert.equal(pending.gallery, true);
+  assert.equal(pendingHomePreparation([], [], otherHome, { ...sample, checked: [] }, now), undefined);
+  assert.equal(pendingHomePreparation([], [], otherHome, { ...sample, checked: ['charge', 'lights', 'unplug', 'fridge', 'water'] }, now), undefined);
+  assert.equal(pendingHomePreparation([], [], otherHome, { ...sample, record: { ...sample.record, details: { ...sample.record.details, date: '2026-10-06' } } }, now), undefined);
+});
+test('Home resumes the latest checklist without combining saved and gallery progress', () => {
+  const latestSample = pendingHomePreparation([record], [progress], home, sample, now);
+  assert.equal(latestSample.gallery, true);
+  assert.deepEqual(latestSample.checked, ['unplug', 'fridge']);
+  const latestSaved = pendingHomePreparation([record], [{ ...progress, updatedAt: '2026-10-07T04:02:00Z' }], home, sample, now);
+  assert.equal(latestSaved.gallery, false);
+  assert.deepEqual(latestSaved.checked, ['charge', 'water']);
 });
