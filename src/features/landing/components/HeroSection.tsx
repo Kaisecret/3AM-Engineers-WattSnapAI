@@ -1,5 +1,6 @@
-import Image from "next/image";
+import Image, { getImageProps } from "next/image";
 import Link from "next/link";
+import { preload } from "react-dom";
 import { ChevronRight } from "lucide-react";
 import { GlossyIcon, type GlossyIconName } from "./GlossyIcon";
 import { ProductTour } from "./ProductTour";
@@ -19,7 +20,21 @@ const callouts: { name: string; icon: GlossyIconName; title: string; description
   { name: "advisory", icon: "bell", title: "Provider\nAdvisories", description: "Stay updated\non maintenance\nand power interruptions", href: "#how-it-works" },
 ];
 
+const mobilePhone = {
+  src: "/assets/branding/wattsnap-smartphone.png",
+  alt: "WattSnap dashboard preview showing electricity bills, appliances, tips, and advisories",
+  width: 1024,
+  height: 1536,
+  sizes: "(max-width: 650px) 60vw, 1px",
+  quality: 70,
+};
+
 export function HeroSection() {
+  // Discover the CSS background before styles load; fetch only the matching viewport.
+  preload("/assets/branding/hero-bg-panorama-mobile.webp", { as: "image", type: "image/webp", media: "(max-width: 650px)", fetchPriority: "high" });
+  preload("/assets/branding/hero-bg-panorama.webp", { as: "image", type: "image/webp", media: "(min-width: 651px)", fetchPriority: "high" });
+  const { props: phone } = getImageProps(mobilePhone);
+  preload(phone.src, { as: "image", imageSrcSet: phone.srcSet, imageSizes: phone.sizes, media: "(max-width: 650px)", fetchPriority: "high" });
   return (
     <section id="home" className="wattsnap-hero" aria-label="Your home electricity assistant">
       <div className="hero-scene" aria-hidden="true" />
@@ -37,8 +52,10 @@ export function HeroSection() {
               alt=""
               width={1804}
               height={872}
-              sizes="(max-width: 700px) 95vw, (max-width: 1100px) 65vw, 640px"
+              sizes="(max-width: 650px) calc(86vw - 31px), (max-width: 700px) 95vw, (max-width: 1100px) 65vw, 640px"
               priority
+              fetchPriority="high"
+              quality={70}
             />
           </h1>
           <p className="hero-description">
@@ -70,14 +87,13 @@ export function HeroSection() {
             height={1024}
             sizes="(max-width: 700px) 125vw, (max-width: 1100px) 85vw, 1150px"
             priority
+            fetchPriority="high"
+            quality={70}
           />
           <Image
             className="hero-mobile-phone"
-            src="/assets/branding/wattsnap-smartphone.png"
-            alt="WattSnap dashboard preview showing electricity bills, appliances, tips, and advisories"
-            width={1024}
-            height={1536}
-            sizes="(max-width: 650px) 60vw, 1px"
+            {...mobilePhone}
+            fetchPriority="high"
           />
           <div className="hero-spark hero-spark-one" aria-hidden="true"><i /><i /></div>
           <div className="hero-callouts">

@@ -31,6 +31,7 @@ Browser verification lives in `tests/e2e`:
 - `advisory-preparation-preview.cjs`: inline checklist and All Set Icon, footer Close, incomplete Done closing without popups, Home progress and resume, reload persistence, completion hiding, separate advisory/sample progress, revision and household changes, failed storage and unreadable-progress recovery, keyboard focus, desktop/phone/small-phone layout.
 - `brownout-ready-preview.cjs`: fixed-clock 13:00–17:00 Manila example, confirmation gates, offline checklist/source access, persisted progress, missing times, elapsed schedules, source/location changes, restoration-update acknowledgment, deletion cancellation and storage recovery.
 - `ui-workflow-navigation.cjs`: desktop/phone links across all seven workflows, stylesheet isolation between bill review and readiness, notification copy and assistant preview boundaries.
+- `landing-performance-preview.cjs`: public SEO metadata, sitemap/robots, visible homepage without JavaScript, compressed backgrounds and local fonts, account/household noindex, desktop/tablet/phone/small-phone layout, menu, walkthrough and chat. See [mobile performance and SEO](./mobile-performance-seo.md) for the production-build audit.
 
 Steps 2–7 have desktop/tablet/phone/small-phone checks at 1440, 1024, 390 and 320 pixels. Screenshots are generated in the corresponding `wattsnap-*-preview` directories under the system temporary directory. The existing account-screen checks remain in `auth-ui-preview.cjs`.
 

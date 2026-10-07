@@ -1,13 +1,22 @@
 import type { Metadata, Viewport } from "next";
+import { Plus_Jakarta_Sans } from "next/font/google";
+import { siteDescription, siteTitle, siteUrl } from "@/lib/site";
 import "./globals.css";
 
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-jakarta-sans",
+});
+
 export const metadata: Metadata = {
-  title: "WattSnap - Your Home Electricity Assistant",
+  metadataBase: new URL(siteUrl),
+  title: { default: siteTitle, template: "%s | WattSnap AI" },
   applicationName: "WattSnap",
   manifest: "/manifest.webmanifest",
-  description: "Understand your bills. Save energy. Be ready for brownouts. WattSnap brings bill scanning, appliance estimation, and provider outage advisories into one friendly app.",
+  description: siteDescription,
   icons: {
-    icon: { url: "/assets/branding/wattsnap-logo9.png", type: "image/png" },
+    icon: { url: "/assets/branding/wattsnap-favicon-32.png", sizes: "32x32", type: "image/png" },
     shortcut: "/assets/branding/wattsnap-icon-192.png",
     apple: { url: "/assets/branding/wattsnap-apple-icon-180.png", sizes: "180x180", type: "image/png" },
   },
@@ -26,15 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang="en" className={jakarta.variable}>
       <body>{children}</body>
     </html>
   );

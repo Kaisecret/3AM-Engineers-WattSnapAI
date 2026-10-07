@@ -39,7 +39,7 @@
   .wattsnap-hero .hero-benefits p { margin-top: 8px; font-size: clamp(9.5px, 2.6vw, 13px); line-height: 1.4; white-space: normal; }
   .wattsnap-hero .hero-benefit-desktop-text { display: none; }
   .wattsnap-hero .hero-benefit-mobile-text { display: inline; }
-  .wattsnap-hero .hero-scene { inset: 0 0 125px; background-position: center bottom; background-size: auto 100%; transform: none; mask-image: none; }
+  .wattsnap-hero .hero-scene { inset: 0 0 125px; background-image: url('/assets/branding/hero-bg-panorama-mobile.webp'); background-position: center bottom; background-size: auto 100%; transform: none; mask-image: none; }
   .wattsnap-hero .hero-veil { inset: 0 0 125px; background: linear-gradient(180deg, #faffffe0, #e5faff75 55%, transparent 90%); mask-image: none; }
 
   .post-hero { background: linear-gradient(#f8feff, #edfbff 40%, #f6fdff); border-radius: 0; }

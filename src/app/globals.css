@@ -36,7 +36,7 @@
   --radius-xl: 2rem;
   --radius-full: 9999px;
 
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: var(--font-jakarta-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* Reset and Base Styles */
@@ -513,7 +513,7 @@ a:focus-visible, button:focus-visible {
   position: absolute;
   inset: 0;
   z-index: -3;
-  background: url('/assets/branding/hero-bg-panorama.png') center top / cover no-repeat;
+  background: url('/assets/branding/hero-bg-panorama.webp') center top / cover no-repeat;
   transform: translateY(65px);
   mask-image: linear-gradient(transparent, #000 25%);
 }

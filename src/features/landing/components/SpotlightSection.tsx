@@ -10,7 +10,7 @@ export function SpotlightSection() {
           <div className="post-spotlight-copy">
             <h2>Be Ready for<br />What’s Next <Zap size={24} fill="#ffd61a" stroke="#ffbd00" aria-hidden="true" /></h2>
             <p>Understand power advisories, outages, and maintenance schedules in your area.</p>
-            <a href="/dashboard" className="post-small-link">Learn More <ArrowRight size={17} aria-hidden="true" /></a>
+            <a href="/advisories" className="post-small-link">Review advisories <ArrowRight size={17} aria-hidden="true" /></a>
           </div>
           <div className="post-readiness-art" aria-hidden="true">
             <span className="post-alert-bubble"><Bell size={46} fill="#ffd128" stroke="#ff9d00" strokeWidth={1.5} /></span>

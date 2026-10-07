@@ -23,7 +23,7 @@
   position: absolute;
   z-index: -1;
   inset: 0;
-  background: linear-gradient(90deg, rgba(228, 249, 255, .25), rgba(234, 251, 255, .9) 53%, #edfbff 80%), url('/assets/branding/hero-bg-panorama.png') left bottom / auto 100% no-repeat;
+  background: linear-gradient(90deg, rgba(228, 249, 255, .25), rgba(234, 251, 255, .9) 53%, #edfbff 80%), url('/assets/branding/hero-bg-panorama.webp') left bottom / auto 100% no-repeat;
   opacity: .65;
   mask-image: linear-gradient(transparent, #000 18%, #000 88%, transparent);
 }

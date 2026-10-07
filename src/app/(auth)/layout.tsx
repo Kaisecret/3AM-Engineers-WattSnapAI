@@ -1,4 +1,6 @@
-import type { Viewport } from "next";
+import type { Metadata, Viewport } from "next";
+
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 // Phone keyboards should shrink the page instead of covering the form, so every
 // field and button can still be scrolled into view while typing (Android Chrome).

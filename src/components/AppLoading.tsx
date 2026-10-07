@@ -1,4 +1,4 @@
-export default function Loading() {
+export default function AppLoading() {
   return (
     <div style={{
       minHeight: "100vh",
