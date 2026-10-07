@@ -173,7 +173,7 @@
   .scan-stop-camera { display: grid; order: 4; }
   .scan-progress { width: min(440px, calc(100% - 48px)); align-self: center; margin-bottom: 24px; }
 
-  .scan-panel, .phase-review .scan-panel, .phase-saved .scan-panel { position: sticky; top: 20px; display: block; max-height: none; overflow: visible; padding: 24px; border-radius: 24px; background: #ffffffed; border: 1px solid #deeff6; box-shadow: 0 6px 20px #4a84950f; }
+  .scan-panel, .phase-review .scan-panel, .phase-saved .scan-panel { position: sticky; top: calc(var(--ws-header-height) + 20px); display: block; max-height: none; overflow: visible; padding: 24px; border-radius: 24px; background: #ffffffed; border: 1px solid #deeff6; box-shadow: 0 6px 20px #4a84950f; }
   .phase-review .scan-panel::before, .phase-saved .scan-panel::before { display: none; }
   .scan-steps { display: flex; gap: 6px; margin-bottom: 22px; list-style: none; }
   .scan-steps li { position: relative; flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; color: #8aa0b2; font-size: 13px; font-weight: 700; white-space: nowrap; }

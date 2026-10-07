@@ -142,7 +142,7 @@ label.st-row { cursor: pointer; }
 }
 @media (min-width: 1200px) {
   .st-layout { grid-template-columns: minmax(300px, 360px) minmax(0, 1fr); align-items: start; }
-  .st-side { position: sticky; top: 20px; }
+  .st-side { position: sticky; top: calc(var(--ws-header-height) + 20px); }
   .st-profile { padding: 32px 24px 22px; }
   .st-avatar { width: 124px; height: 124px; }
 }

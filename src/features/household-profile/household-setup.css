@@ -108,7 +108,7 @@
 @media (min-width: 550px) { .hs-fields-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); } .hs-provider-options { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hs-location-option > button { width: auto; padding-inline: 12px; } .hs-steps button > b { font-size: 11px; } }
 @media (min-width: 900px) {
   .hs-layout { grid-template-columns: minmax(240px, .8fr) minmax(0, 1.4fr); gap: 26px; }
-  .hs-story { position: sticky; top: 25px; min-height: 560px; padding: 32px; }
+  .hs-story { position: sticky; top: calc(var(--ws-header-height) + 25px); min-height: 560px; padding: 32px; }
   .hs-story h2 { margin-top: 21px; font-size: clamp(31px, 3vw, 43px); letter-spacing: -1.8px; }
   .hs-story > p { max-width: none; font-size: 13px; line-height: 1.9; }
   .hs-mascot { position: static; display: block; margin: 25px auto 18px; width: 205px; height: 205px; }

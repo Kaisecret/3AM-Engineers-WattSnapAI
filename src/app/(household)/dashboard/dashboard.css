@@ -3,6 +3,7 @@
   --ws-ink: #0d142c;
   --ws-muted: #81919e;
   --ws-gap: 10px;
+  --ws-header-height: 83px;
   min-height: 100dvh;
   color: var(--ws-ink);
   background: #f1fafc;
@@ -11,9 +12,7 @@
   line-height: 1.4;
 }
 .ws-shell { position: relative; max-width: 600px; margin-inline: auto; }
-.ws-header { height: 83px; display: flex; align-items: center; justify-content: space-between; padding: 15px 20px 13px; padding-top: max(15px, env(safe-area-inset-top)); }
-.ws-home-screen .ws-header { position: sticky; top: 0; z-index: 35; background: #f1fafc; }
-.ws-home-screen .ws-header-panel { top: 100%; }
+.ws-header { position: sticky; top: 0; z-index: 35; height: var(--ws-header-height); display: flex; align-items: center; justify-content: space-between; padding: 15px 20px 13px; padding-top: max(15px, env(safe-area-inset-top)); background: #f1fafc; }
 .ws-brand { display: flex; align-items: center; width: 158px; }
 .ws-brand img { display: block; width: 100%; height: auto; }
 .ws-header-actions { display: flex; align-items: center; gap: 13px; }
@@ -123,7 +122,7 @@
 .ws-tip p { font-size: 10.5px; line-height: 1.48; letter-spacing: -.2px; color: #26314b; }
 .ws-plug-art { position: absolute; right: 8px; bottom: -8px; width: 124px; }
 .ws-plug-art svg { display: block; width: 100%; height: auto; }
-.ws-header-panel { position: absolute; z-index: 20; right: 18px; top: 72px; width: min(300px, calc(100% - 36px)); padding: 20px; border: 1px solid #dceef3; border-radius: 16px; background: white; box-shadow: 0 12px 35px #214c6821; }
+.ws-header-panel { position: absolute; z-index: 20; right: 18px; top: 100%; width: min(300px, calc(100% - 36px)); padding: 20px; border: 1px solid #dceef3; border-radius: 16px; background: white; box-shadow: 0 12px 35px #214c6821; }
 .ws-header-panel strong { display: block; padding-right: 16px; font-size: 14px; }
 .ws-header-panel p { margin-top: 8px; color: #768b9b; font-size: 12px; line-height: 1.6; }
 .ws-header-panel a { display: flex; gap: 8px; align-items: center; margin-top: 15px; color: #009ed5; font-weight: 600; }
@@ -151,7 +150,8 @@
   .ws-advisory { padding: 15px; min-height: 76px; }
 }
 @media (max-width: 374px) {
-  .ws-header { padding-inline: 15px; height: 74px; }
+  .ws-home { --ws-header-height: 74px; }
+  .ws-header { padding-inline: 15px; }
   .ws-brand { width: 145px; }
   .ws-main { padding-inline: 12px; }
   .ws-card h2 { font-size: 11px; letter-spacing: -.5px; }
@@ -174,10 +174,9 @@
   .ws-plug-art { width: 108px; right: 3px; }
 }
 @media (min-width: 900px) {
-  .ws-home { --ws-gap: 20px; padding: 0 38px 40px 258px; background: radial-gradient(ellipse at 100% 0%, #dff6fa66, transparent 65%), #f1f9fc; }
-  .ws-home-screen .ws-header { background: #effaff; }
+  .ws-home { --ws-gap: 20px; --ws-header-height: 112px; padding: 0 38px 40px 258px; background: radial-gradient(ellipse at 100% 0%, #dff6fa66, transparent 65%), #f1f9fc; }
   .ws-shell { max-width: 1160px; }
-  .ws-header { height: 112px; padding: 24px 0; }
+  .ws-header { padding: 24px 0; background: #effaff; }
   .ws-brand { width: 215px; }
   .ws-avatar { width: 44px; height: 44px; }
   .ws-header-actions { gap: 20px; }
@@ -229,7 +228,7 @@
   .ws-tip h2 { font-size: 16px; margin-bottom: 10px; }
   .ws-tip p { font-size: 11px; line-height: 1.6; }
   .ws-plug-art { width: 129px; right: 0; }
-  .ws-header-panel { top: 85px; right: 0; }
+  .ws-header-panel { right: 0; }
 }
 @media (min-width: 900px) and (max-width: 1199px) {
   .ws-advisory, .ws-tip { grid-column: 1 / -1; min-height: 115px; }

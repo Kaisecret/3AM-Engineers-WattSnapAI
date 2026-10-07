@@ -77,9 +77,9 @@
 @media (min-width: 900px) {
   .ws-mobile-today { display: none; }
   .ws-desktop-today { display: inline; }
-  .ws-home { --ws-sidebar-width: clamp(220px, 17.4vw, 315px); padding: 0 clamp(24px, 2.1vw, 38px) 20px calc(var(--ws-sidebar-width) + clamp(24px, 2.1vw, 38px)); background: #effaff; }
+  .ws-home { --ws-header-height: 114px; --ws-sidebar-width: clamp(220px, 17.4vw, 315px); padding: 0 clamp(24px, 2.1vw, 38px) 20px calc(var(--ws-sidebar-width) + clamp(24px, 2.1vw, 38px)); background: #effaff; }
   .ws-shell { max-width: 1600px; }
-  .ws-header { height: 114px; padding: 19px 0 23px; }
+  .ws-header { padding: 19px 0 23px; }
   .ws-header > .ws-brand { display: none; }
   .ws-desktop-heading { display: block; }
   .ws-desktop-heading h1, .ws-desktop-heading h2 { font-size: clamp(30px, 2.25vw, 40px); font-weight: 800; letter-spacing: -1.3px; line-height: 1.2; }
