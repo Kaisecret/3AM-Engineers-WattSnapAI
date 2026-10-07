@@ -21,6 +21,12 @@ async function assertLayout(page) {
   const bounds = await modal(page).boundingBox(); assert.ok(bounds.x >= -1 && bounds.y >= -1 && bounds.x + bounds.width <= page.viewportSize().width + 1 && bounds.y + bounds.height <= page.viewportSize().height + 1, 'Dialog stays inside the viewport');
   assert.equal(await page.locator('[data-nextjs-dialog]').count(), 0, 'No framework error overlay');
 }
+async function closedWithoutPopup(page) {
+  await modal(page).waitFor({ state: 'hidden' });
+  assert.equal(await page.locator('dialog[open]').count(), 0, 'The review closes without opening another dialog');
+  assert.equal(await page.locator('.adv-preparation-toast').count(), 0, 'No checklist toast is shown');
+  assert.equal(await page.getByRole('heading', { name: "You're all set!", exact: true }).count(), 0, 'No completion popup is shown');
+}
 async function home(page) { await page.goto(`${baseURL}/dashboard`); await page.getByRole('heading', { name: 'Monthly Consumption', exact: true }).waitFor(); await page.waitForFunction(() => !!document.querySelector('.ws-checklist-progress') || !!document.querySelector('.ws-checklist-error')); }
 async function artwork(page) { await page.evaluate(async () => { const visible = Array.from(document.images).filter(image => { const box = image.getBoundingClientRect(); return box.width > 0 && box.height > 0; }); for (const image of visible) image.loading = 'eager'; await Promise.race([Promise.all(visible.map(image => image.decode())), new Promise((_, reject) => setTimeout(() => reject(new Error('Artwork did not load')), 20000))]); }); }
 async function flow(browser, viewport, name) {
@@ -43,21 +49,19 @@ async function flow(browser, viewport, name) {
   await checklist(page).waitFor();
   assert.equal(await checklist(page).getByRole('checkbox').count(), 5);
   for (const title of titles) assert.equal(await checklist(page).getByRole('checkbox', { name: title, exact: true }).isChecked(), false);
+  await modal(page).getByRole('button', { name: 'Done', exact: true }).click(); await closedWithoutPopup(page);
+  await page.getByRole('button', { name: 'Review match', exact: true }).click(); await checklist(page).waitFor();
   await checklist(page).getByRole('checkbox').nth(0).check(); await checklist(page).getByRole('checkbox').nth(4).check();
+  const actions = modal(page).locator('.aw-detail-actions'); await actions.scrollIntoViewIfNeeded();
+  const closeBounds = await actions.getByRole('button', { name: 'Close', exact: true }).boundingBox(), doneBounds = await actions.getByRole('button', { name: 'Done', exact: true }).boundingBox();
+  assert.ok(Math.abs(closeBounds.y - doneBounds.y) < 1 && closeBounds.x + closeBounds.width < doneBounds.x, 'Close and Done sit beside each other');
+  await assertLayout(page); await actions.screenshot({ path: path.join(screenshots, `${name}-close-and-done.png`) });
   await modal(page).getByRole('button', { name: 'Done', exact: true }).click();
-  assert.equal(await page.getByRole('heading', { name: "You're all set!", exact: true }).count(), 0, 'Partial progress cannot show completion');
-  const reminder = () => modal(page).getByRole('complementary', { name: 'Incomplete checklist reminder', exact: true });
-  await reminder().waitFor(); assert.match(await reminder().innerText(), /2\/5 Done/); assert.match(await reminder().innerText(), /3 steps left/);
-  assert.equal(await reminder().getByRole('progressbar').getAttribute('value'), '2');
-  await artwork(page); await reminder().screenshot({ path: path.join(screenshots, `${name}-incomplete-toast.png`) });
-  assert.equal(await modal(page).getByRole('button', { name: 'Done', exact: true }).evaluate(button => button === document.activeElement), true, 'The toast does not steal keyboard focus');
-  await page.keyboard.press('Enter'); assert.equal(await reminder().count(), 1, 'Repeated Done never stacks reminders');
-  await modal(page).getByRole('button', { name: 'Done', exact: true }).click(); assert.equal(await reminder().count(), 1, 'The reminder leaves Done accessible by pointer');
-  await reminder().getByRole('button', { name: 'Dismiss checklist reminder', exact: true }).click(); assert.equal(await modal(page).count(), 1, 'Dismissing the toast leaves the checklist open');
-  await modal(page).getByRole('button', { name: 'Done', exact: true }).click();
-  await modal(page).getByRole('button', { name: 'Continue checklist', exact: true }).click();
-  assert.equal(await checklist(page).getByRole('checkbox').nth(1).evaluate(input => input === document.activeElement), true, 'Continue focuses the first remaining item');
-  await modal(page).getByRole('button', { name: 'Close advisory details', exact: true }).click();
+  await closedWithoutPopup(page);
+  assert.equal(await page.getByRole('button', { name: 'Review match', exact: true }).evaluate(button => button === document.activeElement), true, 'Done restores focus to the review trigger');
+  await page.getByRole('button', { name: 'Review match', exact: true }).click(); await checklist(page).waitFor();
+  assert.equal(await checklist(page).getByRole('checkbox', { checked: true }).count(), 2, 'Closing preserves the two completed items');
+  await modal(page).getByRole('button', { name: 'Close', exact: true }).click(); await closedWithoutPopup(page);
   await home(page); const homeCard = () => page.locator('.ws-checklist-progress');
   assert.match(await homeCard().innerText(), /2\/5 Done/); assert.equal(await homeCard().getByRole('progressbar').getAttribute('value'), '2');
   assert.match(await homeCard().getAttribute('href'), new RegExp(`${first.id}.*checklist=1`));
@@ -67,6 +71,8 @@ async function flow(browser, viewport, name) {
   await homeCard().click(); await ready(page); await checklist(page).waitFor();
   assert.equal(await checklist(page).getByRole('checkbox').nth(1).evaluate(input => input === document.activeElement), true, 'Home resumes the selected advisory at its first unchecked item');
   for (const title of titles) await checklist(page).getByRole('checkbox', { name: title, exact: true }).check();
+  await modal(page).getByRole('button', { name: 'Close', exact: true }).click(); await closedWithoutPopup(page);
+  await openCard(page, first.details.title); await checklist(page).waitFor(); assert.equal(await checklist(page).getByRole('checkbox', { checked: true }).count(), 5, 'Close preserves a completed checklist without a confirmation popup');
   await modal(page).getByRole('button', { name: 'Done', exact: true }).click(); await modal(page).getByRole('button', { name: 'Back to advisories', exact: true }).click();
   await page.goto(`${baseURL}/dashboard`); await page.getByRole('heading', { name: 'Monthly Consumption', exact: true }).waitFor();
   await page.locator('.ws-advisory h2').filter({ hasText: '1 saved notice matches your inputs' }).waitFor({ state: 'attached' }); assert.equal(await homeCard().count(), 0, 'The reminder disappears after all five items are checked');
@@ -78,8 +84,8 @@ async function flow(browser, viewport, name) {
     await checklist(page).getByRole('checkbox').nth(1).click(); await modal(page).getByRole('alert').filter({ hasText: 'could not be saved' }).waitFor();
     assert.equal(await checklist(page).getByRole('checkbox').nth(1).isChecked(), false, 'Failed saves keep the last saved count');
     assert.equal(await page.evaluate(key => localStorage.getItem(key), progressKey), progressBeforeFailure);
-    await modal(page).getByRole('button', { name: 'Done', exact: true }).click(); assert.equal(await reminder().count(), 0, 'A save failure does not show a misleading completion or reminder');
-    await page.evaluate(() => window.restoreChecklistStorage()); await modal(page).getByRole('button', { name: 'Retry loading checklist', exact: true }).click();
+    await modal(page).getByRole('button', { name: 'Done', exact: true }).click(); await closedWithoutPopup(page);
+    await page.evaluate(() => window.restoreChecklistStorage()); await openCard(page, first.details.title); await checklist(page).waitFor(); await modal(page).getByRole('button', { name: 'Retry loading checklist', exact: true }).click();
     await page.evaluate(({ key, event }) => { localStorage.setItem(key, 'broken-checklist-json'); window.dispatchEvent(new Event(event)); }, { key: progressKey, event: progressEvent });
     await modal(page).getByRole('alert').filter({ hasText: 'could not be opened' }).waitFor(); assert.equal(await checklist(page).getByRole('checkbox').first().isDisabled(), true);
     await home(page); assert.equal(await homeCard().count(), 0, 'Unreadable progress never becomes a false 0/5 card');
@@ -98,8 +104,7 @@ async function flow(browser, viewport, name) {
   await modal(page).getByRole('button', { name: 'Close advisory details', exact: true }).click();
   await openCard(page, second.details.title); await checklist(page).waitFor();
   assert.equal(await checklist(page).getByRole('checkbox', { checked: true }).count(), 0, 'A different advisory starts with its own checklist');
-  await modal(page).getByRole('button', { name: 'Done', exact: true }).click();
-  await modal(page).getByRole('button', { name: 'Close advisory details', exact: true }).click();
+  await modal(page).getByRole('button', { name: 'Done', exact: true }).focus(); await page.keyboard.press('Enter'); await closedWithoutPopup(page);
   await openCard(page, first.details.title); await checklist(page).waitFor();
   for (const title of titles) await checklist(page).getByRole('checkbox', { name: title, exact: true }).check();
   assert.equal(await checklist(page).getByRole('checkbox', { checked: true }).count(), 5);
@@ -113,8 +118,7 @@ async function flow(browser, viewport, name) {
   await assertLayout(page); await page.screenshot({ path: path.join(screenshots, `${name}-all-set.png`) });
   await modal(page).getByRole('button', { name: 'Review my checklist', exact: true }).click(); await checklist(page).waitFor();
   await checklist(page).getByRole('checkbox').nth(4).uncheck(); await modal(page).getByRole('button', { name: 'Done', exact: true }).click();
-  assert.equal(await page.getByRole('heading', { name: "You're all set!", exact: true }).count(), 0, 'Unchecking removes readiness completion');
-  await modal(page).getByRole('button', { name: 'Close advisory details', exact: true }).click();
+  await closedWithoutPopup(page);
   await openCard(page, first.details.title);
   await checklist(page).getByRole('checkbox').nth(4).check(); await modal(page).getByRole('button', { name: 'Done', exact: true }).click();
   await modal(page).getByRole('button', { name: 'Back to advisories', exact: true }).click();
@@ -131,8 +135,7 @@ async function flow(browser, viewport, name) {
   await page.getByRole('group', { name: 'Advisory source view' }).getByRole('button', { name: 'Samples', exact: true }).click();
   const affected = page.locator('.adv-card-button').filter({ has: page.locator('.adv-status-affected') }).first();
   await affected.click(); await checklist(page).waitFor(); assert.equal(await checklist(page).getByRole('checkbox', { checked: true }).count(), 0, 'Gallery samples have separate progress');
-  await modal(page).getByRole('button', { name: 'Done', exact: true }).click();
-  await modal(page).getByRole('button', { name: 'Close advisory details', exact: true }).click();
+  await modal(page).getByRole('button', { name: 'Done', exact: true }).click(); await closedWithoutPopup(page);
   for (const status of ['possibly-affected', 'not-listed']) {
     await page.locator('.adv-card-button').filter({ has: page.locator(`.adv-status-${status}`) }).first().click();
     assert.equal(await checklist(page).count(), 0, `${status} does not claim an affected-user preparation flow`);
@@ -142,7 +145,7 @@ async function flow(browser, viewport, name) {
   assert.equal(await checklist(page).count(), 0, 'Restoration updates have no preparation checklist');
   assert.deepEqual(await records(page), [corrected, second], 'Checking preparation never changes advisory originals or fields');
   assert.deepEqual(errors, []); assert.deepEqual(consoleErrors, []); assert.deepEqual(apiRequests, []);
-  await context.close(); console.log(`PASS ${name}: incomplete toast, saved Home progress, resume/reload, completion hiding, All Set Icon, isolated reviews/samples, location/revision resets, focus, and layout${name === 'mobile' ? ', failed storage and recovery' : ''}`);
+  await context.close(); console.log(`PASS ${name}: footer Close, incomplete Done closes without popups, saved Home progress, resume/reload, completion hiding, All Set Icon, isolated reviews/samples, location/revision resets, focus, and layout${name === 'mobile' ? ', failed storage and recovery' : ''}`);
 }
 (async () => {
   await fs.mkdir(screenshots, { recursive: true }); const browser = await chromium.launch({ channel: 'chrome', headless: true });

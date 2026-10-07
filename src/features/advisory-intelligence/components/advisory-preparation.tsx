@@ -12,19 +12,6 @@ export function AdvisoryPreparationChecklist({ checked, disabled, sample, onTogg
   </section>;
 }
 
-export function AdvisoryPreparationReminder({ completed, onContinue, onDismiss }: { completed: number; onContinue: () => void; onDismiss: () => void }) {
-  const remaining = advisoryPreparationItems.length - completed;
-  return <aside className="adv-preparation-toast" aria-label="Incomplete checklist reminder">
-    <Image src="/assets/branding/actions-2.png" alt="" width={1280} height={1280} sizes="64px" />
-    <div><div className="adv-toast-heading"><h3>Checklist incomplete</h3><span>{completed}/{advisoryPreparationItems.length} Done</span></div>
-      <p role="status">{remaining} {remaining === 1 ? "step left" : "steps left"}. Check each remaining item when it’s done.</p>
-      <progress value={completed} max={advisoryPreparationItems.length} aria-label="Preparation checklist progress" />
-      <button type="button" className="adv-toast-continue" onClick={onContinue}>Continue checklist</button>
-    </div>
-    <button type="button" className="adv-toast-close" aria-label="Dismiss checklist reminder" onClick={onDismiss}><X size={16} aria-hidden="true" /></button>
-  </aside>;
-}
-
 export function AdvisoryPreparationComplete({ sample, onBack, onClose }: { sample: boolean; onBack: () => void; onClose: () => void }) {
   return <div className="adv-dialog-content adv-complete-content">
     <button type="button" className="adv-dialog-close" aria-label="Close readiness confirmation" onClick={onClose}><X aria-hidden="true" /></button>
