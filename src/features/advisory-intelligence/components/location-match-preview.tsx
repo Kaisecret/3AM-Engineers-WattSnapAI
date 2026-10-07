@@ -1,0 +1,12 @@
+import Link from "next/link";
+import { CheckCircle2, Info, MapPin, TriangleAlert } from "lucide-react";
+import { previewProviderName } from "@/features/household-profile/provider-preview";
+import type { PreviewHousehold } from "@/features/dashboard/preview-data";
+import { matchIsStale, matchLabels, matchPreviewAdvisory } from "../review-preview";
+import type { AdvisoryDetails, ReviewedAdvisory } from "../types";
+
+export default function LocationMatchPreview({ details, household, record, onRecheck, disabled = false, sampleBasis = false }: { details: AdvisoryDetails; household: PreviewHousehold; record?: ReviewedAdvisory; onRecheck?: () => void; disabled?: boolean; sampleBasis?: boolean }) {
+  const result = matchPreviewAdvisory(details, household), stale = record ? matchIsStale(record, household) : false;
+  const Icon = result.status === "affected" ? CheckCircle2 : result.status === "possibly-affected" ? TriangleAlert : Info;
+  return <section className={`aw-match ui-panel is-${result.status}`} aria-label="Location match preview"><div className="aw-match-heading"><span><Icon aria-hidden="true" /></span><div><p>{sampleBasis ? "Example household match" : "Preview match against entered fields"}</p><h2>{matchLabels[result.status]}</h2></div></div><div className="aw-match-basis"><MapPin size={16} aria-hidden="true" /><p><strong>{household.location || "Household location not completed"}</strong><span>{previewProviderName(household.provider)} · Advisory: {previewProviderName(details.provider)}</span></p></div><ul>{result.rationale.map(line => <li key={line}>{line}</li>)}</ul>{stale && <div className="aw-stale" role="status"><strong>Your location or provider changed</strong><p>This result has been recalculated for the current household. The previous review used {record?.match.householdBasis.location || "an incomplete location"} · {previewProviderName(record?.match.householdBasis.provider)}. Review this basis before readiness activation.</p>{onRecheck && <button type="button" className="ui-secondary" disabled={disabled} onClick={onRecheck}>Confirm updated match</button>}</div>}{!sampleBasis && <Link className="aw-match-setup" href="/onboarding">Review household location and provider</Link>}<p className="aw-muted">UI preview only · announcement authenticity, locality aliases, and provider coverage are unverified. Use the original provider announcement as your reference.</p></section>;
+}

@@ -1,12 +1,19 @@
 export type BillSource = "scan" | "manual" | "sample";
 export type ApplianceKind = "fan" | "aircon" | "fridge" | "tv" | "rice-cooker" | "washer" | "lights" | "laptop" | "phone" | "microwave" | "iron" | "other";
-export interface PreviewBill { id: string; month: string; amount: number; kwh: number; dueDate?: string; source?: BillSource; }
-export interface PreviewAppliance { id: string; name: string; watts: number; hours: number; quantity: number; kind?: ApplianceKind; }
+export interface PreviewBill {
+  id: string; month: string; amount: number; kwh: number; dueDate?: string; source?: BillSource;
+  periodStart?: string; periodEnd?: string; provider?: string; sourceName?: string;
+}
+export interface PreviewAppliance {
+  id: string; name: string; watts: number; hours: number; quantity: number; kind?: ApplianceKind;
+  model?: string; days?: number; source?: "manual" | "sample"; wattageBasis?: "nameplate" | "approximate";
+}
 export interface NotificationPrefs { brownouts: boolean; billReminders: boolean; tips: boolean; }
 export interface PreviewHousehold {
   bills: PreviewBill[]; appliances: PreviewAppliance[]; budget: number; name: string;
   /** Square JPEG/PNG/WebP data URL, resized in the browser before saving. */
   photo?: string; email?: string; location?: string; provider?: string; notifications?: NotificationPrefs;
+  locality?: { province: string; municipality: string; barangay: string };
 }
 
 export const emptyPreview: PreviewHousehold = { bills: [], appliances: [], budget: 3500, name: "Kris" };
@@ -74,16 +81,27 @@ export function dailyApplianceKwh(appliance: Pick<PreviewAppliance, "watts" | "h
 export function validateAppliance(appliance: Omit<PreviewAppliance, "id">) {
   if (!appliance.name.trim()) return "Enter an appliance name.";
   if (!Number.isFinite(appliance.watts) || appliance.watts <= 0) return "Enter a wattage greater than zero.";
-  if (!Number.isFinite(appliance.hours) || appliance.hours <= 0 || appliance.hours > 24) return "Daily usage must be between 0 and 24 hours.";
-  if (!Number.isInteger(appliance.quantity) || appliance.quantity < 1) return "Quantity must be a whole number of at least 1.";
+  if (!Number.isFinite(appliance.hours) || appliance.hours < 0 || appliance.hours > 24) return "Daily usage must be between 0 and 24 hours.";
+  if (!Number.isInteger(appliance.quantity) || appliance.quantity < 1 || appliance.quantity > 50) return "Quantity must be a whole number from 1 to 50.";
+  if (appliance.days !== undefined && (!Number.isInteger(appliance.days) || appliance.days < 1 || appliance.days > 366)) return "Days in this period must be a whole number from 1 to 366.";
   return null;
 }
 export function validateBill(bill: Omit<PreviewBill, "id">) {
-  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(bill.month)) return "Choose a valid billing month.";
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(bill.month) || bill.month.startsWith("0000")) return "Choose a valid billing month.";
   if (!Number.isFinite(bill.amount) || bill.amount <= 0) return "Enter a bill amount greater than zero.";
   if (!Number.isFinite(bill.kwh) || bill.kwh <= 0) return "Enter consumption greater than zero.";
-  if (bill.dueDate !== undefined && bill.dueDate !== "" && !/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(bill.dueDate)) return "Choose a valid due date.";
+  if (bill.dueDate && !isCalendarDate(bill.dueDate)) return "Choose a valid due date.";
+  if (Boolean(bill.periodStart) !== Boolean(bill.periodEnd)) return "Enter both billing period dates, or leave both blank.";
+  if (bill.periodStart && bill.periodEnd) {
+    if (!isCalendarDate(bill.periodStart) || !isCalendarDate(bill.periodEnd)) return "Choose valid billing period dates.";
+    if (bill.periodStart > bill.periodEnd) return "The billing period end must be on or after its start.";
+  }
   return null;
+}
+export function isCalendarDate(value: string) {
+  if (!/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(value) || value.startsWith("0000")) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 export const isPhotoDataUrl = (value: unknown): value is string =>
   typeof value === "string" && value.length <= maxPhotoLength && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(value);
@@ -111,8 +129,9 @@ export function normalizePreview(value: unknown): PreviewHousehold {
   return {
     ...(isPhotoDataUrl(data.photo) ? { photo: data.photo } : {}),
     ...(typeof data.email === "string" && isEmail(data.email.trim()) ? { email: data.email.trim() } : {}),
-    ...(typeof data.location === "string" && data.location.trim() ? { location: data.location.trim().slice(0, 120) } : {}),
-    ...(data.provider === defaultProvider ? { provider: data.provider } : {}),
+    ...(typeof data.location === "string" && data.location.trim() ? { location: data.location.trim().slice(0, 200) } : {}),
+    ...(typeof data.provider === "string" && ["anteco", "akelco", "capelco", "ileco-1", "ileco-2", "ileco-3", "more-power"].includes(data.provider) ? { provider: data.provider } : {}),
+    ...(data.locality && typeof data.locality.province === "string" && typeof data.locality.municipality === "string" && typeof data.locality.barangay === "string" ? { locality: { province: data.locality.province.trim().slice(0, 40), municipality: data.locality.municipality.trim().slice(0, 60), barangay: data.locality.barangay.trim().slice(0, 60) } } : {}),
     ...(notifications ? { notifications } : {}),
     bills: Array.isArray(data.bills) ? data.bills.filter(item => item && typeof item.id === "string" && typeof item.month === "string" && !validateBill(item)) : [],
     appliances: Array.isArray(data.appliances) ? data.appliances.filter(item => item && typeof item.id === "string" && typeof item.name === "string" && !validateAppliance(item)) : [],

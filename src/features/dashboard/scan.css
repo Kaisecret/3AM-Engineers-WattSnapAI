@@ -17,6 +17,7 @@
 .scan-title { flex: 1; min-width: 0; text-align: center; }
 .scan-title strong { display: block; font-size: 16px; font-weight: 800; letter-spacing: -.3px; }
 .scan-title span { display: block; margin-top: 1px; color: #b9dcf0; font-size: 11px; }
+.scan-preview-tag { position: relative; z-index: 6; align-self: center; max-width: calc(100% - 28px); padding: 6px 11px; border: 1px solid #ffffff2b; border-radius: 999px; color: #bee4f6; background: #092640b8; font-size: 9px; line-height: 1.5; text-align: center; }
 
 .scan-frame-wrap { position: relative; z-index: 2; flex: 1; min-height: 0; display: grid; place-items: center; padding: 10px 0; }
 .scan-frame { --scan-accent: #3fe0ff; position: relative; width: min(70vw, 320px, calc((100dvh - 280px) * .72)); aspect-ratio: 3 / 4.1; border-radius: 18px; box-shadow: 0 0 0 200vmax #020c1a8f; }
@@ -120,6 +121,8 @@
 .scan-saved-card > div { padding: 11px 13px; background: #fff; text-align: left; }
 .scan-saved-card small { display: block; color: #7a93a8; font-size: 10.5px; font-weight: 600; }
 .scan-saved-card strong { display: block; margin-top: 2px; font-size: 15px; font-weight: 800; letter-spacing: -.3px; }
+.scan-saved-card .scan-saved-wide { grid-column: 1 / -1; }
+.scan-saved > .scan-saved-sample { margin-top: -4px; padding: 9px 12px; border: 1px solid #eadcaa; border-radius: 9px; background: #fff9e7; color: #92772e; font-size: 10px; }
 .scan-saved .scan-actions { width: 100%; grid-template-columns: 1fr; }
 .scan-saved .scan-actions .ui-primary { order: -1; }
 
@@ -145,6 +148,8 @@
   .scan-frame { width: clamp(220px, 22vw, 330px); }
   .scan-bot { max-width: 140px; }
   .phase-camera:not(.camera-live) .scan-stage { background: linear-gradient(160deg, #f6fcff, #e1f5fc); }
+  .scan-preview-tag { margin: 17px 0 0; border-color: #cce8f5; background: #f3fbff; color: #3b86ac; font-size: 11px; }
+  .scan-steps li { white-space: normal; font-size: 11px; }
   .phase-camera:not(.camera-live) :is(.scan-frame-wrap, .scan-hint, .scan-controls, .scan-dots) { display: none; }
   .scan-placeholder { position: relative; z-index: 3; flex: 1; margin: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; border: 2px dashed #a8def0; border-radius: 20px; text-align: center; transition: background .2s, border-color .2s; }
   .scan-placeholder > * { flex-shrink: 0; }
@@ -253,3 +258,4 @@
 @media (prefers-reduced-motion: no-preference) and (min-width: 900px) {
   .phase-review .scan-panel, .phase-saved .scan-panel { animation: ws-arrive .3s ease-out both; }
 }
+@media (min-width: 900px) { .scan-app .scan-steps li { font-size: 11px; white-space: normal; } }

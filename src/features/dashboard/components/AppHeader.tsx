@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, ChevronDown, ChevronRight, LogOut, Settings, X } from "lucide-react";
+import { Bell, ChevronDown, ChevronRight, LogOut, MapPin, Settings, X } from "lucide-react";
 import UserAvatar from "./UserAvatar";
 import LogoutDialog from "./LogoutDialog";
 import { usePreviewHousehold } from "../use-preview-household";
@@ -41,6 +41,7 @@ export default function AppHeader({ title, subtitle }: { title?: string; subtitl
         {panel === "profile" ? <>
           <div className="ws-panel-user"><span className="ws-avatar"><UserAvatar photo={household.photo} /></span><div><strong>{household.name}</strong><p>{household.email ?? `${household.name.split(/\s+/)[0]}'s home`}</p></div></div>
           <Link href="/settings" onClick={() => setPanel(null)}><Settings size={17} /> Account settings</Link>
+          <Link href="/onboarding" onClick={() => setPanel(null)}><MapPin size={17} /> Household setup</Link>
           <button type="button" className="ws-panel-logout" onClick={() => { setPanel(null); setLogout(true); }}><LogOut size={17} /> Log out</button>
         </> : <><strong>Household advisories</strong><p>Check Active for interruptions and notices. Your previous advisories are in History.</p><Link href="/advisories" onClick={() => setPanel(null)}>View advisories <ChevronRight size={16} /></Link></>}
       </div>}

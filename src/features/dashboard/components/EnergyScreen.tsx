@@ -6,6 +6,7 @@ import { ArrowDown, ArrowUp, ChartColumnBig, ChevronRight, Info, ReceiptText, Sc
 import PageShell from "./PageShell";
 import { usePreviewHousehold } from "../use-preview-household";
 import { averageKwh, billMonth, chartMonths, compareWithPrevious, dueDateLabel, monthName, monthlySeries, pesos, sampleBills, shortMonth, sortBillsByMonth, type PreviewBill } from "../preview-data";
+import { previewProviderName } from "@/features/household-profile/provider-preview";
 
 const sourceLabels = { scan: "Scanned", manual: "Manual", sample: "Sample" };
 
@@ -54,7 +55,7 @@ export default function EnergyScreen() {
   }
 
   return <PageShell title="Energy" subtitle="Compare your electricity use month by month" active="Energy" className="en-page">
-    {hasSamples && <div className="en-sample" role="note"><Info aria-hidden="true" /><p><strong>You&apos;re viewing sample bills.</strong> Scan your own bills and they&apos;ll join this history.</p><button type="button" disabled={!ready} onClick={() => { if (update({ bills: household.bills.filter(bill => bill.source !== "sample") })) setMessage("Sample bills cleared."); }}>Clear samples</button></div>}
+    {hasSamples && <div className="en-sample" role="note"><Info aria-hidden="true" /><p><strong>You&apos;re viewing sample bills.</strong> Manually enter your own readings to add actual bill records to this preview.</p><button type="button" disabled={!ready} onClick={() => { if (update({ bills: household.bills.filter(bill => bill.source !== "sample") })) setMessage("Sample bills cleared."); }}>Clear samples</button></div>}
 
     {latest ? <>
       <div className="en-top">
@@ -113,7 +114,7 @@ export default function EnergyScreen() {
       <ul className="en-list">
         {history.map(bill => { const change = compareWithPrevious(household.bills, bill.month); const source = bill.source ?? "manual"; return <li key={bill.id} id={`bill-${bill.id}`} className={bill.id === highlight ? "is-new" : ""}>
           <MonthTile month={bill.month} />
-          <div className="en-list-main"><strong>{billMonth(bill.month)}{bill.id === highlight && <span className="en-new">New</span>}</strong><span>{bill.dueDate ? `Due ${dueDateLabel(bill.dueDate)}` : "No due date"} · <em className={`en-source is-${source}`}>{sourceLabels[source]}</em></span></div>
+          <div className="en-list-main"><strong>{billMonth(bill.month)}{bill.id === highlight && <span className="en-new">New</span>}</strong><span>{bill.dueDate ? `Due ${dueDateLabel(bill.dueDate)}` : "No due date"} · <em className={`en-source is-${source}`}>{sourceLabels[source]}</em>{bill.provider && ` · ${previewProviderName(bill.provider)}`}</span>{bill.periodStart && bill.periodEnd && <span>{dueDateLabel(bill.periodStart)} – {dueDateLabel(bill.periodEnd)}</span>}</div>
           <div className="en-list-values"><strong>{bill.kwh} kWh</strong><span>{pesos(bill.amount)}</span></div>
           <div className="en-list-change">{change ? <Change percent={change.kwhPercent} compact /> : <span className="en-first">First</span>}</div>
           <button type="button" className="ui-icon-button" disabled={!ready} aria-label={`Remove ${billMonth(bill.month)} bill`} onClick={() => remove(bill)}><Trash2 size={17} /></button>

@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, Bell, ChartNoAxesColumnIncreasing, ChevronDown, ChevronRight, Info, Lightbulb, LogOut, Megaphone, ReceiptText, ScanText, SendHorizontal, Settings, Sparkles, X, Zap } from "lucide-react";
-import { PlugArtwork, PowerLinesArtwork } from "./DashboardArtwork";
+import { ArrowDown, ArrowUp, Bell, ChartNoAxesColumnIncreasing, ChevronDown, ChevronRight, Info, LogOut, Megaphone, ReceiptText, ScanText, SendHorizontal, Settings, Sparkles, X, Zap } from "lucide-react";
+import HomeAdvisoryCard from "@/features/advisory-intelligence/components/HomeAdvisoryCard";
+import HomeTipCard from "@/features/tipid-tips/components/HomeTipCard";
 import UserAvatar from "./UserAvatar";
 import LogoutDialog from "./LogoutDialog";
 import AppNavigation from "./AppNavigation";
@@ -59,7 +60,7 @@ export default function HomeScreen() {
         {openMenu && (
           <div ref={menuRegion} id="ws-header-panel" className="ws-header-panel" role="region" aria-label={openMenu === "profile" ? "Account" : openMenu === "notifications" ? "Notifications" : "About consumption"}>
             <button className="ws-panel-close" aria-label="Close panel" onClick={() => { menuTriggers.current[openMenu]?.focus(); setOpenMenu(null); }}><X size={17} /></button>
-            {openMenu === "profile" ? <><div className="ws-panel-user"><span className="ws-avatar"><UserAvatar photo={household.photo} /></span><div><strong>{household.name}</strong><p>{household.email ?? `${firstName}'s home`}</p></div></div><Link href="/settings"><Settings size={17} /> Account settings</Link><button type="button" className="ws-panel-logout" onClick={() => { setOpenMenu(null); setLogout(true); }}><LogOut size={17} /> Log out</button></> : openMenu === "notifications" ? <><strong>You&apos;re all caught up!</strong><p>No brownout advisory in your area today.</p><Link href="/advisories">View advisories <ChevronRight size={16} /></Link></> : <><strong>Your monthly energy use</strong><p>Each bar is one electricity bill from your history; striped bars are examples until you add more bills. Select a month to see its reading. Scan a new bill with Snap AI to add the next month.</p><Link href="/bills">Compare all months <ChevronRight size={16} /></Link></>}
+            {openMenu === "profile" ? <><div className="ws-panel-user"><span className="ws-avatar"><UserAvatar photo={household.photo} /></span><div><strong>{household.name}</strong><p>{household.email ?? `${firstName}'s home`}</p></div></div><Link href="/settings"><Settings size={17} /> Account settings</Link><button type="button" className="ws-panel-logout" onClick={() => { setOpenMenu(null); setLogout(true); }}><LogOut size={17} /> Log out</button></> : openMenu === "notifications" ? <><strong>Household advisories</strong><p>Saved reviews do not confirm live power status. Check your provider for current announcements.</p><Link href="/advisories">View advisories <ChevronRight size={16} /></Link></> : <><strong>Your monthly energy use</strong><p>Each bar is one electricity bill from your history; striped bars are examples until you add more bills. Select a month to see its reading. Review a new bill with Snap AI to add the next month.</p><Link href="/bills">Compare all months <ChevronRight size={16} /></Link></>}
           </div>
         )}
         <main className="ws-main">
@@ -98,8 +99,8 @@ export default function HomeScreen() {
             </div>
             <Image className="ws-assistant-mascot" src="/assets/branding/wattsnap-mascot.png" alt="" width={300} height={300} sizes="(min-width: 900px) 200px, 130px" />
           </section>
-          <section className="ws-advisory" aria-labelledby="ws-advisory-title"><span className="ws-megaphone"><Megaphone aria-hidden="true" /></span><div className="ws-advisory-copy"><h2 id="ws-advisory-title">No brownout advisory</h2><p>in your area today.</p></div><span className="ws-power-lines"><PowerLinesArtwork /></span><Link href="/advisories" className="ws-advisory-link">View Advisories <ChevronRight aria-hidden="true" /></Link></section>
-          <section className="ws-card ws-tip" aria-labelledby="ws-tip-title"><span className="ws-lightbulb"><Lightbulb aria-hidden="true" /></span><div className="ws-tip-copy"><h2 id="ws-tip-title">Today&apos;s Tipid Tip</h2><p>Unplug appliances you&apos;re not using.<br />It can help reduce your electricity bill<br />by up to 5–10%!</p></div><span className="ws-plug-art"><PlugArtwork /></span></section>
+          <HomeAdvisoryCard />
+          <HomeTipCard />
         </main>
         <p className="ws-desktop-preview">Preview • Saved in this browser</p>
         <AppNavigation active="Home" />

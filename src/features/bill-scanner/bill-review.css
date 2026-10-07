@@ -1,0 +1,63 @@
+.br-eyebrow { display: block; margin-bottom: 5px; color: #159ac9; font-size: 9px; letter-spacing: .8px; font-weight: 800; }
+.br-note { display: flex; align-items: flex-start; gap: 8px; padding: 12px; margin-top: 15px; border: 1px solid #f0df9a; border-radius: 12px; background: #fff9e7; color: #8b702e; font-size: 11px; line-height: 1.7; }
+.br-note strong { display: block; color: #816324; margin-bottom: 2px; }
+.br-note > svg { width: 17px; height: 17px; margin-top: 2px; flex: 0 0 auto; color: #c89a27; }
+.br-note.is-offline { border-color: #cde7f5; background: #edf8ff; color: #527b97; }
+.br-note.is-offline strong, .br-note.is-offline > svg { color: #168cbc; }
+.br-source { display: flex; align-items: center; gap: 9px; padding: 12px 0; margin-top: 6px; border-bottom: 1px solid #e2eef5; }
+.br-source-icon { display: grid; place-items: center; flex: 0 0 auto; width: 35px; height: 39px; border-radius: 10px; color: #1c9fcd; background: #e8f7fe; }
+.br-source-icon svg { width: 18px; }
+.br-source > div { flex: 1; min-width: 0; }
+.br-source strong { display: block; color: #355875; font-size: 11px; overflow-wrap: anywhere; }
+.br-source small { display: block; margin-top: 3px; color: #7e97ab; font-size: 9px; line-height: 1.5; }
+.br-source > button { flex: 0 0 auto; max-width: 85px; min-height: 36px; padding: 5px 7px; color: #078fc6; border-radius: 8px; background: #edf9ff; font-size: 10px; font-weight: 700; }
+.br-provider { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 11px 1px 0; color: #587b96; font-size: 10px; }
+.br-provider > svg { flex: 0 0 auto; color: #0ba9da; }
+.br-provider > a { margin-left: auto; color: #098dbd; font-size: 10px; text-decoration: underline; text-underline-offset: 3px; }
+.br-fields { align-items: start; }
+.br-field-hint { color: #839bae; font-size: 9px; font-weight: 400; line-height: 1.5; }
+.br-period { margin-top: 17px; border: 1px solid #dcebf4; border-radius: 12px; overflow: hidden; }
+.br-period > button { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding: 12px; color: #557b95; background: #f7fcff; font-size: 12px; font-weight: 700; text-align: left; }
+.br-period > button small { margin-left: 6px; font-size: 10px; color: #8a9fb0; font-weight: 400; }
+.br-period > button > svg { width: 17px; height: 17px; transition: transform .2s; }
+.br-period > button[aria-expanded="true"] > svg { transform: rotate(180deg); }
+.br-period > div { padding: 12px; border-top: 1px solid #e3edf5; background: white; }
+.br-period p { color: #8196a6; font-size: 10px; line-height: 1.7; }
+.br-period .scan-fields { margin-top: 10px; }
+.br-corrections { display: flex; align-items: center; gap: 6px; margin-top: 13px; color: #269b78; font-size: 11px; }
+.br-check { display: flex; align-items: flex-start; gap: 10px; color: #476c85; font-size: 11px; line-height: 1.7; cursor: pointer; }
+.br-check input { flex: 0 0 auto; width: 17px; height: 17px; margin-top: 2px; accent-color: #00a8db; }
+.br-check strong { display: block; font-weight: 700; }
+.br-check small { display: block; color: #7b95a8; font-size: 10px; line-height: 1.7; }
+.br-confirm { margin-top: 20px; padding: 13px; border: 1px solid #d6e7f1; border-radius: 12px; background: white; }
+.br-confirm.is-checked { background: #effbf7; border-color: #aae2cd; }
+.br-duplicate { margin-top: 18px; padding: 13px; color: #906926; background: #fffaee; border: 1px solid #f0dcad; border-radius: 13px; }
+.br-duplicate h3 { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; line-height: 1.6; font-weight: 700; }
+.br-duplicate h3 > svg { flex: 0 0 auto; width: 17px; height: 17px; margin-top: 2px; color: #d79a2b; }
+.br-duplicate > p { margin-top: 6px; color: #a08852; font-size: 10px; line-height: 1.7; }
+.br-replacement-values { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+.br-replacement-values > div { min-width: 0; padding: 10px; border: 1px solid #efe3c7; border-radius: 9px; background: #ffffffc7; }
+.br-replacement-values small { display: block; color: #aa915e; font-size: 9px; line-height: 1.5; }
+.br-replacement-values strong { display: block; margin: 5px 0 3px; color: #735b2c; font-size: 14px; overflow-wrap: anywhere; }
+.br-replacement-values span { color: #a08852; font-size: 11px; overflow-wrap: anywhere; }
+.br-duplicate .br-check { color: #8e702e; }
+.br-save-note { display: flex; align-items: flex-start; justify-content: center; gap: 6px; margin-top: 12px; color: #86a1b2; font-size: 9px; line-height: 1.7; text-align: center; }
+.br-save-note > svg { flex: 0 0 auto; }
+.br-actions .ui-primary, .br-actions .ui-secondary { padding-inline: 10px; font-size: 12px; }
+.br-original-dialog { width: calc(100% - 28px); max-width: 650px; max-height: 90dvh; overflow-y: auto; margin: auto; padding: 22px; border: 1px solid #cfe8f3; border-radius: 22px; color: #244967; background: white; box-shadow: 0 30px 100px #183e6240; }
+.br-original-dialog::backdrop { background: #09294580; backdrop-filter: blur(4px); }
+.br-original-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 19px; }
+.br-original-head h2 { font-size: 19px; letter-spacing: -.4px; line-height: 1.4; }
+.br-original-head .ui-icon-button { background: #f0f8fc; }
+.br-original-image { display: block; width: 100%; height: auto; max-height: 60dvh; object-fit: contain; border-radius: 12px; background: #f0f7fc; }
+.br-original-sample { max-width: 320px; margin: auto; padding: 15px 22px; border-radius: 15px; background: #edf8fe; }
+.br-original-sample .bill-art { height: auto; filter: drop-shadow(0 6px 8px #8cb1c236); }
+.br-original-caption { margin: 14px 0; font-size: 10px; color: #8198a9; line-height: 1.75; text-align: center; }
+.br-original-dialog > .ui-secondary { display: flex; width: 100%; }
+.br-pdf { display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 25px 15px; background: #f2faff; border-radius: 14px; text-align: center; }
+.br-pdf > svg { width: 55px; height: 55px; color: #16a3d1; }
+.br-pdf > strong { font-size: 13px; overflow-wrap: anywhere; }
+.br-pdf > p { color: #7390a4; font-size: 11px; line-height: 1.7; }
+.br-review :is(button, a, input):focus-visible, .br-original-dialog :is(button, a):focus-visible { outline: 2px solid #009bd2; outline-offset: 3px; }
+@media (min-width: 900px) { .br-source strong { font-size: 12px; } .br-check { font-size: 12px; } .br-fields .scan-label { font-size: 12px; } }
+@media (max-width: 359px) { .br-source { gap: 7px; } .br-source-icon { width: 29px; } .br-source > button { max-width: 65px; font-size: 9px; } .br-original-dialog { padding: 17px; } .br-original-head h2 { font-size: 17px; } }

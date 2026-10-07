@@ -112,10 +112,10 @@ export default function BudgetScreen() {
         <div>
           <h2 id="bg-tips-title"><Lightbulb aria-hidden="true" /> Stay on budget</h2>
           <ul>
-            <li><TrendingDown aria-hidden="true" /> Your average month uses about {Math.round(averageKwh(recent))} kWh.</li>
-            <li><TrendingDown aria-hidden="true" /> Cutting 1 hour of aircon a day saves around {whole(0.9 * 30 * rate)} a month.</li>
+            <li><TrendingDown aria-hidden="true" /> {recent.length ? `Your saved bills average ${Math.round(averageKwh(recent))} kWh per recorded period.` : "Add a reviewed bill to give your tips a bill basis."}</li>
+            <li><TrendingDown aria-hidden="true" /> Review tips based on your own appliance inputs and usage assumptions.</li>
           </ul>
-          <Link href="/assistant?q=How%20can%20I%20save%20on%20aircon%3F" className="bg-tips-link">Ask WattSnap AI for more <ChevronRight size={16} aria-hidden="true" /></Link>
+          <Link href="/tips" className="bg-tips-link">View Tipid Tips <ChevronRight size={16} aria-hidden="true" /></Link>
         </div>
       </section>
     </div>

@@ -24,7 +24,8 @@ test("bill questions compare the latest bill with the month before", () => {
 test("household answers explain missing data instead of inventing it", () => {
   assert.match(householdReply("why is my bill higher", {}).text, /don't see a bill yet/);
   assert.match(householdReply("which appliance uses the most", {}).text, /Add the appliances/);
-  assert.match(householdReply("any brownout today?", { location: "Iloilo" }).text, /no interruption currently lists Iloilo/);
+  assert.match(householdReply("any brownout today?", { location: "Iloilo" }).text, /Review saved provider announcements for Iloilo/);
+  assert.doesNotMatch(householdReply("any brownout today?", { location: "Iloilo" }).text, /Good news|no interruption|power is restored/);
 });
 
 test("intents route to the matching household topic", () => {
@@ -40,7 +41,17 @@ test("intents route to the matching household topic", () => {
 test("landing answers stay within the product description", () => {
   assert.match(landingReply("What is WattSnap?").text, /home electricity assistant/);
   assert.match(landingReply("Does it work offline?").text, /work offline/);
+  assert.match(landingReply("Does it work offline?").text, /already open preview/);
+  assert.match(landingReply("How does bill scanning work?").text, /AI extraction is not connected/);
+  assert.match(landingReply("Is my data private?").text, /same browser profile/);
   assert.match(landingReply("Which areas are covered?").text, /Antique with ANTECO/);
   assert.equal(landingReply("how do I sign up").links[0].href, "/signup");
   assert.deepEqual(landingReply("zzz").suggestions, landingSuggestions);
+});
+
+test("tips replies lead to reviewed advice without reducing essential appliance hours", () => {
+  const reply = householdReply("Give me tipid tips", context);
+  assert.equal(reply.links[0].href, "/tips");
+  assert.doesNotMatch(reply.text, /Cut an hour.*refrigerator|Unplug/);
+  assert.match(reply.text, /inputs, assumptions, and freshness/);
 });

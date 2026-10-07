@@ -1,13 +1,14 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { BadgeCheck, CalendarClock, Camera, Check, ChevronRight, CircleCheck, Database, ImageUp, Lightbulb, LogOut, MapPin, Megaphone, PlugZap, ReceiptText, ShieldCheck, Sparkles, Trash2, UserRound, Wallet, Zap } from "lucide-react";
+import { CalendarClock, Camera, Check, ChevronRight, CircleCheck, Database, ImageUp, Lightbulb, LogOut, MapPin, Megaphone, PlugZap, ReceiptText, ShieldCheck, Sparkles, Trash2, UserRound, Wallet, Zap } from "lucide-react";
 import PageShell from "./PageShell";
 import UserAvatar from "./UserAvatar";
 import PhotoEditor from "./PhotoEditor";
 import LogoutDialog from "./LogoutDialog";
 import { usePreviewHousehold } from "../use-preview-household";
-import { defaultLocation, defaultNotifications, defaultProvider, isPhotoDataUrl, pesos, validateProfile, type NotificationPrefs } from "../preview-data";
+import { defaultLocation, defaultNotifications, isPhotoDataUrl, pesos, validateProfile, type NotificationPrefs } from "../preview-data";
+import { previewProviderName } from "@/features/household-profile/provider-preview";
 
 type Draft = { name: string; email: string; location: string };
 const alerts: { key: keyof NotificationPrefs; title: string; detail: string; icon: typeof Megaphone; tone: string }[] = [
@@ -59,7 +60,7 @@ export default function SettingsScreen() {
     event.preventDefault();
     const issue = validateProfile(values);
     if (issue) { setError(issue); return; }
-    if (update({ name: values.name.trim(), email: values.email.trim() || undefined, location: values.location.trim(), provider: defaultProvider })) { setDraft(null); notify("Profile saved"); }
+    if (update({ name: values.name.trim(), email: values.email.trim() || undefined, location: values.location.trim(), locality: values.location.trim() === saved.location ? household.locality : undefined })) { setDraft(null); notify("Profile saved"); }
   }
   function toggle(key: keyof NotificationPrefs) {
     const next = { ...prefs, [key]: !prefs[key] };
@@ -79,7 +80,7 @@ export default function SettingsScreen() {
           </div>
           <h2 id="st-name">{household.name}</h2>
           <p className="st-email">{household.email ?? "Add your email below"}</p>
-          <div className="st-chips"><span><MapPin aria-hidden="true" />{household.location ?? defaultLocation}</span><span><Zap aria-hidden="true" />ANTECO</span></div>
+          <div className="st-chips"><span><MapPin aria-hidden="true" />{household.location ?? defaultLocation}</span><span><Zap aria-hidden="true" />{previewProviderName(household.provider)}</span></div>
           <div className="st-photo-actions">
             <button type="button" disabled={!ready} onClick={() => fileInput.current?.click()}><ImageUp aria-hidden="true" /> {household.photo ? "Change photo" : "Upload photo"}</button>
             {household.photo && <button type="button" className="is-remove" disabled={!ready} onClick={removePhoto}><Trash2 aria-hidden="true" /> Remove</button>}
@@ -95,6 +96,7 @@ export default function SettingsScreen() {
 
         <nav className="ui-panel st-links" aria-label="Household shortcuts">
           {[
+            { href: "/onboarding", icon: MapPin, title: "Household setup", detail: "Home location and electricity provider" },
             { href: "/budget", icon: Wallet, title: "Smart Energy Budget", detail: `${wholePesos(household.budget)} a month` },
             { href: "/bills", icon: ReceiptText, title: "Bill history", detail: `${household.bills.length} ${household.bills.length === 1 ? "bill" : "bills"} saved` },
             { href: "/appliances", icon: PlugZap, title: "My appliances", detail: `${household.appliances.length} added` },
@@ -109,8 +111,8 @@ export default function SettingsScreen() {
           <form className="st-form" onSubmit={saveProfile} noValidate>
             <label><span className="st-label">Full name</span><input value={values.name} maxLength={50} autoComplete="name" required onChange={event => edit({ name: event.target.value })} /></label>
             <label><span className="st-label">Email <small>optional</small></span><input type="email" value={values.email} maxLength={120} autoComplete="email" placeholder="maria@gmail.com" onChange={event => edit({ email: event.target.value })} /></label>
-            <label className="st-wide"><span className="st-label">Home location</span><span className="st-icon-input"><MapPin aria-hidden="true" /><input value={values.location} maxLength={120} placeholder="Municipality, province" required onChange={event => edit({ location: event.target.value })} /></span></label>
-            <div className="st-wide st-provider"><span className="st-label">Electricity provider</span><div className="st-provider-box"><span className="st-provider-logo"><Zap aria-hidden="true" /></span><span><strong>ANTECO</strong><small>Antique · bills and advisories supported</small></span><span className="st-verified"><BadgeCheck aria-hidden="true" /> Supported</span></div><small className="st-hint">More Panay providers are coming once their coverage is verified.</small></div>
+            <label className="st-wide"><span className="st-label">Home location</span><span className="st-icon-input"><MapPin aria-hidden="true" /><input value={values.location} maxLength={200} placeholder="Municipality, province" required onChange={event => edit({ location: event.target.value })} /></span></label>
+            <div className="st-wide st-provider"><span className="st-label">Electricity provider</span><div className="st-provider-box"><span className="st-provider-logo"><Zap aria-hidden="true" /></span><span><strong>{previewProviderName(household.provider)}</strong><small>Household UI preview</small></span><Link href="/onboarding" className="st-verified"><ChevronRight size={15} aria-hidden="true" /> Change</Link></div><small className="st-hint">Choose and confirm your provider in Household setup.</small></div>
             {(error || storageError) && <p className="ui-error st-wide" role="alert">{error || storageError}</p>}
             <div className="st-form-actions st-wide">
               {dirty && <span className="st-unsaved">Unsaved changes</span>}

@@ -7,12 +7,14 @@ import AppHeader from "@/features/dashboard/components/AppHeader";
 import AppNavigation from "@/features/dashboard/components/AppNavigation";
 import { usePreviewHousehold } from "@/features/dashboard/use-preview-household";
 import { compareWithPrevious, dailyApplianceKwh, effectiveRate, pesos, shortMonth, sortBillsByMonth, type PreviewHousehold } from "@/features/dashboard/preview-data";
-import { advisoryPreview, advisoryTypeLabels, formatAdvisoryDate } from "@/features/advisory-intelligence/advisory-preview";
+import { advisoryTypeLabels, formatAdvisoryDate } from "@/features/advisory-intelligence/advisory-preview";
+import { advisoryTab, matchIsStale, matchPreviewAdvisory, scheduleLabel } from "@/features/advisory-intelligence/review-preview";
+import { usePreviewAdvisories } from "@/features/advisory-intelligence/use-preview-advisories";
+import type { ReviewedAdvisory } from "@/features/advisory-intelligence/types";
 import { householdReply, householdSuggestions, type ChatContext } from "../replies";
 import { useChat } from "../use-chat";
 import ChatThread, { BotAvatar } from "./ChatThread";
 
-const location = "San Jose de Buenavista, Antique";
 const starters = [
   { text: householdSuggestions[0], hint: "Compare with last month", icon: ReceiptText },
   { text: householdSuggestions[1], hint: "Cooling without the cost", icon: AirVent },
@@ -20,10 +22,10 @@ const starters = [
   { text: householdSuggestions[3], hint: "Find your biggest user", icon: PlugZap },
 ];
 
-function buildContext(household: PreviewHousehold): ChatContext {
+function buildContext(household: PreviewHousehold, records: ReviewedAdvisory[]): ChatContext {
   const bills = sortBillsByMonth(household.bills);
   const top = [...household.appliances].sort((a, b) => dailyApplianceKwh(b) - dailyApplianceKwh(a))[0];
-  const advisory = advisoryPreview.find(item => item.tab === "active" && item.status === "affected" && (item.type === "scheduled" || item.type === "unscheduled"));
+  const advisory = records.find(item => advisoryTab(item) === "active" && !matchIsStale(item, household) && matchPreviewAdvisory(item.details, household).status === "affected" && ["scheduled", "unscheduled"].includes(item.details.type));
   return {
     name: household.name,
     latest: bills[bills.length - 1],
@@ -32,17 +34,18 @@ function buildContext(household: PreviewHousehold): ChatContext {
     rate: effectiveRate(household.bills),
     topAppliance: top ? { name: top.name, monthlyKwh: dailyApplianceKwh(top) * 30 } : undefined,
     applianceCount: household.appliances.length,
-    location,
-    advisory: advisory ? { title: advisoryTypeLabels[advisory.type], when: `${formatAdvisoryDate(advisory.date)} · ${advisory.time}`, area: advisory.area, reason: advisory.reason } : undefined,
+    location: household.location,
+    advisory: advisory ? { title: `${advisory.original.kind === "sample" ? "Sample · " : ""}${advisory.details.title || advisoryTypeLabels[advisory.details.type]}`, when: `${advisory.details.date ? formatAdvisoryDate(advisory.details.date) : "Date unknown"} · ${scheduleLabel(advisory.details)}`, area: advisory.details.areaText, reason: advisory.details.reason || "Not provided" } : undefined,
   };
 }
 
 export default function ChatScreen() {
-  const { household, ready } = usePreviewHousehold();
+  const { household, ready: householdReady } = usePreviewHousehold(), advisories = usePreviewAdvisories();
+  const ready = householdReady && advisories.ready;
   const [draft, setDraft] = useState("");
   const input = useRef<HTMLTextAreaElement>(null);
   const asked = useRef(false);
-  const context = useMemo(() => buildContext(household), [household]);
+  const context = useMemo(() => buildContext(household, advisories.records), [household, advisories.records]);
   const respond = useCallback((text: string) => householdReply(text, context), [context]);
   const { messages, typing, send, reset } = useChat(respond);
   const first = household.name.split(/\s+/)[0];

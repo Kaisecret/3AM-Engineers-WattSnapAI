@@ -18,6 +18,18 @@ test("bills need a month, finite positive amount, and positive consumption", () 
   assert.ok(validateBill({ month: "2026-10", amount: 1200, kwh: 0 }));
   assert.equal(validateBill({ month: "2026-10", amount: 1200, kwh: 100 }), null);
 });
+
+test("bill dates reject nonexistent days and reversed or incomplete periods", () => {
+  const bill = { month: "2026-10", amount: 1200, kwh: 100 };
+  assert.ok(validateBill({ ...bill, dueDate: "2026-02-29" }));
+  assert.ok(validateBill({ ...bill, dueDate: "2026-04-31" }));
+  assert.equal(validateBill({ ...bill, dueDate: "2028-02-29" }), null);
+  assert.ok(validateBill({ ...bill, periodStart: "2026-09-10" }));
+  assert.ok(validateBill({ ...bill, periodStart: "2026-10-10", periodEnd: "2026-09-10" }));
+  assert.ok(validateBill({ ...bill, periodStart: "2026-09-31", periodEnd: "2026-10-10" }));
+  assert.equal(validateBill({ ...bill, periodStart: "2026-09-10", periodEnd: "2026-10-10" }), null);
+  assert.equal(validateBill(bill), null);
+});
 test("invalid browser records are ignored without breaking the page", () => {
   const value = normalizePreview({ name: "  Maria  ", budget: -100, bills: [null, { id: "bad", month: "2026-99", amount: 1000, kwh: 100 }], appliances: [{ id: "bad", name: "Fan", watts: 60, hours: 99, quantity: 1 }] });
   assert.equal(value.name, "Maria");

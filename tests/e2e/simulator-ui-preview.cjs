@@ -1,0 +1,172 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs/promises');
+const path = require('node:path');
+const os = require('node:os');
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const baseURL = process.env.UI_PREVIEW_URL || 'http://127.0.0.1:3000';
+const screenshots = path.join(os.tmpdir(), 'wattsnap-simulator-ui-preview');
+const householdKey = 'wattsnap-ui-preview-v1';
+const scenarioKey = 'wattsnap-scenarios-ui-preview-v1';
+const seed = { name: 'Santos household', provider: 'anteco', location: 'San Jose de Buenavista, Antique', budget: 1800, appliances: [{ id: 'aircon', name: 'Living room aircon', kind: 'aircon', watts: 1000, hours: 8, quantity: 1, days: 10, source: 'manual', wattageBasis: 'nameplate' }], bills: [{ id: 'bill', month: '2026-09', amount: 1200, kwh: 100, source: 'manual' }] };
+async function contextFor(browser, viewport, data = seed) {
+  const context = await browser.newContext({ viewport, reducedMotion: 'reduce' });
+  await context.addInitScript(({ householdKey, data }) => { if (!localStorage.getItem(householdKey)) localStorage.setItem(householdKey, JSON.stringify(data)); }, { householdKey, data });
+  return context;
+}
+async function snapshot(page, name) {
+  await page.evaluate(async () => { for (const image of document.images) image.loading = 'eager'; await Promise.all(Array.from(document.images).map(image => image.decode().catch(() => {}))); });
+  assert.equal(await page.locator('[data-nextjs-dialog]').count(), 0, 'No framework error overlay');
+  assert.equal(await page.locator('[data-next-badge][data-error="true"]').count(), 0, 'No development issue badge');
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true, `${name}: no page overflow`);
+  for (const selector of ['.wi-settings', '.wi-editor', '.wi-comparison', '.wi-refresh-dialog[open]']) if (await page.locator(selector).count()) assert.equal(await page.locator(selector).evaluate(element => element.scrollWidth <= element.clientWidth + 1), true, `${name}: ${selector} fits its width`);
+  assert.deepEqual(await page.locator('img').evaluateAll(images => images.filter(image => !image.complete || image.naturalWidth === 0).map(image => image.src)), [], 'Artwork loads');
+  await page.screenshot({ path: path.join(screenshots, `${name}.png`), fullPage: true });
+}
+async function expectComparison(page, baseline, scenario, difference) {
+  assert.equal(await page.getByTestId('baseline-kwh').innerText(), `${baseline.toFixed(2)}\nkWh`);
+  assert.equal(await page.getByTestId('scenario-kwh').innerText(), `${scenario.toFixed(2)}\nkWh`);
+  assert.equal(await page.getByTestId('energy-difference').innerText(), difference);
+}
+async function scenarios(page) { return page.evaluate(key => JSON.parse(localStorage.getItem(key) || '[]'), scenarioKey); }
+async function waitReady(page) { await page.waitForFunction(() => { const button = document.querySelector('.wi-example'); return button && !button.disabled; }); }
+async function simulatorFlow(browser, viewport, name) {
+  const context = await contextFor(browser, viewport);
+  const page = await context.newPage(); page.setDefaultTimeout(20000);
+  const errors = [], consoleErrors = [], aiRequests = []; let offline = false;
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => { if (message.type() === 'error' && !(offline && message.text().includes('net::ERR_INTERNET_DISCONNECTED'))) consoleErrors.push(message.text()); });
+  page.on('request', request => { if (request.url().includes('/api/ai/')) aiRequests.push(request.url()); });
+  await page.goto(`${baseURL}/appliances`, { waitUntil: 'domcontentloaded' });
+  await page.getByRole('link', { name: 'Open simulator', exact: false }).click(); await waitReady(page);
+  await snapshot(page, `${name}-intro`);
+  await page.getByRole('button', { name: 'Use saved appliances', exact: false }).click();
+  await page.getByRole('heading', { name: 'Build your Watt-If', exact: true }).waitFor();
+  await expectComparison(page, 240, 240, '0.00 kWh difference');
+  assert.equal(await page.locator('.wi-costs').count(), 0, 'No peso result before an explicit rate');
+  await page.getByLabel('Hours per day for appliance 1', { exact: true }).fill('5');
+  await expectComparison(page, 240, 150, '90.00 kWh less');
+  await page.getByLabel('Adjust hours for appliance 1', { exact: true }).focus();
+  await page.keyboard.press('ArrowRight'); await expectComparison(page, 240, 157.5, '82.50 kWh less');
+  await page.keyboard.press('ArrowLeft'); await expectComparison(page, 240, 150, '90.00 kWh less');
+  await snapshot(page, `${name}-reduced-hours`);
+  await page.getByLabel('Comparison period in days', { exact: true }).fill('15');
+  await expectComparison(page, 120, 75, '45.00 kWh less');
+  await page.getByLabel('Comparison period in days', { exact: true }).fill('30');
+  await page.getByRole('button', { name: 'Use latest bill rate', exact: false }).click();
+  assert.match(await page.locator('.wi-costs').innerText(), /₱1,080\.00 potential savings/);
+  assert.match(await page.locator('.wi-costs').innerText(), /Saved September 2026 bill rate/);
+  await page.getByLabel('Hours per day for appliance 1', { exact: true }).fill('10');
+  await expectComparison(page, 240, 300, '60.00 kWh more');
+  await page.getByText('This scenario increases estimated consumption.', { exact: true }).waitFor();
+  await snapshot(page, `${name}-increased-use`);
+  await page.getByLabel('Optional rate in pesos per kWh', { exact: true }).fill('-1');
+  await page.getByText('Enter a rate greater than zero', { exact: false }).waitFor();
+  assert.equal(await page.getByTestId('baseline-kwh').count(), 0, 'An invalid rate suppresses the result');
+  await page.getByRole('button', { name: 'Clear rate', exact: true }).click();
+  await page.getByLabel('Hours per day for appliance 1', { exact: true }).fill('25');
+  await page.getByRole('button', { name: 'Save scenario', exact: true }).click();
+  await page.getByRole('alert').filter({ hasText: 'Daily usage must be' }).waitFor();
+  assert.deepEqual(await scenarios(page), [], 'Invalid scenarios are not saved');
+  await page.getByLabel('Hours per day for appliance 1', { exact: true }).fill('5');
+  await page.getByRole('button', { name: 'Add scenario appliance', exact: true }).click();
+  assert.equal(await page.getByTestId('baseline-kwh').count(), 0, 'A new appliance needs manual inputs');
+  await page.getByLabel('Scenario name for appliance 2', { exact: true }).fill('Desk fan');
+  await page.getByLabel('Power in watts for appliance 2', { exact: true }).fill('55');
+  await page.getByLabel('Hours per day for appliance 2', { exact: true }).fill('3');
+  await expectComparison(page, 240, 154.95, '85.05 kWh less');
+  await page.getByRole('checkbox', { name: 'Include Desk fan in scenario', exact: true }).uncheck();
+  await expectComparison(page, 240, 150, '90.00 kWh less');
+  await page.getByRole('checkbox', { name: 'Include Desk fan in scenario', exact: true }).check();
+  await page.getByLabel('Scenario name', { exact: true }).fill(`${name} fan plan`);
+  await page.getByLabel('Optional rate in pesos per kWh', { exact: true }).fill('12');
+  await snapshot(page, `${name}-fan-substitution`);
+  await page.getByRole('button', { name: 'Save scenario', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Scenario saved in this browser.' }).waitFor();
+  assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)), householdKey), seed, 'Scenario edits never change appliance or bill records');
+  const stored = (await scenarios(page))[0]; assert.equal(stored.entries.length, 2); assert.equal(stored.baseline[0].hours, 8); assert.equal(stored.days, '30');
+  await page.reload(); await waitReady(page);
+  await page.getByRole('button', { name: `Open ${name} fan plan`, exact: true }).click();
+  await expectComparison(page, 240, 154.95, '85.05 kWh less');
+  assert.equal(await page.getByLabel('Optional rate in pesos per kWh', { exact: true }).inputValue(), '12');
+  // Simulate a later edit arriving from the household's separate edit workflow.
+  const changed = { ...seed, appliances: [{ ...seed.appliances[0], watts: 800 }] };
+  await page.evaluate(({ key, changed }) => { localStorage.setItem(key, JSON.stringify(changed)); window.dispatchEvent(new Event('wattsnap-preview-change')); }, { key: householdKey, changed });
+  await page.getByRole('heading', { name: 'Your saved appliances changed', exact: true }).waitFor();
+  assert.equal(await page.getByTestId('baseline-kwh').count(), 0, 'Changed household records block stale comparisons');
+  await snapshot(page, `${name}-stale-baseline`);
+  await page.getByRole('button', { name: 'Review original snapshot', exact: true }).click();
+  await expectComparison(page, 240, 154.95, '85.05 kWh less');
+  await page.getByRole('button', { name: 'Refresh baseline', exact: true }).click();
+  await page.getByRole('heading', { name: 'Refresh this baseline?', exact: true }).waitFor();
+  await snapshot(page, `${name}-refresh-dialog`);
+  await page.getByRole('button', { name: 'Keep current scenario', exact: true }).click();
+  await expectComparison(page, 240, 154.95, '85.05 kWh less');
+  await page.getByRole('button', { name: 'Refresh baseline', exact: true }).click();
+  await page.getByRole('button', { name: 'Refresh and reset scenario', exact: true }).click();
+  await expectComparison(page, 192, 192, '0.00 kWh difference');
+  assert.equal((await scenarios(page))[0].baseline[0].watts, 1000, 'Refresh does not overwrite a stored scenario before saving');
+  await page.getByLabel('Hours per day for appliance 1', { exact: true }).fill('4');
+  offline = true; await context.setOffline(true);
+  await page.getByRole('status').filter({ hasText: 'You’re offline.' }).waitFor();
+  await expectComparison(page, 192, 96, '96.00 kWh less');
+  await snapshot(page, `${name}-offline`);
+  await page.getByRole('button', { name: 'Save scenario changes', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Scenario saved in this browser.' }).waitFor();
+  assert.equal((await scenarios(page)).length, 1); assert.equal((await scenarios(page))[0].baseline[0].watts, 800);
+  assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)), householdKey), changed);
+  await context.setOffline(false); offline = false;
+  assert.deepEqual(errors, []); assert.deepEqual(consoleErrors, []); assert.deepEqual(aiRequests, []);
+  await context.close(); console.log(`PASS: ${name} navigation, equal periods, increased use, explicit rates, fan substitution, saved snapshots, stale-baseline review, offline save, and layout`);
+}
+async function examplesAndErrors(browser) {
+  const context = await contextFor(browser, { width: 390, height: 844 }, { ...seed, appliances: [], bills: [] });
+  const page = await context.newPage(); page.setDefaultTimeout(20000);
+  await page.goto(`${baseURL}/simulator`, { waitUntil: 'domcontentloaded' }); await waitReady(page);
+  await page.getByText('No appliances yet.', { exact: false }).waitFor(); await snapshot(page, 'empty-household');
+  await page.getByRole('button', { name: 'Fewer aircon hours', exact: false }).click();
+  await expectComparison(page, 240, 150, '90.00 kWh less');
+  await page.getByText('Sample scenario · UI preview', { exact: true }).waitFor();
+  assert.equal(await page.locator('.wi-costs').count(), 0);
+  await page.getByRole('button', { name: 'Use example rate', exact: false }).click();
+  assert.match(await page.locator('.wi-costs').innerText(), /Example rate of ₱11\.45\/kWh/);
+  await page.getByRole('button', { name: 'New scenario', exact: true }).click();
+  await page.getByRole('button', { name: 'Switch to LED bulbs', exact: false }).click();
+  await expectComparison(page, 72, 8.64, '63.36 kWh less'); await snapshot(page, 'led-example');
+  await page.getByRole('button', { name: 'New scenario', exact: true }).click();
+  await page.getByRole('button', { name: 'Use a fan part of the day', exact: false }).click();
+  await expectComparison(page, 240, 154.95, '85.05 kWh less');
+  await page.getByRole('button', { name: 'Reset scenario appliances', exact: true }).click();
+  await expectComparison(page, 240, 240, '0.00 kWh difference'); assert.equal(await page.locator('.wi-entry').count(), 1);
+  await page.getByLabel('Scenario name', { exact: true }).fill('');
+  await page.getByRole('button', { name: 'Save scenario', exact: true }).click();
+  await page.getByRole('alert').filter({ hasText: 'Give your scenario a name' }).waitFor();
+  await page.getByLabel('Scenario name', { exact: true }).fill('Sample fan plan');
+  await page.getByRole('button', { name: 'Save scenario', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Scenario saved in this browser.' }).waitFor();
+  assert.equal((await scenarios(page))[0].origin, 'sample');
+  await page.getByRole('button', { name: 'Remove Sample fan plan', exact: true }).click();
+  assert.equal((await scenarios(page)).length, 0);
+  await page.getByRole('heading', { name: 'No saved scenarios yet', exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Fewer aircon hours', exact: false }).click();
+  await page.evaluate(() => { Storage.prototype.setItem = function () { throw new Error('Storage blocked for test'); }; });
+  await page.getByRole('button', { name: 'Save scenario', exact: true }).click();
+  await page.getByRole('alert').filter({ hasText: 'Your scenario could not be saved' }).waitFor();
+  assert.equal(await page.getByRole('status').filter({ hasText: 'Scenario saved in this browser.' }).count(), 0, 'No false save success');
+  await expectComparison(page, 240, 150, '90.00 kWh less'); await context.close();
+  const corrupt = await contextFor(browser, { width: 320, height: 740 });
+  await corrupt.addInitScript(key => localStorage.setItem(key, '{invalid json'), scenarioKey);
+  const badPage = await corrupt.newPage(); await badPage.goto(`${baseURL}/simulator`); await waitReady(badPage);
+  await badPage.getByRole('alert').filter({ hasText: 'Saved scenarios could not be opened' }).waitFor();
+  await badPage.getByRole('button', { name: 'Use saved appliances', exact: false }).click();
+  await badPage.getByRole('button', { name: 'Save scenario', exact: true }).click();
+  await badPage.getByRole('status').filter({ hasText: 'Scenario saved in this browser.' }).waitFor();
+  assert.equal((await scenarios(badPage)).length, 1); await corrupt.close();
+  console.log('PASS: empty state, sample aircon/LED/fan cases, resets, named saves, removal, storage failure, and unreadable-snapshot recovery');
+}
+(async () => {
+  await fs.mkdir(screenshots, { recursive: true }); const browser = await chromium.launch({ channel: 'chrome', headless: true });
+  try {
+    for (const [name, width, height] of [['desktop', 1440, 900], ['tablet', 1024, 768], ['mobile', 390, 844], ['small-mobile', 320, 740]]) await simulatorFlow(browser, { width, height }, name);
+    await examplesAndErrors(browser); console.log(`Screenshots: ${screenshots}`);
+  } finally { await browser.close(); }
+})().catch(error => { console.error(error); process.exitCode = 1; });
