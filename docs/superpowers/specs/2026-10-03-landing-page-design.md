@@ -10,7 +10,7 @@ The visual identity follows the mockups precisely:
 - **Palette**: Electric cyan (`#0284c7` to `#38bdf8`), energetic lightning amber (`#f59e0b` to `#fbbf24`), vibrant emerald green (`#10b981`), crisp white glassmorphism cards, and soft ambient gradient backgrounds (sky blue to warm pastel yellow/green).
 - **Typography**: Clean, modern sans-serif typography (`Inter`, system-ui), high legibility, crisp weight contrast.
 - **Micro-animations**: Subtle floating animations on the mascot and callout badges, hover elevation transitions on cards and action buttons.
-- **Zero Blurry Images**: High-resolution branding assets (`wattsnap-logo.png`, `wattsnap-mascot.png`) served from `public/assets/branding/`. The phone mockup is built with interactive CSS/SVG elements so every label, number, and icon is ultra-sharp on retina and high-DPI displays.
+- **Zero Blurry Images**: High-resolution branding assets (`wattsnap-logo.png`, `Cheerful Bee Robot Thumbs-Up.png`) served from `public/assets/branding/`. The phone mockup is built with interactive CSS/SVG elements so every label, number, and icon is ultra-sharp on retina and high-DPI displays.
 
 ## Information Architecture & Page Sections
 
@@ -84,7 +84,7 @@ WATTSNAP/
     assets/
       branding/
         wattsnap-logo.png
-        wattsnap-mascot.png
+        Cheerful Bee Robot Thumbs-Up.png
   src/
     app/
       globals.css                     # Design tokens, variables, typography, animations

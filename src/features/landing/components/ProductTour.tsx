@@ -50,7 +50,7 @@ export function ProductTour() {
           <button type="button" className="tour-close" aria-label="Close product walkthrough" onClick={() => dialog.current?.close()}><X size={23} /></button>
           <span className="tour-eyebrow">WattSnap product walkthrough</span>
           <div className="tour-preview">
-            <Image src="/assets/branding/wattsnap-mascot.png" alt="WattSnap mascot" width={180} height={180} />
+            <Image src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="WattSnap mascot" width={180} height={180} />
             <div key={step} className="tour-example">
               <span>{current.label}</span><strong>{current.value}</strong><p>{current.detail}</p>
             </div>

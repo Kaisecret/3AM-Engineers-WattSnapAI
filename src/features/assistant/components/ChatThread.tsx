@@ -6,7 +6,7 @@ import { ChevronRight } from "lucide-react";
 import type { ChatMessage } from "../use-chat";
 
 export function BotAvatar({ size = "sm" }: { size?: "sm" | "md" | "lg" }) {
-  return <span className={`chat-avatar is-${size}`} aria-hidden="true"><Image src="/assets/branding/wattsnap-mascot.png" alt="" width={120} height={120} sizes="64px" /></span>;
+  return <span className={`chat-avatar is-${size}`} aria-hidden="true"><Image src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="" width={120} height={120} sizes="64px" /></span>;
 }
 
 function Text({ value }: { value: string }) {

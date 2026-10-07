@@ -14,7 +14,7 @@ export function SpotlightSection() {
           </div>
           <div className="post-readiness-art" aria-hidden="true">
             <span className="post-alert-bubble"><Bell size={46} fill="#ffd128" stroke="#ff9d00" strokeWidth={1.5} /></span>
-            <Image src="/assets/branding/wattsnap-mascot.png" alt="" width={250} height={250} sizes="(max-width: 650px) 150px, 250px" />
+            <Image src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="" width={250} height={250} sizes="(max-width: 650px) 150px, 250px" />
             <Megaphone className="post-megaphone" size={68} strokeWidth={1.5} />
           </div>
         </article>

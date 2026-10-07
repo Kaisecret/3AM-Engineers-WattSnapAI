@@ -68,7 +68,7 @@ export default function HomeScreen() {
             <Image className="ws-greeting-landscape" src="/assets/branding/sunny-eco-city-bg.png" alt="" fill sizes="(min-width: 900px) 1000px, 100vw" priority />
             <div className="ws-greeting-copy"><p>Good morning,</p><h1 id="ws-greeting-title">{firstName}!</h1><p className="ws-greeting-description">Let&apos;s keep your home<br />energy-smart today!</p></div>
             <span className="ws-hero-rays" aria-hidden="true"><i /><i /><i /></span>
-            <Image className="ws-greeting-mascot" src="/assets/branding/wattsnap-mascot.png" alt="A cheerful WattSnap mascot" width={360} height={360} sizes="(min-width: 900px) 320px, 48vw" priority />
+            <Image className="ws-greeting-mascot" src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="A cheerful WattSnap mascot" width={360} height={360} sizes="(min-width: 900px) 320px, 48vw" priority />
           </section>
           <section className="ws-card ws-consumption" aria-labelledby="ws-consumption-title">
             <div className="ws-card-heading">
@@ -97,7 +97,7 @@ export default function HomeScreen() {
               <span className="ws-assistant-input" aria-hidden="true">Ask me anything…<span><SendHorizontal /></span></span>
               <div className="ws-assistant-prompts">{assistantPrompts.map(prompt => <Link key={prompt} href={`/assistant?q=${encodeURIComponent(prompt)}`}>{prompt}</Link>)}</div>
             </div>
-            <Image className="ws-assistant-mascot" src="/assets/branding/wattsnap-mascot.png" alt="" width={300} height={300} sizes="(min-width: 900px) 200px, 130px" />
+            <Image className="ws-assistant-mascot" src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="" width={300} height={300} sizes="(min-width: 900px) 200px, 130px" />
           </section>
           <HomeAdvisoryCard />
           <HomeTipCard />

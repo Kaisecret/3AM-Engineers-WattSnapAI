@@ -28,7 +28,7 @@
 - Create/Modify: `next.config.ts`
 - Create/Modify: `src/app/layout.tsx`
 - Create: `public/assets/branding/wattsnap-logo.png` (copy from `assets/branding/`)
-- Create: `public/assets/branding/wattsnap-mascot.png` (copy from `assets/branding/`)
+- Create: `public/assets/branding/Cheerful Bee Robot Thumbs-Up.png` (copy from `assets/branding/`)
 - Create: `src/app/(household)/dashboard/page.tsx`
 
 **Interfaces:**

@@ -316,7 +316,7 @@ export function PhoneMockup({ showFloatingBadges = true }: PhoneMockupProps) {
             {/* Mascot in Phone */}
             <div style={{ flexShrink: 0 }}>
               <Image
-                src="/assets/branding/wattsnap-mascot.png"
+                src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png"
                 alt="WattSnap Mascot"
                 width={46}
                 height={46}

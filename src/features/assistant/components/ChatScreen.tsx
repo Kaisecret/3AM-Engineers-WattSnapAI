@@ -78,7 +78,7 @@ export default function ChatScreen() {
   }
 
   const intro = <div className={`chat-welcome${messages.length ? " is-compact" : ""}`}>
-    <div className="chat-welcome-art" aria-hidden="true"><span /><Image src="/assets/branding/wattsnap-mascot.png" alt="" width={300} height={300} sizes="160px" priority /></div>
+    <div className="chat-welcome-art" aria-hidden="true"><span /><Image src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="" width={300} height={300} sizes="160px" priority /></div>
     <h2>Hi {first}! I&apos;m WattSnap AI</h2>
     <p>Ask me about your bills, appliances, savings, or brownouts. I answer using what you&apos;ve saved in WattSnap.</p>
     {!messages.length && <div className="chat-starters">{starters.map(({ text, hint, icon: Icon }) => <button type="button" key={text} onClick={() => send(text)}><span><Icon aria-hidden="true" /></span><strong>{text}</strong><small>{hint}</small></button>)}</div>}

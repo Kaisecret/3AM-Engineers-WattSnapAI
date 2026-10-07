@@ -71,7 +71,7 @@ export default function BudgetScreen() {
           <span className="bg-status">{status === "on-track" ? <CircleCheck aria-hidden="true" /> : <TriangleAlert aria-hidden="true" />}{latest ? statusCopy[status].label : "Waiting for a bill"}</span>
           <span className="bg-avg">Avg bill {money(recent.length ? recent.reduce((sum, bill) => sum + bill.amount, 0) / recent.length : 0)}</span>
         </div>
-        <Image className="bg-wallet-art" src="/assets/branding/wattsnap-mascot.png" alt="" width={240} height={240} sizes="(min-width: 900px) 150px, 100px" />
+        <Image className="bg-wallet-art" src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="" width={240} height={240} sizes="(min-width: 900px) 150px, 100px" />
       </section>
 
       <section className="ui-panel bg-set" aria-labelledby="bg-set-title">

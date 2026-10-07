@@ -15,7 +15,7 @@ export function MobileLandingDetails() {
     <div className="mobile-landing-details">
       <article className="mobile-home-banner">
         <div className="mobile-home-art" aria-hidden="true">
-          <Image src="/assets/branding/wattsnap-mascot.png" alt="" width={240} height={240} sizes="(max-width: 650px) 48vw, 1px" />
+          <Image src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="" width={240} height={240} sizes="(max-width: 650px) 48vw, 1px" />
           <GlossyIcon name="bulb" />
         </div>
         <div className="mobile-home-copy">

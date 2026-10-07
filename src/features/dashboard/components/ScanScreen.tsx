@@ -227,7 +227,7 @@ export default function ScanScreen() {
                 <span className="scan-cone" />
                 <span className="scan-bot">
                   <span className="scan-bubble">{bubble}</span>
-                  <Image src="/assets/branding/wattsnap-mascot.png" alt="" width={260} height={260} sizes="140px" priority />
+                  <Image src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="" width={260} height={260} sizes="140px" priority />
                 </span>
               </div>
               {phase === "scanning" && <>
@@ -259,7 +259,7 @@ export default function ScanScreen() {
           {phase === "camera" && !live && <div className={`scan-placeholder${dragging ? " is-dragging" : ""}`}>
             <div className="scan-placeholder-art" aria-hidden="true">
               <span className="scan-placeholder-bill"><BillArt period={shortPeriod(preview.month)} kwh={String(preview.kwh)} amount={pesos(preview.amount)} due={preview.dueDate ? dueDateLabel(preview.dueDate) : "—"} /><i /></span>
-              <Image className="scan-placeholder-bot" src="/assets/branding/wattsnap-mascot.png" alt="" width={260} height={260} sizes="150px" priority />
+              <Image className="scan-placeholder-bot" src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="" width={260} height={260} sizes="150px" priority />
             </div>
             <h2>Drop your electricity bill here</h2>
             <p>Try the scan and review flow with sample values, or manually enter the details from your own bill.</p>

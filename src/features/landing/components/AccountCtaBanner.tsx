@@ -17,7 +17,7 @@ export function AccountCtaBanner() {
             </div>
           </div>
           <div className="post-account-art" aria-hidden="true">
-            <Image className="post-account-mascot" src="/assets/branding/wattsnap-mascot.png" alt="" width={350} height={350} sizes="(max-width: 650px) 230px, 350px" />
+            <Image className="post-account-mascot" src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="" width={350} height={350} sizes="(max-width: 650px) 230px, 350px" />
             <Image className="post-account-phone" src="/assets/branding/wattsnap-smartphone.png" alt="" width={150} height={225} sizes="150px" />
           </div>
           <span className="post-banner-cloud post-banner-cloud-one" aria-hidden="true" />

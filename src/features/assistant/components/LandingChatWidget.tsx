@@ -63,7 +63,7 @@ export function LandingChatWidget() {
       <button type="button" className="lchat-teaser-close" aria-label="Dismiss" onClick={() => setTeaser(false)}><X aria-hidden="true" /></button>
     </div>}
     <button ref={launcher} type="button" className={`lchat-launcher${open ? " is-open" : ""}`} aria-label={open ? "Close chat" : "Chat with WattSnap AI"} aria-expanded={open} aria-controls={open ? "lchat-panel" : undefined} onClick={() => { if (open) close(); else { setOpen(true); setTeaser(false); } }}>
-      {open ? <X aria-hidden="true" /> : <Image src="/assets/branding/wattsnap-mascot.png" alt="" width={140} height={140} sizes="72px" />}
+      {open ? <X aria-hidden="true" /> : <Image src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="" width={140} height={140} sizes="72px" />}
       {!open && <span className="lchat-ping" aria-hidden="true" />}
     </button>
   </div>;

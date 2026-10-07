@@ -20,7 +20,7 @@ export default function AppNavigation({ active }: { active?: string }) {
         </Link>
       ))}
       <Link href="/assistant" className={`ws-sidebar-assistant${active === "Assistant" ? " is-active" : ""}`} aria-current={active === "Assistant" ? "page" : undefined}>
-        <span className="ws-sidebar-assistant-art"><Image src="/assets/branding/wattsnap-mascot.png" alt="" width={120} height={120} sizes="64px" /></span>
+        <span className="ws-sidebar-assistant-art"><Image src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="" width={120} height={120} sizes="64px" /></span>
         <span className="ws-sidebar-assistant-copy"><strong>WattSnap AI</strong><small>Ask me anything</small></span>
         <ChevronRight aria-hidden="true" />
       </Link>
