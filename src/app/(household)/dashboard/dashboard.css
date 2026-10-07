@@ -12,6 +12,8 @@
 }
 .ws-shell { position: relative; max-width: 600px; margin-inline: auto; }
 .ws-header { height: 83px; display: flex; align-items: center; justify-content: space-between; padding: 15px 20px 13px; padding-top: max(15px, env(safe-area-inset-top)); }
+.ws-home-screen .ws-header { position: sticky; top: 0; z-index: 35; background: #f1fafc; }
+.ws-home-screen .ws-header-panel { top: 100%; }
 .ws-brand { display: flex; align-items: center; width: 158px; }
 .ws-brand img { display: block; width: 100%; height: auto; }
 .ws-header-actions { display: flex; align-items: center; gap: 13px; }
@@ -173,6 +175,7 @@
 }
 @media (min-width: 900px) {
   .ws-home { --ws-gap: 20px; padding: 0 38px 40px 258px; background: radial-gradient(ellipse at 100% 0%, #dff6fa66, transparent 65%), #f1f9fc; }
+  .ws-home-screen .ws-header { background: #effaff; }
   .ws-shell { max-width: 1160px; }
   .ws-header { height: 112px; padding: 24px 0; }
   .ws-brand { width: 215px; }
