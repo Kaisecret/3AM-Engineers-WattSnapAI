@@ -121,18 +121,24 @@
 .adv-ready input:checked ~ * { color: #4b7a5c; }
 .adv-ready label:has(input:checked) { color: #5f8a6d; text-decoration: line-through; }
 .adv-ready input:focus-visible + .adv-check { outline: 2px solid #008acb; outline-offset: 2px; }
+.adv-ready label { min-height: 44px; }
+.adv-ready ul { padding: 0; }
+.adv-ready-sample { margin-top: 8px; color: #6e907a; font-size: 11px; line-height: 1.5; }
+.adv-ready-hint { margin-top: 10px; color: #548567; font-size: 12px; line-height: 1.5; }
 .adv-dialog-done { display: block; width: 100%; margin-top: 18px; }
 .adv-page dialog :focus-visible { outline: 2px solid #00a3dd; outline-offset: 3px; }
 
 /* Completed preparation checklist */
 .adv-complete { background: radial-gradient(ellipse at 50% 35%, #e2f9ff, transparent 65%), linear-gradient(180deg, #f1fcff, #fff 72%, #f0fbf4); }
-.adv-complete .adv-complete-content { display: flex; flex-direction: column; align-items: center; padding-top: 52px; text-align: center; }
+.adv-complete.adv-detail .adv-complete-content { display: flex; flex-direction: column; align-items: center; padding-top: 52px; text-align: center; }
 .adv-complete-badge { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid #c9eed6; border-radius: 999px; color: #166534; background: #e9faef; font-size: 12px; font-weight: 800; }
 .adv-complete-badge svg { width: 16px; height: 16px; }
 .adv-complete-art { width: min(100%, 300px, 42dvh); height: auto; margin: 16px auto 12px; filter: drop-shadow(0 10px 16px #079acb1a); }
 .adv-complete h2 { padding-right: 0; font-size: 26px; color: #0d2440; }
 .adv-complete-content > p { margin-top: 8px; font-size: 13px; color: #5f7d93; }
 .adv-complete .adv-dialog-done { margin-top: 24px; }
+.adv-review-checklist { min-height: 44px; margin-top: 8px; color: #1682a4; font-size: 12px; font-weight: 700; }
+.adv-complete-content .adv-ready-sample { font-size: 11px; }
 
 @media (hover: hover) {
   .adv-card-button:hover { background: #fbfeff; }

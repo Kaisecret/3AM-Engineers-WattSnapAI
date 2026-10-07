@@ -9,10 +9,12 @@ This delivery implements the seven UI workflows selected from the proposal. It p
 | 3 | F04 Appliance registration | `/appliances/new` | Labeled appliance types, optional nameplate reference, reviewed watts/kW, explicit usage and quantity, unknown-power validation, approximate-input labels, original viewer, duplicate decision and saved appliance edits. |
 | 4 | F10 Watt-If simulator | `/simulator` | Separate baseline and scenario, equal periods, aircon/LED/fan examples, increased-use results, explicit rate basis, named saved scenarios, changed-baseline review and reset. Registered appliances stay independent. |
 | 5 | F07 Personalized Tipid Tips | `/tips` | Local rules using supplied household inputs, explanations and assumptions, qualified bill comparisons, sample/limited-input states, saved timestamps, stale-input labels, explicit refresh, filtering, retry/cancel demonstrations that retain previous tips. |
-| 6 | F08 Advisory intelligence | `/advisories`, `/advisories/new` | Screenshot/pasted originals, editable or unknown fields, qualified three-state location match, source attribution, review revisions, explicit household-match rechecks, separate restoration updates, saved versus fictional-sample views. |
+| 6 | F08 Advisory intelligence | `/advisories`, `/advisories/new` | Screenshot/pasted originals, editable or unknown fields, qualified three-state location match, source attribution, review revisions, explicit household-match rechecks, separate restoration updates, saved versus fictional-sample views, inline affected-user preparation checklist and All Set Icon confirmation. |
 | 7 | F12 Brownout Ready Mode | `/brownout-ready` | Reviewed-advisory selection, future matching-schedule recommendation, explicit uncertain-relevance confirmation, Manila countdown and duration, retained source and household basis, five saved checklist items, source/location change review, separate update acknowledgment, elapsed-schedule state. |
 
 The Home, Energy, Appliances, Tips, Advisories, Settings, and Assistant screens provide links into these workflows. Advisories link to preparation plans, including the selected reviewed source. The assistant uses saved relevant advisory reviews instead of its old fixture announcements.
+
+Review match also includes the original five preparation steps for affected active interruptions. Checking all five and selecting Done opens the “You’re all set!” confirmation with `All Set Icon.png`. Inline progress stays separate for each advisory, review revision, and household basis during the current page visit; saved Brownout Ready Mode plans retain their existing browser persistence.
 
 ## Verification
 
@@ -26,6 +28,7 @@ Browser verification lives in `tests/e2e`:
 - `simulator-ui-preview.cjs`: independent scenario edits, equal periods, explicit rates, increased use, substitutions, saved snapshots, changed-baseline review and offline calculations.
 - `tips-ui-preview.cjs`: input-based advice, filters, empty/sample/limited contexts, stale inputs, offline reads, refresh timeout/quota demonstrations, cancellation and persistence.
 - `advisory-review-preview.cjs`: upload/paste, review validation, original preservation, all match states, corrected revisions, household rechecks, separate updates, local storage failure and recovery.
+- `advisory-preparation-preview.cjs`: restored inline checklist and All Set Icon, partial/uncheck completion gates, separate advisory/sample progress, revision and household changes, keyboard focus, desktop/phone/small-phone layout.
 - `brownout-ready-preview.cjs`: fixed-clock 13:00–17:00 Manila example, confirmation gates, offline checklist/source access, persisted progress, missing times, elapsed schedules, source/location changes, restoration-update acknowledgment, deletion cancellation and storage recovery.
 - `ui-workflow-navigation.cjs`: desktop/phone links across all seven workflows, stylesheet isolation between bill review and readiness, notification copy and assistant preview boundaries.
 
