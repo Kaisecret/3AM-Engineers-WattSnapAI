@@ -14,11 +14,11 @@ This delivery implements the seven UI workflows selected from the proposal. It p
 
 The Home, Energy, Appliances, Tips, Advisories, Settings, and Assistant screens provide links into these workflows. Advisories link to preparation plans, including the selected reviewed source. The assistant uses saved relevant advisory reviews instead of its old fixture announcements.
 
-Review match also includes the original five preparation steps for affected active interruptions. Checking all five and selecting Done opens the “You’re all set!” confirmation with `All Set Icon.png`. Inline progress stays separate for each advisory, review revision, and household basis during the current page visit; saved Brownout Ready Mode plans retain their existing browser persistence.
+Review match also includes the original five preparation steps for affected active interruptions. Checking all five and selecting Done opens the “You’re all set!” confirmation with `All Set Icon.png`. Selecting Done early keeps the checklist open and shows a progress toast with a Continue checklist action. Home shows a matching Checklist Progress card until all five items are checked. Saved review progress persists in this browser, stays separate for each advisory, review revision, and household basis, and resumes at the first unchecked item from Home. Gallery sample progress remains within the current page visit; saved Brownout Ready Mode plans retain their existing browser persistence.
 
 ## Verification
 
-The production build checks TypeScript and completes static page generation. The feature test suite contains 62 passing checks covering calculations, unknown inputs, date validation, source preservation, matching, stale inputs, and saved data contracts.
+The production build checks TypeScript and completes static page generation. The feature test suite contains 67 passing checks covering calculations, unknown inputs, date validation, source preservation, matching, stale inputs, saved data contracts, and preparation progress.
 
 Browser verification lives in `tests/e2e`:
 
@@ -28,7 +28,7 @@ Browser verification lives in `tests/e2e`:
 - `simulator-ui-preview.cjs`: independent scenario edits, equal periods, explicit rates, increased use, substitutions, saved snapshots, changed-baseline review and offline calculations.
 - `tips-ui-preview.cjs`: input-based advice, filters, empty/sample/limited contexts, stale inputs, offline reads, refresh timeout/quota demonstrations, cancellation and persistence.
 - `advisory-review-preview.cjs`: upload/paste, review validation, original preservation, all match states, corrected revisions, household rechecks, separate updates, local storage failure and recovery.
-- `advisory-preparation-preview.cjs`: restored inline checklist and All Set Icon, partial/uncheck completion gates, separate advisory/sample progress, revision and household changes, keyboard focus, desktop/phone/small-phone layout.
+- `advisory-preparation-preview.cjs`: restored inline checklist and All Set Icon, incomplete-checklist toast, Home progress and resume, reload persistence, completion hiding, separate advisory/sample progress, revision and household changes, failed storage and unreadable-progress recovery, keyboard focus, desktop/phone/small-phone layout.
 - `brownout-ready-preview.cjs`: fixed-clock 13:00–17:00 Manila example, confirmation gates, offline checklist/source access, persisted progress, missing times, elapsed schedules, source/location changes, restoration-update acknowledgment, deletion cancellation and storage recovery.
 - `ui-workflow-navigation.cjs`: desktop/phone links across all seven workflows, stylesheet isolation between bill review and readiness, notification copy and assistant preview boundaries.
 

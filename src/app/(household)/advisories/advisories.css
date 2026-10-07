@@ -140,6 +140,19 @@
 .adv-review-checklist { min-height: 44px; margin-top: 8px; color: #1682a4; font-size: 12px; font-weight: 700; }
 .adv-complete-content .adv-ready-sample { font-size: 11px; }
 
+.adv-preparation-toast { position: sticky; z-index: 5; bottom: max(12px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: 56px minmax(0, 1fr) 32px; align-items: center; gap: 10px; width: min(470px, calc(100% - 24px)); margin: 12px auto max(12px, env(safe-area-inset-bottom)); padding: 14px 12px; border: 1px solid #ccebdc; border-radius: 18px; background: #fff; box-shadow: 0 12px 40px #12374d33; font-family: var(--font-sans); }
+.adv-preparation-toast > img { width: 56px; height: auto; }
+.adv-toast-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 10px; }
+.adv-toast-heading h3 { color: #182446; font-size: 13px; font-weight: 800; }
+.adv-toast-heading > span { padding: 4px 7px; border-radius: 999px; background: #e2faec; color: #148146; font-size: 10px; font-weight: 800; }
+.adv-preparation-toast p { margin-top: 6px; color: #648095; font-size: 11px; line-height: 1.5; }
+.adv-preparation-toast progress { appearance: none; display: block; width: 100%; height: 7px; margin-top: 9px; overflow: hidden; border: 0; border-radius: 999px; background: #edf3f6; }
+.adv-preparation-toast progress::-webkit-progress-bar { background: #edf3f6; border-radius: 999px; }
+.adv-preparation-toast progress::-webkit-progress-value { background: linear-gradient(90deg, #32db68, #15bc50); border-radius: 999px; }
+.adv-preparation-toast progress::-moz-progress-bar { background: #22c55e; border-radius: 999px; }
+.adv-toast-continue { min-height: 44px; color: #088ead; font-size: 11px; font-weight: 800; }
+.adv-toast-close { align-self: start; display: grid; place-items: center; width: 32px; min-height: 44px; border-radius: 9px; color: #7b97a8; background: #f1f8fb; }
+
 @media (hover: hover) {
   .adv-card-button:hover { background: #fbfeff; }
   .adv-card:hover { box-shadow: 0 10px 22px #6aa9c424; }

@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowDown, ArrowUp, Bell, ChartNoAxesColumnIncreasing, ChevronDown, ChevronRight, Info, LogOut, Megaphone, ReceiptText, ScanText, SendHorizontal, Settings, Sparkles, X, Zap } from "lucide-react";
 import HomeAdvisoryCard from "@/features/advisory-intelligence/components/HomeAdvisoryCard";
+import HomePreparationCard from "@/features/advisory-intelligence/components/HomePreparationCard";
 import HomeTipCard from "@/features/tipid-tips/components/HomeTipCard";
 import UserAvatar from "./UserAvatar";
 import LogoutDialog from "./LogoutDialog";
@@ -70,6 +71,7 @@ export default function HomeScreen() {
             <span className="ws-hero-rays" aria-hidden="true"><i /><i /><i /></span>
             <Image className="ws-greeting-mascot" src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="A cheerful WattSnap mascot" width={360} height={360} sizes="(min-width: 900px) 320px, 48vw" priority />
           </section>
+          <HomePreparationCard />
           <section className="ws-card ws-consumption" aria-labelledby="ws-consumption-title">
             <div className="ws-card-heading">
               <div className="ws-heading-label"><span className="ws-icon-tile ws-icon-yellow"><Zap aria-hidden="true" /></span><h2 id="ws-consumption-title">Monthly Consumption</h2></div>

@@ -1,15 +1,7 @@
 "use client";
 import Image from "next/image";
 import { Check, ShieldCheck, X } from "lucide-react";
-
-export const advisoryPreparationItems = [
-  { id: "charge", title: "Charge phones and power banks" },
-  { id: "lights", title: "Prepare flashlights or emergency lights" },
-  { id: "unplug", title: "Unplug sensitive appliances" },
-  { id: "fridge", title: "Keep the refrigerator closed" },
-  { id: "water", title: "Store drinking water" },
-] as const;
-export type AdvisoryPreparationId = typeof advisoryPreparationItems[number]["id"];
+import { advisoryPreparationItems, type AdvisoryPreparationId } from "../preparation-progress";
 
 export function AdvisoryPreparationChecklist({ checked, disabled, sample, onToggle }: { checked: AdvisoryPreparationId[]; disabled: boolean; sample: boolean; onToggle: (id: AdvisoryPreparationId) => void }) {
   return <section className="adv-ready" aria-label="Brownout ready checklist">
@@ -18,6 +10,19 @@ export function AdvisoryPreparationChecklist({ checked, disabled, sample, onTogg
     <ul>{advisoryPreparationItems.map(item => <li key={item.id}><label><input type="checkbox" checked={checked.includes(item.id)} disabled={disabled} onChange={() => onToggle(item.id)} /><span className="adv-check" aria-hidden="true"><Check /></span><span>{item.title}</span></label></li>)}</ul>
     <p className="adv-ready-hint">Check each step as you finish it, then select Done.</p>
   </section>;
+}
+
+export function AdvisoryPreparationReminder({ completed, onContinue, onDismiss }: { completed: number; onContinue: () => void; onDismiss: () => void }) {
+  const remaining = advisoryPreparationItems.length - completed;
+  return <aside className="adv-preparation-toast" aria-label="Incomplete checklist reminder">
+    <Image src="/assets/branding/actions-2.png" alt="" width={1280} height={1280} sizes="64px" />
+    <div><div className="adv-toast-heading"><h3>Checklist incomplete</h3><span>{completed}/{advisoryPreparationItems.length} Done</span></div>
+      <p role="status">{remaining} {remaining === 1 ? "step left" : "steps left"}. Check each remaining item when it’s done.</p>
+      <progress value={completed} max={advisoryPreparationItems.length} aria-label="Preparation checklist progress" />
+      <button type="button" className="adv-toast-continue" onClick={onContinue}>Continue checklist</button>
+    </div>
+    <button type="button" className="adv-toast-close" aria-label="Dismiss checklist reminder" onClick={onDismiss}><X size={16} aria-hidden="true" /></button>
+  </aside>;
 }
 
 export function AdvisoryPreparationComplete({ sample, onBack, onClose }: { sample: boolean; onBack: () => void; onClose: () => void }) {
