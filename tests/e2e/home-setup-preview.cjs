@@ -55,6 +55,12 @@ async function count(page, expected) {
     await page.getByLabel('Municipality or city', { exact: true }).fill('San Jose de Buenavista');
     await page.getByRole('button', { name: 'Save household profile', exact: true }).click();
     await count(page, 2);
+    await open(page, '/dashboard');
+    await page.locator('.setup-progress-card').getByText('2/5 Completed', { exact: true }).waitFor();
+    assert.equal(await page.locator('.setup-progress-card progress').getAttribute('value'), '2');
+    assert.equal(await page.evaluate(() => document.querySelector('.ws-greeting').nextElementSibling.classList.contains('setup-progress-card')), true);
+    await page.getByRole('link', { name: 'Continue Setup', exact: true }).click();
+    await page.waitForURL('**/setup#setup-provider', { waitUntil: 'domcontentloaded' });
     await page.getByRole('link', { name: 'Start: Select Electricity Provider', exact: true }).click();
     await page.getByRole('radio', { name: 'ANTECO', exact: false }).check();
     await page.getByRole('button', { name: 'Continue', exact: true }).click();
@@ -93,6 +99,10 @@ async function count(page, expected) {
     await page.reload();
     await page.getByText('5/5 Completed', { exact: true }).waitFor();
     assert.equal(await page.getByRole('button', { name: 'Got it', exact: true }).count(), 0);
+    await open(page, '/dashboard');
+    await page.getByRole('link', { name: 'Home setup complete', exact: true }).waitFor();
+    assert.equal(await page.locator('.setup-progress-card').count(), 0);
+    await count(page, 5);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await page.screenshot({ path: path.join(screenshots, 'setup-complete-390.png'), fullPage: true });
 

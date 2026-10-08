@@ -7,6 +7,7 @@ import { ArrowDown, ArrowUp, Bell, ChartNoAxesColumnIncreasing, ChevronDown, Che
 import HomeAdvisoryCard from "@/features/advisory-intelligence/components/HomeAdvisoryCard";
 import HomePreparationCard from "@/features/advisory-intelligence/components/HomePreparationCard";
 import HomeTipCard from "@/features/tipid-tips/components/HomeTipCard";
+import HomeSetupProgress from "@/features/onboarding/components/HomeSetupProgress";
 import UserAvatar from "./UserAvatar";
 import LogoutDialog from "./LogoutDialog";
 import AppNavigation from "./AppNavigation";
@@ -71,6 +72,7 @@ export default function HomeScreen() {
             <span className="ws-hero-rays" aria-hidden="true"><i /><i /><i /></span>
             <Image className="ws-greeting-mascot" src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="A cheerful WattSnap mascot" width={360} height={360} sizes="(min-width: 900px) 320px, 48vw" priority />
           </section>
+          <HomeSetupProgress />
           <HomePreparationCard />
           <section className="ws-card ws-consumption" aria-labelledby="ws-consumption-title">
             <div className="ws-card-heading">
