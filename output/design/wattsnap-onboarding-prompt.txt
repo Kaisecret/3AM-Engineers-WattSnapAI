@@ -1,0 +1,71 @@
+Use case: ui-mockup
+Asset type: One polished, high-resolution landscape presentation board containing FOUR complete WattSnap mobile onboarding screens side by side.
+Primary request: Create a premium, production-ready utility/fintech mobile app onboarding UI concept, not an illustration of an app. Deliver one 3840 × 2160 landscape image if possible. Four front-facing tall smartphone screens in one perfectly aligned horizontal row, evenly spaced, all fully visible including bottom controls, with equal width, height, corner radius, margins and baseline. Light airy off-white presentation background. Each screen has a very thin pale rim, restrained soft shadow and white/light mint screen surface. No perspective, no hands, no outer presentation headline, no extra screens.
+Input images:
+- Reference 1, wattsnap-logo.png: EXACT EXISTING WATTSNAP BRAND LOGO to reproduce faithfully. Keep the blue/cyan 'Watt' and yellow/orange 'Snap', bee icon and proportions. Do not replace it with a plain text wordmark.
+- Reference 2, Cheerful Bee Robot Thumbs-Up.png: authoritative established WATTSNAP ROBOT-BEE character identity for ALL four screens. Preserve white shell, cyan helmet crown, glossy dark navy face screen, cyan digital eyes, orange smiling mouth, curved orange antennae with yellow bulbs, round orange ear pieces, cyan hands and limbs, white torso with yellow lightning bolt, four golden translucent bee wings, large head and compact body. Only change pose/expression as requested. Avoid excessive character glow.
+- Reference 3, All Set Icon.png: same mascot, reference ONLY for the cheerful curved ^ ^ cyan eyes on screen 4 and consistent winged character proportions. Ignore the reference's wording, check badge and decorative marks. No 'YOU'RE ALL SET' text in the new image.
+The user supplied a separate dog-app image as a UX/layout reference only: four aligned tall screens, strong upper typography, illustrations/UI cards in the middle, navigation anchored at bottom. Invent an original WattSnap visual layout; do not use dogs, paws, dog-brand typography, pet content, or copy the reference design.
+
+Visual system: clean light-mode design, cyan #087F9A, white, fresh green #188351, soft mint #EAF8F1, warm yellow #FFD45A with dark warm amber #A15B09 for highlighted heading text, important text in dark navy #10263B. Cyan and green heading accents should be dark enough for readable contrast on white. Modern rounded sans-serif resembling Nunito Sans or contemporary rounded UI type, bold large 32–36pt equivalent headings, body 17–18pt equivalent, very readable dark slate body text. Clear hierarchy, generous whitespace, comfortable line spacing, senior-friendly large touch targets, minimal simple familiar icons always paired with labels. UI cards: opaque white or pale mint, 20–24px equivalent rounded corners, gentle shadows, subtle borders. Only a few quiet cyan/mint/yellow curved shapes behind lower illustrations. Trustworthy and energetic, never childish. No glass, excessive glow, busy ornament, confetti, dark mode, unrelated functionality or pet imagery.
+Global layout: identical small 9:41 status bar, understated signal/Wi-Fi/battery icons. Small faithful original WattSnap logo below status bar at upper-left of each screen. A clearly legible 'Skip' at upper-right of screens 2, 3, 4 only. Large left-aligned headline and supporting paragraph at consistent upper positions. Illustrations or UI previews occupy middle/lower region and do not cover text. Keep every screen footer pinned to the same bottom safe-area region. Four progress dots in every screen, correct active position. Welcome has large full-width pill button; screens 2–4 have bottom-left Skip, central progress dots, bottom-right large 64–72px equivalent navy circular action button with white arrow/check. All content remains inside each screen.
+
+SCREEN 1 — Welcome:
+Headline EXACT, split across lines naturally:
+'Smarter energy.'
+'Easier days.'
+'Easier days.' in readable WattSnap cyan. First sentence dark navy.
+Supporting text EXACT:
+'Understand your electricity, manage your home, and discover simple ways to save.'
+Middle/lower illustration: the exact established robot-bee, large and happily flying above/beside a bright energy-efficient home. Polished softly rendered 3D mascot matches reference, a simple beautiful white home with muted cyan roof, solar panels, warm window light and a little fresh greenery. Mascot dominant but balanced. Quiet soft mint/cyan/yellow backdrop shapes, no large glows.
+Bottom wide navy pill primary button with bold white EXACT 'Get Started →'.
+Below button EXACT 'Already have an account? Sign in', with Sign in darker and bold.
+Bottom progress ● ○ ○ ○, first dot cyan and others pale grey.
+
+SCREEN 2 — Understand Your Bills:
+Headline EXACT:
+'Know your bill'
+'at a glance.'
+'at a glance.' in fresh readable green; first line navy.
+Supporting text EXACT:
+'Scan your electricity bill and let WattSnap organize the important details for you.'
+A realistic accessible bill-summary UI card with a camera icon and prominent 'Scan Electricity Bill' control, then a generous pale mint amount section and tidy labeled data rows. ALL these labels and realistic sample values must be clearly legible:
+'Amount Due' / '₱2,480.00'
+'kWh Consumption' / '210 kWh'
+'Billing Period' / 'Sep 1–30, 2026'
+'Due Date' / 'Oct 15, 2026'
+A small established winged robot-bee next to or just above the UI card holding/scanning an electricity bill; do not obscure data. This is a clear feature preview, no extra finance features.
+Bottom: 'Skip' at left | ○ ● ○ ○ in center, second dot green | large navy circular → at right.
+
+SCREEN 3 — Understand Your Home:
+Headline EXACT, natural 3-line layout:
+'See where your'
+'energy goes.'
+'energy goes.' in readable dark warm yellow/orange/amber; first part navy.
+Supporting text EXACT:
+'Add appliances, scan their wattage labels, and estimate which devices may use the most electricity.'
+Simplified polished dashboard preview, clearly labeled 'My Appliances', with four spacious accessible cards in a 2×2 grid, large familiar matching outline/appliance icons and easy-to-read labels:
+'Refrigerator' / '150 W'
+'Electric Fan' / '60 W'
+'Television' / '100 W'
+'Air Conditioner' / '900 W'
+Small clean caption 'Estimated wattage' indicates estimates.
+Include one obvious wide 'Scan Label' control with camera icon beneath grid. The small exact winged WattSnap mascot points toward appliance cards from below/beside without covering text.
+Bottom: 'Skip' at left | ○ ○ ● ○ centered, third dot amber | large navy circular → at right.
+
+SCREEN 4 — Save & Stay Informed:
+Headline EXACT:
+'Save smarter.'
+'Stay informed.'
+'Stay informed.' in readable cyan or green; first sentence dark navy.
+Supporting text EXACT:
+'Get personalized Tipid Tips and understand electricity-provider advisories that may affect your area.'
+Two clean accessible feature cards stacked with generous padding and readable body copy. Familiar lightbulb icon in warm yellow/mint badge for first card and bell/advisory icon in cyan badge for second:
+Card 1 title EXACT 'Tipid Tip'
+Card 1 body EXACT 'Turn off unused appliances to reduce standby power.'
+Card 2 title EXACT 'Provider Advisory'
+Card 2 body EXACT 'Scheduled interruption may affect your area.'
+The established friendly winged WattSnap mascot visible in remaining lower space makes a clear PEACE SIGN with two raised cyan fingers. BOTH cyan digital eyes are curved cheerful upside-down-U arcs like ^ ^, matching the established expression from reference 3; no winking eye, no circular eyes. Same proportions, wings, white/cyan shell, golden antennae and lightning chest as on other screens.
+Bottom: 'Skip' at left | ○ ○ ○ ● centered, fourth dot cyan | large navy circular ✓ at right.
+
+Typography must be crisp, exact and spelled correctly. Do not shorten or omit the required support paragraphs. Maximize readable content scale. Preserve all brand/character identity invariants on every screen. All four screens must look like one coherent real application.
