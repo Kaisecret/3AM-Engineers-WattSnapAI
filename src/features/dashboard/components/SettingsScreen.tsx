@@ -9,6 +9,7 @@ import LogoutDialog from "./LogoutDialog";
 import { usePreviewHousehold } from "../use-preview-household";
 import { defaultLocation, defaultNotifications, isPhotoDataUrl, pesos, validateProfile, type NotificationPrefs } from "../preview-data";
 import { previewProviderName } from "@/features/household-profile/provider-preview";
+import { ThemeSettings } from "@/features/onboarding/components/ThemeSupport";
 
 type Draft = { name: string; email: string; location: string };
 const alerts: { key: keyof NotificationPrefs; title: string; detail: string; icon: typeof Megaphone; tone: string }[] = [
@@ -133,6 +134,8 @@ export default function SettingsScreen() {
           </div>
         </section>
 
+        <ThemeSettings />
+
         <section className="ui-panel st-card" aria-labelledby="st-data-title">
           <div className="st-card-head"><span className="st-card-icon is-green"><ShieldCheck aria-hidden="true" /></span><div><h2 id="st-data-title">Privacy &amp; data</h2><p>Your household&apos;s records are private to your account.</p></div></div>
           <div className="st-rows">
@@ -144,7 +147,7 @@ export default function SettingsScreen() {
         <section className="ui-panel st-card st-logout" aria-labelledby="st-logout-title">
           <span className="st-card-icon is-red"><LogOut aria-hidden="true" /></span>
           <div><h2 id="st-logout-title">Log out</h2><p>Sign out of WattSnap on this device.</p></div>
-          <button type="button" className="st-logout-button" onClick={() => setLogout(true)}><LogOut size={18} aria-hidden="true" /> Log out</button>
+          <button type="button" className="st-logout-button" disabled={!ready} onClick={() => setLogout(true)}><LogOut size={18} aria-hidden="true" /> Log out</button>
         </section>
         <p className="st-version">WattSnap AI · Preview build</p>
       </div>

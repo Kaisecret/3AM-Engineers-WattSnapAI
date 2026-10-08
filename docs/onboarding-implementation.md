@@ -10,7 +10,7 @@ The application is Next.js 15 / React 19 with existing CSS and Lucide icons. Pub
 
 | Requirement | Existing source | Integration |
 | --- | --- | --- |
-| Branding and guidance | `public/assets/branding/` | Reuse original logo and mascot PNGs; add only the requested peace-sign pose without changing the character. |
+| Branding and guidance | `public/assets/branding/` | Reuse original logo and mascot PNGs; add bill, pointing and peace-sign poses from the original character reference. |
 | Introduction | New `/intro` and `/welcome` entry | Four responsive screens; persisted slide and completed/skipped state; first visit enters intro, returning identities enter dashboard, returning signed-out users enter login. Preserve the public landing page. |
 | Account forms | `features/auth/components/` | Reuse validation, verification/profile UI and Google preview. Record a local preview identity after the existing successful flow; never store passwords or OTPs. |
 | Household/location/provider | `/onboarding`, `HouseholdSetupScreen` | Keep this editor and explicit provider review. Checklist links into it; profile and provider count only after successful saves. |
@@ -48,3 +48,15 @@ Progress derives from records rather than mutable checkboxes. Completion acknowl
 ### Baseline evidence
 
 `node --test` over existing `src/features/**/*.test.mjs`: 70 passed, 0 failed. `npx tsc --noEmit`: passed. Existing auth and feature browser scripts are regression checks; new tests must exercise real save/confirm actions, refresh, identity changes and failed storage rather than simply opening routes.
+
+## Implemented refinements (phase 6)
+
+Added consistent bill-holding, pointing and cheerful peace-sign poses using the original mascot as the image reference. Original assets remain unchanged; generation instructions are in `output/design/wattsnap-mascot-pose-prompts.txt`. Intro motion respects reduced-motion preferences. Setup rows keep readable copy and separate large actions on narrow screens. Participating feature editors now offer a Back to home setup link.
+
+Light remains the default. Settings offers a persisted, device-wide dark appearance for intro, account forms and household setup surfaces. Controls remain disabled until their handlers are ready, preventing early clicks during hydration from being lost.
+
+Optional location lookup is explicitly user-triggered after an explanation and browser permission. It sends coordinates rounded to three decimal places to OpenStreetMap Nominatim, fills a suggestion without saving, and requires the existing provider confirmation. Denial, offline access, timeouts and unsupported browsers retain manual entry. The existing example-location path remains. No precise coordinates are persisted. Reference: [reverse geocoding API](https://nominatim.org/release-docs/latest/api/Reverse/) and [service usage policy](https://operations.osmfoundation.org/policies/nominatim/). The public service is suitable for this low-volume preview; production-scale usage needs a geocoding service with an appropriate application-wide quota. Provider boundaries remain labeled unverified preview choices.
+
+The production-only service worker caches public static app shells and their own build assets. Household records remain in local storage. API requests, non-GET requests, third-party geocoding and Next.js RSC responses are not cached. Offline reload/navigation use cached HTML; uncached routes show an offline explanation. Cache installation needs one successful online visit and a supported secure origin. Reference: [Next.js PWA guidance](https://nextjs.org/docs/app/guides/progressive-web-apps) and [MDN service-worker guidance](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers).
+
+Validation: production build and TypeScript pass. Browser checks cover keyboard heading focus, reduced motion, 320–1440px setup widths, doubled text, large controls, persisted light/dark choice, synthetic location lookup without saving, and production offline reload/navigation/reconnect. Full setup flow passes real saves in a different order, failed storage, explicit tips review, refresh, account isolation, legacy-record preservation, dashboard progress and ordinary logout/login.

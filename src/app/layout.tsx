@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { siteDescription, siteTitle, siteUrl } from "@/lib/site";
 import "./globals.css";
+import "@/features/onboarding/theme.css";
+import { ThemeSupport } from "@/features/onboarding/components/ThemeSupport";
+import OfflineSupport from "@/components/OfflineSupport";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -35,8 +38,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={jakarta.variable}>
-      <body>{children}</body>
+    <html lang="en" className={jakarta.variable} suppressHydrationWarning>
+      <body><script dangerouslySetInnerHTML={{ __html: "try{document.documentElement.dataset.theme=localStorage.getItem('wattsnap-theme-v1')==='dark'?'dark':'light'}catch{}" }} /><ThemeSupport /><OfflineSupport />{children}</body>
     </html>
   );
 }

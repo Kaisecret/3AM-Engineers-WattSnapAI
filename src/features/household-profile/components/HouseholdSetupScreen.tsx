@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowRight, Check, CircleCheck, House, Info, LocateFixed, Ma
 import PageShell from "@/features/dashboard/components/PageShell";
 import { usePreviewHousehold } from "@/features/dashboard/use-preview-household";
 import { previewProviders, previewProviderName } from "../provider-preview";
+import { lookupLocation } from "../location-suggestion";
 import "../household-setup.css";
 
 type Draft = { name: string; province: string; municipality: string; barangay: string; provider: string };
@@ -23,6 +24,10 @@ export default function HouseholdSetupScreen() {
   const [complete, setComplete] = useState(false);
   const [offline, setOffline] = useState(false);
   const [locationState, setLocationState] = useState<"idle" | "example" | "manual">("idle");
+  const [locating, setLocating] = useState(false);
+  const [locationMessage, setLocationMessage] = useState("");
+  const locationRequest = useRef<AbortController | null>(null);
+  const lastLookup = useRef(0);
   const permission = useRef<HTMLDialogElement>(null);
   const locationButton = useRef<HTMLButtonElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -50,6 +55,8 @@ export default function HouseholdSetupScreen() {
   useEffect(() => {
     if (moved.current) heading.current?.focus();
   }, [step, complete]);
+
+  useEffect(() => () => locationRequest.current?.abort(), []);
 
   useEffect(() => {
     if (ready && household.location && new URLSearchParams(window.location.search).get("step") === "provider") {
@@ -101,6 +108,29 @@ export default function HouseholdSetupScreen() {
     permission.current?.close();
   }
 
+  function currentLocation() {
+    permission.current?.close();
+    if (!navigator.onLine) { setLocationMessage("You’re offline. Enter your home location manually."); return; }
+    if (!navigator.geolocation) { setLocationMessage("This browser cannot request location. Enter your home location manually."); return; }
+    if (locating || Date.now() - lastLookup.current < 1500) return;
+    setLocating(true); setLocationMessage("Finding a location suggestion…");
+    const request = new AbortController(); locationRequest.current = request;
+    navigator.geolocation.getCurrentPosition(async position => {
+      if (request.signal.aborted) return;
+      lastLookup.current = Date.now();
+      const timeout = window.setTimeout(() => request.abort(), 10000);
+      try {
+        const suggestion = await lookupLocation(position.coords.latitude, position.coords.longitude, request.signal);
+        edit({ ...suggestion, barangay: "" });
+        setLocationMessage("Location suggestion filled in. Check that it is your home, then confirm the provider shown on your bill.");
+      } catch (issue) { setLocationMessage(issue instanceof Error && issue.name !== "AbortError" ? issue.message : "Location lookup timed out. Enter your home location manually."); }
+      finally { window.clearTimeout(timeout); setLocating(false); }
+    }, issue => {
+      if (request.signal.aborted) return;
+      setLocating(false); setLocationMessage(issue.code === 1 ? "Location permission was declined. You can enter your home location manually." : "Your location could not be found. Enter your home location manually.");
+    }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
+  }
+
   function saveProfile() {
     const issues = validateHousehold();
     if (Object.keys(issues).length) { setErrors(issues); requestAnimationFrame(() => document.getElementById(`setup-${Object.keys(issues)[0]}`)?.focus()); return; }
@@ -135,7 +165,8 @@ export default function HouseholdSetupScreen() {
           <form onSubmit={submit} noValidate>
             {step === 0 && <div className="hs-form">
               <label htmlFor="setup-name"><span id="setup-name-label">Household name</span><input id="setup-name" aria-labelledby="setup-name-label" autoComplete="organization" maxLength={50} placeholder="e.g. Santos household" value={values.name} onChange={event => edit({ name: event.target.value })} aria-invalid={!!errors.name} aria-describedby={errors.name ? "setup-name-error" : undefined} />{errors.name && <span className="hs-field-error" id="setup-name-error">{errors.name}</span>}</label>
-              <div className="hs-location-option"><span className="hs-location-symbol"><LocateFixed aria-hidden="true" /></span><div><strong>Start with a location suggestion</strong><p>Preview how optional location permission will work.</p></div><button ref={locationButton} type="button" onClick={() => permission.current?.showModal()}>Try preview <ArrowRight size={15} aria-hidden="true" /></button></div>
+              <div className="hs-location-option"><span className="hs-location-symbol"><LocateFixed aria-hidden="true" /></span><div><strong>Start with a location suggestion</strong><p>Optional. Always check that the suggestion is your home.</p></div><button ref={locationButton} type="button" disabled={locating} onClick={() => permission.current?.showModal()}>Try preview <ArrowRight size={15} aria-hidden="true" /></button></div>
+              {locationMessage && <p className="hs-inline-note" role="status">{locationMessage}</p>}
               {locationState !== "idle" && <p className={`hs-inline-note ${locationState === "example" ? "is-example" : ""}`} role="status">{locationState === "example" ? "Example location filled in. No device location was requested. Edit it to match your household." : "Location permission skipped. Continue by entering your home location below."}</p>}
               <div className="hs-divider"><span>or enter your home location</span></div>
               <div className="hs-fields-row">
@@ -169,9 +200,10 @@ export default function HouseholdSetupScreen() {
 
     <dialog ref={permission} className="hs-permission" aria-labelledby="location-permission-title" aria-describedby="location-permission-description" onClose={() => locationButton.current?.focus()} onClick={event => { if (event.target === event.currentTarget) permission.current?.close(); }}>
       <button type="button" className="hs-dialog-close" aria-label="Close location preview" onClick={() => permission.current?.close()}><X aria-hidden="true" /></button>
-      <span className="hs-permission-icon"><LocateFixed aria-hidden="true" /></span><span className="hs-eyebrow">LOCATION PERMISSION PREVIEW</span><h2 id="location-permission-title">Find a starting point for your home</h2><p id="location-permission-description">In the finished app, your permission would let WattSnap suggest nearby providers. This preview uses an example in Antique and does not access your device location.</p>
+      <span className="hs-permission-icon"><LocateFixed aria-hidden="true" /></span><span className="hs-eyebrow">OPTIONAL LOCATION</span><h2 id="location-permission-title">Find a starting point for your home</h2><p id="location-permission-description">Use an example, or allow a one-time device location lookup. The lookup shares your approximate coordinates with OpenStreetMap to suggest a province and municipality. Check the result before saving. Your precise coordinates are not saved.</p>
       <div className="hs-permission-example"><MapPin size={18} aria-hidden="true" /><span>Payao, San Jose de Buenavista, Antique<small>Example location · confirm or edit before saving</small></span></div>
-      <button type="button" className="ui-primary" onClick={exampleLocation}>Use example location</button><button type="button" className="hs-back" onClick={() => { setLocationState("manual"); permission.current?.close(); }}>Skip permission & enter manually</button>
+      <button type="button" className="ui-primary" disabled={offline || locating} onClick={currentLocation}>Use my current location</button><button type="button" className="hs-back" onClick={exampleLocation}>Use example location</button><button type="button" className="hs-back" onClick={() => { setLocationState("manual"); permission.current?.close(); }}>Skip permission & enter manually</button>
+      <p className="hs-field-hint">Location data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a>. Permission is optional; manual entry always works.</p>
     </dialog>
   </PageShell>;
 }

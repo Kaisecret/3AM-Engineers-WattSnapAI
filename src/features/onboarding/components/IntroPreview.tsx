@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Bell, Camera, Fan, Lightbulb, Refrigerator, Snowflake, Tv, Zap } from "lucide-react";
+import { Bell, Camera, Fan, Lightbulb, Refrigerator, Snowflake, Tv } from "lucide-react";
 
 const mascot = "/assets/branding/Cheerful Bee Robot Thumbs-Up.png";
 const appliances = [
@@ -27,7 +27,7 @@ export function IntroPreview({ step }: { step: number }) {
   </div>;
 
   if (step === 1) return <div className="intro-art intro-bill-art">
-    <div className="intro-bill-guide" aria-hidden="true"><span className="intro-paper"><Zap />Electricity bill<span /><span /><span /></span><Image src={mascot} alt="" width={180} height={180} sizes="150px" /></div>
+    <div className="intro-bill-guide"><Image src="/assets/branding/wattsnap-bee-bill.png" alt="WattSnap holds an electricity bill for review" width={180} height={180} sizes="160px" /></div>
     <section className="intro-demo-card" aria-label="Example electricity bill preview">
       <div className="intro-scan"><Camera aria-hidden="true" />Scan Electricity Bill</div>
       <p className="intro-example">Example bill</p>
@@ -42,12 +42,12 @@ export function IntroPreview({ step }: { step: number }) {
       <div className="intro-appliance-grid">{appliances.map(({ label, watts, Icon }) => <div key={label}><Icon aria-hidden="true" /><span>{label}</span><strong>{watts} W</strong></div>)}</div>
       <div className="intro-scan"><Camera aria-hidden="true" />Scan Label</div>
     </section>
-    <Image className="intro-small-bee" src={mascot} alt="WattSnap guides you through appliance estimates" width={150} height={150} sizes="110px" />
+    <Image className="intro-small-bee" src="/assets/branding/wattsnap-bee-point.png" alt="WattSnap points toward your appliance cards" width={150} height={150} sizes="120px" />
   </div>;
 
   return <div className="intro-art intro-tips-art">
     <section className="intro-feature-card"><span className="intro-feature-icon is-yellow"><Lightbulb aria-hidden="true" /></span><div><h2>Tipid Tip</h2><p>Turn off unused appliances to reduce standby power.</p></div></section>
     <section className="intro-feature-card"><span className="intro-feature-icon"><Bell aria-hidden="true" /></span><div><h2>Provider Advisory</h2><p>Scheduled interruption may affect your area.</p></div></section>
-    <Image className="intro-finish-bee" src={mascot} alt="Your friendly WattSnap guide" width={260} height={260} sizes="190px" />
+    <Image className="intro-finish-bee" src="/assets/branding/wattsnap-bee-peace.png" alt="WattSnap makes a peace sign with cheerful curved eyes" width={260} height={260} sizes="190px" />
   </div>;
 }

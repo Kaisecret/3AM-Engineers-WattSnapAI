@@ -38,3 +38,8 @@
 @media (prefers-reduced-motion: reduce) { .intro-page *, .intro-page *::before { animation: none !important; transition: none !important; } }
 @media (max-width: 359px) { .intro-art::before { left: -10px; right: -10px; } }
 .intro-entry { align-content: center; gap: 24px; text-align: center; }.intro-entry > img { width: 240px; height: auto; animation: intro-rise .24s ease-out; }.intro-entry > div { max-width: 400px; display: grid; gap: 18px; padding: 24px; }.intro-entry p { font-size: 17px; line-height: 1.6; }
+.intro-bill-guide img { width: 165px; height: 165px; }
+.intro-small-bee { margin-left: 4px; width: 120px; transform: rotate(-5deg); }
+.intro-primary, .intro-next { transition: transform .15s ease, filter .15s ease; }.intro-primary:hover, .intro-next:hover { filter: brightness(1.08); }.intro-primary:active, .intro-next:active { transform: scale(.98); }
+@media (prefers-reduced-motion: no-preference) { .intro-hero-bee { animation: intro-float 4s ease-in-out infinite; } }
+@keyframes intro-float { 0%, 100% { transform: translateY(0) rotate(-7deg); } 50% { transform: translateY(-5px) rotate(-7deg); } }
