@@ -41,11 +41,40 @@ async function introduction(browser, width, height) {
   console.log(`PASS: introduction navigation, refresh, skip, completion and ${width}px layout`);
 }
 
+async function returningUserFlow(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+  const page = await context.newPage();
+  page.setDefaultNavigationTimeout(60000);
+  await page.goto(`${baseURL}/welcome`);
+  await page.waitForURL('**/intro');
+  await page.getByRole('button', { name: 'Skip introduction' }).click();
+  await page.waitForURL('**/signup');
+  await page.goto(`${baseURL}/welcome`);
+  await page.waitForURL('**/login');
+  await page.getByLabel('Email or Username', { exact: true }).fill('onboarding-test@example.com');
+  await page.getByLabel('Password', { exact: true }).fill('LocalPreview2026!');
+  await page.locator('#login-submit-button').click();
+  await page.waitForURL('**/dashboard');
+  await page.goto(`${baseURL}/welcome`);
+  await page.waitForURL('**/dashboard');
+  await page.goto(`${baseURL}/settings`);
+  await page.locator('.st-logout-button').click();
+  await page.locator('.lo-dialog[open] .lo-confirm').click();
+  await page.waitForURL('**/login');
+  assert.equal(await page.evaluate(() => localStorage.getItem('wattsnap-preview-session-v1')), null);
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-intro-v1')).status), 'skipped');
+  await page.goto(`${baseURL}/welcome`);
+  await page.waitForURL('**/login');
+  await context.close();
+  console.log('PASS: first visit, returning signed-in/signed-out entry and logout preservation');
+}
+
 (async () => {
   await fs.mkdir(screenshots, { recursive: true });
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   try {
     for (const [width, height] of [[1440, 900], [390, 844], [320, 740]]) await introduction(browser, width, height);
+    await returningUserFlow(browser);
     console.log(`Screenshots: ${screenshots}`);
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

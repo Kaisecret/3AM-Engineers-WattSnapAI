@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "WattSnap",
     description: "Understand your bills. Save energy. Be ready for brownouts.",
     id: "/",
-    start_url: "/",
+    start_url: "/welcome",
     scope: "/",
     display: "standalone",
     background_color: "#f8fbff",

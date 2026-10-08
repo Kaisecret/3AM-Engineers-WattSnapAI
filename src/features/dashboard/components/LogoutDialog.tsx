@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Check, LoaderCircle, LogOut } from "lucide-react";
 import { previewStorageKey } from "../preview-data";
+import { endPreviewSession } from "@/features/auth/preview-session";
 
 /** Confirms logging out; optionally removes this browser's saved preview data. */
 export default function LogoutDialog({ open, onClose, name }: { open: boolean; onClose: () => void; name: string }) {
@@ -11,17 +12,19 @@ export default function LogoutDialog({ open, onClose, name }: { open: boolean; o
   const router = useRouter();
   const [clearData, setClearData] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const element = dialog.current;
     if (!element) return;
-    if (open && !element.open) { setClearData(false); setLeaving(false); element.showModal(); }
+    if (open && !element.open) { setClearData(false); setLeaving(false); setError(""); element.showModal(); }
     else if (!open && element.open) element.close();
   }, [open]);
 
   function confirm() {
     setLeaving(true);
-    if (clearData) { try { localStorage.removeItem(previewStorageKey); } catch { /* Nothing to clear if storage is blocked. */ } }
+    try { if (clearData) localStorage.removeItem(previewStorageKey); endPreviewSession(); }
+    catch { setError("Your browser could not finish logging out. Please try again."); setLeaving(false); return; }
     window.setTimeout(() => router.push("/login"), 700);
   }
 
@@ -30,6 +33,7 @@ export default function LogoutDialog({ open, onClose, name }: { open: boolean; o
       <div className="lo-art" aria-hidden="true"><span /><Image src="/assets/branding/actions-1.png" alt="" width={240} height={240} sizes="130px" /></div>
       <h2 id="lo-title">Log out of WattSnap?</h2>
       <p id="lo-text">You&apos;ll need to log in again to see {name.split(/\s+/)[0]}&apos;s home.</p>
+      {error && <p className="ui-error" role="alert">{error}</p>}
       <label className="lo-check">
         <input type="checkbox" checked={clearData} disabled={leaving} onChange={event => setClearData(event.target.checked)} />
         <span className="lo-box" aria-hidden="true"><Check /></span>

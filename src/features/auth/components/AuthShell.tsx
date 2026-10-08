@@ -125,6 +125,7 @@ export function AuthShell({
               {art.bubble && <div className="auth-bubble">{art.bubble}</div>}
               <Image
                 src={art.src}
+                unoptimized={process.env.NODE_ENV === "development"}
                 alt=""
                 width={1254}
                 height={1254}

@@ -4,7 +4,7 @@ import Link from "next/link";
 const productLinks = [
   { label: "Features", href: "#features" },
   { label: "How It Works", href: "#how-it-works" },
-  { label: "Create account", href: "/signup" },
+  { label: "Create account", href: "/welcome" },
   { label: "Log in", href: "/login" },
 ];
 

@@ -294,3 +294,4 @@
 @keyframes authFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes authSpin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .auth-page * { animation: none !important; transition: none !important; } }
+.auth-preview-note { color: #425d70; font-size: 13px; line-height: 1.5; margin: 0 0 18px; }

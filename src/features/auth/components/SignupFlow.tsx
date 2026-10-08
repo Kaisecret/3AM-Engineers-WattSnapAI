@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Lock, Mail, User } from "lucide-react";
 import { AUTH_ART, AuthShell } from "./AuthShell";
 import { GoogleChooserStep, ProfileSetupStep, VerifyCodeStep, WelcomeStep } from "./AuthSteps";
+import { beginPreviewSession } from "../preview-session";
 import {
   AuthAlert,
   AuthDivider,
@@ -84,7 +85,11 @@ export function SignupFlow() {
           art={{ src: AUTH_ART.profileCard }}
           onBack={() => setStep(viaGoogle ? "google" : "verify")}
         >
-          <ProfileSetupStep defaultName={fullName} onContinue={() => setStep("welcome")} />
+          {error && <AuthAlert>{error}</AuthAlert>}
+          <ProfileSetupStep defaultName={fullName} onContinue={profile => {
+            try { beginPreviewSession(email, profile); setError(null); setStep("welcome"); }
+            catch (issue) { setError(issue instanceof Error ? issue.message : "Your browser could not save your profile. Please try again."); }
+          }} />
         </AuthShell>
       );
 
@@ -100,6 +105,7 @@ export function SignupFlow() {
         <AuthShell stepKey="account" art={{ src: AUTH_ART.clipboard }} backHref="/">
           <h1 className="auth-title">Create Your Account</h1>
           <p className="auth-subtitle">Start managing your electricity in a smarter and easier way.</p>
+          <p className="auth-preview-note">UI preview · Account creation and email verification are demonstrated locally.</p>
 
           {error && <AuthAlert>{error}</AuthAlert>}
 

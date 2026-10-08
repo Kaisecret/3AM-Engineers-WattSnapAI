@@ -12,7 +12,7 @@ export function AccountCtaBanner() {
             <h2>Get Started with WattSnap<span aria-hidden="true">✦</span></h2>
             <p>Manage your electricity and save money.<br />Your brighter home starts in your browser.</p>
             <div className="post-account-actions">
-              <Link href="/signup" className="post-account-signup landing-create-account"><CreateAccountLabel /></Link>
+              <Link href="/welcome" className="post-account-signup landing-create-account"><CreateAccountLabel /></Link>
               <Link href="/login" className="post-account-login"><LogIn size={20} aria-hidden="true" /> Log in</Link>
             </div>
           </div>

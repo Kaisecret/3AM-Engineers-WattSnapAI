@@ -180,7 +180,7 @@ export function GoogleChooserStep({
 /* -------------------------------------------------------------------------- */
 /* Profile setup                                                              */
 /* -------------------------------------------------------------------------- */
-export function ProfileSetupStep({ defaultName = "", onContinue }: { defaultName?: string; onContinue: () => void }) {
+export function ProfileSetupStep({ defaultName = "", onContinue }: { defaultName?: string; onContinue: (profile: { name: string; username: string }) => void }) {
   const [fullName, setFullName] = useState(defaultName);
   const [birthDate, setBirthDate] = useState("");
   const [username, setUsername] = useState("");
@@ -197,7 +197,7 @@ export function ProfileSetupStep({ defaultName = "", onContinue }: { defaultName
     setLoading(true);
     await fakeDelay();
     setLoading(false);
-    onContinue();
+    onContinue({ name: fullName.trim(), username: username.trim() });
   };
 
   return (

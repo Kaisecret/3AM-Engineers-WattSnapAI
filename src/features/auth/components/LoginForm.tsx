@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Lightbulb, Lock, Mail } from "lucide-react";
 import { AUTH_ART, AuthShell } from "./AuthShell";
 import { GoogleChooserStep } from "./AuthSteps";
+import { beginPreviewSession } from "../preview-session";
 import {
   AuthAlert,
   AuthDivider,
@@ -49,13 +50,19 @@ export function LoginForm() {
     }
     setLoading(true);
     await fakeDelay();
-    router.push("/dashboard");
+    continuePreview(identifier);
   };
+
+  function continuePreview(value: string, name?: string) {
+    try { beginPreviewSession(value, name ? { name } : undefined); router.push("/dashboard"); }
+    catch (issue) { setError(issue instanceof Error ? issue.message : "Your browser could not remember this sign-in. Please try again."); setLoading(false); }
+  }
 
   if (step === "google") {
     return (
       <AuthShell stepKey="google" art={{ src: AUTH_ART.thumbsUp }} onBack={() => setStep("form")}>
-        <GoogleChooserStep onSelect={() => router.push("/dashboard")} onUseAnother={() => setStep("form")} />
+        {error && <AuthAlert>{error}</AuthAlert>}
+        <GoogleChooserStep onSelect={account => continuePreview(account.email, account.name)} onUseAnother={() => setStep("form")} />
       </AuthShell>
     );
   }
@@ -64,6 +71,7 @@ export function LoginForm() {
     <AuthShell stepKey="login" art={{ src: AUTH_ART.laptop, bubble: loginBubble }} backHref="/">
       <h1 className="auth-title">Welcome Back!</h1>
       <p className="auth-subtitle">Log in to continue managing your electricity smarter.</p>
+      <p className="auth-preview-note">UI preview · Sign-in is demonstrated locally. Account verification is not connected.</p>
 
       {error && <AuthAlert>{error}</AuthAlert>}
 
