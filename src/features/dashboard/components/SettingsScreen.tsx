@@ -96,7 +96,7 @@ export default function SettingsScreen() {
 
         <nav className="ui-panel st-links" aria-label="Household shortcuts">
           {[
-            { href: "/onboarding", icon: MapPin, title: "Household setup", detail: "Home location and electricity provider" },
+            { href: "/setup", icon: MapPin, title: "Home setup checklist", detail: "Your five setup steps and saved progress" },
             { href: "/budget", icon: Wallet, title: "Smart Energy Budget", detail: `${wholePesos(household.budget)} a month` },
             { href: "/bills", icon: ReceiptText, title: "Bill history", detail: `${household.bills.length} ${household.bills.length === 1 ? "bill" : "bills"} saved` },
             { href: "/appliances", icon: PlugZap, title: "My appliances", detail: `${household.appliances.length} added` },

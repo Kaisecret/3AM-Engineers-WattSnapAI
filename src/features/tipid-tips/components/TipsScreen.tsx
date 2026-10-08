@@ -8,6 +8,7 @@ import { usePreviewHousehold } from "@/features/dashboard/use-preview-household"
 import { samplePreview } from "@/features/dashboard/preview-data";
 import { generatePreviewTips, tipsAreStale } from "../preview-tips";
 import { usePreviewTips } from "../use-preview-tips";
+import TipsSetupReview from "@/features/onboarding/components/TipsSetupReview";
 import TipsList from "./tips-list";
 
 const dateLabel = (date: string) => new Intl.DateTimeFormat("en-PH", { dateStyle: "medium", timeStyle: "short" }).format(new Date(date));
@@ -64,6 +65,7 @@ export default function TipsScreen() {
       <TipsList tips={snapshot.tips} filter={filter} sample={snapshot.origin === "sample"} />
       <section className="tt-next"><Lightbulb aria-hidden="true" /><div><h2>Explore an idea before changing a habit</h2><p>Use Watt-If to compare your own power and usage assumptions over an equal period.</p></div><Link href="/simulator">Open Watt-If</Link></section>
     </> : ready && !loading ? <section className="ui-panel tt-empty"><Lightbulb aria-hidden="true" /><h2>No saved tips yet</h2><p>Create preview tips from your current records, or try a clearly labeled sample household. Missing inputs will be explained.</p></section> : null}
+    <TipsSetupReview />
     <details className="tt-preview-controls"><summary>Preview refresh states</summary><label>Refresh result<select aria-label="Preview refresh result" disabled={loading} value={outcome} onChange={event => { setOutcome(event.target.value as typeof outcome); setError(""); }}><option value="success">Tips ready</option><option value="timeout">Timeout example</option><option value="limit">Request-limit example</option></select></label><p>Choose a state to review the UI, then use the refresh button above. No service requests are sent.</p></details>
   </PageShell>;
 }

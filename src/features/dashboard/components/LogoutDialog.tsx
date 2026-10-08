@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Check, LoaderCircle, LogOut } from "lucide-react";
 import { previewStorageKey } from "../preview-data";
 import { endPreviewSession } from "@/features/auth/preview-session";
+import { previewStorageFor } from "@/features/auth/use-preview-storage-key";
 
 /** Confirms logging out; optionally removes this browser's saved preview data. */
 export default function LogoutDialog({ open, onClose, name }: { open: boolean; onClose: () => void; name: string }) {
@@ -23,7 +24,7 @@ export default function LogoutDialog({ open, onClose, name }: { open: boolean; o
 
   function confirm() {
     setLeaving(true);
-    try { if (clearData) localStorage.removeItem(previewStorageKey); endPreviewSession(); }
+    try { if (clearData) localStorage.removeItem(previewStorageFor(previewStorageKey)); endPreviewSession(); }
     catch { setError("Your browser could not finish logging out. Please try again."); setLeaving(false); return; }
     window.setTimeout(() => router.push("/login"), 700);
   }

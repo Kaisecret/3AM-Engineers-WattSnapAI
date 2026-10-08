@@ -4,6 +4,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type ButtonHTMLAttributes,
   type ClipboardEvent,
   type InputHTMLAttributes,
@@ -16,6 +17,10 @@ import { AlertCircle, CheckCircle2, ChevronDown, ChevronRight, Eye, EyeOff } fro
 export const fakeDelay = (ms = 650) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const subscribeReady = () => () => {};
+const clientReady = () => true;
+const serverReady = () => false;
+function useAuthReady() { return useSyncExternalStore(subscribeReady, clientReady, serverReady); }
 
 type FieldProps = InputHTMLAttributes<HTMLInputElement> & {
   icon?: ReactNode;
@@ -24,6 +29,7 @@ type FieldProps = InputHTMLAttributes<HTMLInputElement> & {
 };
 
 export function AuthField({ icon, mobileIcon, label, id, className = "", ...rest }: FieldProps) {
+  const ready = useAuthReady();
   return (
     <div className="auth-field">
       <label htmlFor={id} className={label ? "auth-label" : "auth-sr-only auth-mobile-label"}>
@@ -32,7 +38,7 @@ export function AuthField({ icon, mobileIcon, label, id, className = "", ...rest
       <div className="auth-input-wrap">
         {icon && <span className="auth-input-icon">{icon}</span>}
         {!icon && mobileIcon && <span className="auth-input-icon mobile-only">{mobileIcon}</span>}
-        <input id={id} className={`auth-input${icon ? "" : " no-icon"}${mobileIcon ? " has-mobile-icon" : ""} ${className}`} {...rest} />
+        <input id={id} className={`auth-input${icon ? "" : " no-icon"}${mobileIcon ? " has-mobile-icon" : ""} ${className}`} {...rest} disabled={!ready || rest.disabled} />
         {rest.type === "date" && <ChevronDown className="auth-date-chevron mobile-only" size={22} aria-hidden="true" />}
       </div>
     </div>
@@ -40,6 +46,7 @@ export function AuthField({ icon, mobileIcon, label, id, className = "", ...rest
 }
 
 export function PasswordField({ icon, mobileIcon, label, id, className = "", ...rest }: Omit<FieldProps, "type">) {
+  const ready = useAuthReady();
   const [visible, setVisible] = useState(false);
 
   return (
@@ -55,6 +62,7 @@ export function PasswordField({ icon, mobileIcon, label, id, className = "", ...
           type={visible ? "text" : "password"}
           className={`auth-input has-toggle${icon ? "" : " no-icon"}${mobileIcon ? " has-mobile-icon" : ""} ${className}`}
           {...rest}
+          disabled={!ready || rest.disabled}
         />
         <button
           type="button"
@@ -74,10 +82,11 @@ export function PasswordField({ icon, mobileIcon, label, id, className = "", ...
 type PrimaryButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { loading?: boolean };
 
 export function PrimaryButton({ loading = false, disabled, children, className = "", ...rest }: PrimaryButtonProps) {
+  const ready = useAuthReady();
   return (
     <button
       className={`auth-btn auth-btn-primary ${className}`}
-      disabled={disabled || loading}
+      disabled={!ready || disabled || loading}
       aria-busy={loading}
       {...rest}
     >

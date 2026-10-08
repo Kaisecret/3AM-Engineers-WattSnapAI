@@ -70,7 +70,7 @@ async function signup(page, viewport) {
   await page.getByRole('heading', { name: 'Welcome to WattSnap!' }).waitFor();
   await checkScreen(page, `welcome-${viewport}`);
   await page.locator('#welcome-get-started').click();
-  await page.waitForURL('**/onboarding');
+  await page.waitForURL('**/setup');
 }
 
 async function reset(page, viewport) {

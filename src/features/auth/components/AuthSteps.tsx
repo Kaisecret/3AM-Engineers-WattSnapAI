@@ -260,7 +260,7 @@ export function WelcomeStep() {
         <br />
         Start exploring and take control of your electricity usage.
       </p>
-      <Link href="/onboarding" className="auth-btn auth-btn-primary auth-btn-fit" id="welcome-get-started">
+      <Link href="/setup" className="auth-btn auth-btn-primary auth-btn-fit" id="welcome-get-started">
         Get Started
       </Link>
     </>

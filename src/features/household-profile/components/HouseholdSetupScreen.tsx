@@ -51,6 +51,12 @@ export default function HouseholdSetupScreen() {
     if (moved.current) heading.current?.focus();
   }, [step, complete]);
 
+  useEffect(() => {
+    if (ready && household.location && new URLSearchParams(window.location.search).get("step") === "provider") {
+      setStep(1); setFurthest(1);
+    }
+  }, [ready, household.location]);
+
   function edit(patch: Partial<Draft>) {
     setDraft({ ...values, ...patch });
     setErrors({});
@@ -95,6 +101,12 @@ export default function HouseholdSetupScreen() {
     permission.current?.close();
   }
 
+  function saveProfile() {
+    const issues = validateHousehold();
+    if (Object.keys(issues).length) { setErrors(issues); requestAnimationFrame(() => document.getElementById(`setup-${Object.keys(issues)[0]}`)?.focus()); return; }
+    if (update({ name: values.name.trim(), location, locality: { province: values.province.trim(), municipality: values.municipality.trim(), barangay: values.barangay.trim() } })) go(1);
+  }
+
   return <PageShell title="Set up your household" subtitle="A little context for a smarter home" active="Home" className="hs-page">
     <div className="hs-preview-note"><Info aria-hidden="true" /><p><strong>UI preview</strong> · Try the setup flow. Location and provider choices are saved only in this browser.</p></div>
     {offline && <div className="hs-offline" role="status"><WifiOff aria-hidden="true" /><p><strong>You’re offline.</strong> You can enter your location and select a provider manually. Changes stay on this device.</p></div>}
@@ -115,7 +127,7 @@ export default function HouseholdSetupScreen() {
           <p>Your household preview is ready. Next, add a bill to start building your energy history.</p>
           <dl className="hs-review-list"><div><dt><House aria-hidden="true" /> Household</dt><dd>{values.name.trim()}</dd></div><div><dt><MapPin aria-hidden="true" /> Home location</dt><dd>{location}</dd></div><div><dt><Zap aria-hidden="true" /> Provider</dt><dd>{provider?.name}</dd></div></dl>
           <Link href="/bills/new" className="ui-primary"><ReceiptText size={18} aria-hidden="true" /> Add your first bill <ArrowRight size={17} aria-hidden="true" /></Link>
-          <div className="hs-complete-links"><button type="button" onClick={() => { moved.current = true; setComplete(false); go(0); }}>Edit household</button><Link href="/dashboard">Go to dashboard</Link></div>
+          <div className="hs-complete-links"><button type="button" onClick={() => { moved.current = true; setComplete(false); go(0); }}>Edit household</button><Link href="/setup">Continue home setup</Link><Link href="/dashboard">Go to dashboard</Link></div>
           <p className="hs-local-note">Saved in this browser. You can revisit setup from Account settings.</p>
         </div> : <>
           <ol className="hs-steps" aria-label="Household setup progress">{steps.map((label, index) => <li key={label} className={index === step ? "is-current" : index < step ? "is-done" : ""}><button type="button" disabled={index > furthest} aria-current={index === step ? "step" : undefined} onClick={() => go(index)}><span>{index < step ? <Check size={15} aria-hidden="true" /> : index + 1}</span><b>{label}</b></button></li>)}</ol>
@@ -132,6 +144,7 @@ export default function HouseholdSetupScreen() {
               </div>
               <datalist id="setup-provinces">{provinces.map(name => <option key={name} value={name} />)}</datalist>
               <label htmlFor="setup-barangay"><span id="setup-barangay-label">Barangay</span><small>optional</small><input id="setup-barangay" aria-labelledby="setup-barangay-label" aria-describedby="setup-barangay-hint" autoComplete="address-level3" maxLength={60} placeholder="e.g. Payao" value={values.barangay} onChange={event => edit({ barangay: event.target.value })} /><span id="setup-barangay-hint" className="hs-field-hint">A barangay helps make future advisory matching more specific.</span></label>
+              <button type="button" className="ui-secondary" onClick={saveProfile}>Save household profile</button>
             </div>}
 
             {step === 1 && <>
