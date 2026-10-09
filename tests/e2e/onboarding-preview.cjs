@@ -25,8 +25,8 @@ async function introduction(browser, width, height) {
     await page.evaluate(() => document.fonts.ready);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `screen ${index + 1} overflow at ${width}`);
     assert.equal(await page.locator('.intro-dots [aria-current="step"]').count(), 1);
-    const buttons = await page.locator('.intro-next, .intro-primary, .intro-dots button').evaluateAll(items => items.map(item => ({ width: item.getBoundingClientRect().width, height: item.getBoundingClientRect().height })));
-    assert(buttons.every(item => item.width >= 44 && item.height >= 48), 'navigation touch targets');
+    const buttons = await page.locator('.intro-page button').evaluateAll(items => items.map(item => ({ width: item.getBoundingClientRect().width, height: item.getBoundingClientRect().height })));
+    assert(buttons.every(item => item.width >= 44 && item.height >= 48), `navigation touch targets: ${JSON.stringify(buttons)}`);
     await page.screenshot({ path: path.join(screenshots, `intro-${index + 1}-${width}.png`), fullPage: true });
   }
   await page.getByRole('button', { name: 'Finish introduction and create account' }).click();
@@ -65,6 +65,10 @@ async function returningUserFlow(browser) {
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-intro-v1')).status), 'skipped');
   await page.goto(`${baseURL}/welcome`);
   await page.waitForURL('**/login');
+  await page.evaluate(() => localStorage.removeItem('wattsnap-intro-v1'));
+  await page.goto(`${baseURL}/welcome`);
+  await page.waitForURL('**/login');
+  assert.equal(await page.evaluate(() => localStorage.getItem('wattsnap-intro-v1')), null, 'known returning identity bypasses intro even without an intro marker');
   await context.close();
   console.log('PASS: first visit, returning signed-in/signed-out entry and logout preservation');
 }

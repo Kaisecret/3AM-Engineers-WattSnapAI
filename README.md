@@ -48,7 +48,7 @@ Users review AI-extracted information before saving it. Appliance consumption, s
 
 ## Project status
 
-WattSnap AI is currently in the planning and scaffolding stage. This repository contains documentation, asset folders, and empty application placeholder files. The planned features have not yet been implemented, and the application is not runnable yet.
+WattSnap AI now includes a runnable Next.js UI preview, with account screens, four introductory onboarding screens, a household setup checklist, and the existing electricity workflows. Preview records stay in this browser. Backend account verification and Gemini processing are not connected. See [UI preview status](docs/ui-preview-status.md) and [onboarding implementation](docs/onboarding-implementation.md) for routes, verification, and implementation boundaries.
 
 The planned stack includes **Next.js**, **Supabase**, and **Google Gemini**, delivered as an offline-first **Progressive Web Application (PWA)**.
 

@@ -22,6 +22,8 @@ function readAccounts(): PreviewIdentity[] {
   return raw.accounts.map(identity).filter((item: PreviewIdentity | null): item is PreviewIdentity => !!item);
 }
 
+export function hasPreviewAccounts() { return readAccounts().length > 0; }
+
 export function beginPreviewSession(identifier: string, profile?: { name: string; username?: string }) {
   const normalized = identifier.trim().toLowerCase();
   if (!normalized || normalized.length > 160) throw new Error("Enter an email or username of 160 characters or fewer.");

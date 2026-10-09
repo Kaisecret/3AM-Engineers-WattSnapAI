@@ -7,6 +7,24 @@ const baseURL = process.env.ONBOARDING_PREVIEW_URL || 'http://127.0.0.1:3001';
 const screenshots = path.join(os.tmpdir(), 'wattsnap-onboarding-preview');
 async function open(page, route) { await page.goto(`${baseURL}${route}`, { waitUntil: 'domcontentloaded', timeout: 60000 }); }
 async function noOverflow(page, name) { assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, name); }
+async function artwork(page) {
+  await page.evaluate(async () => {
+    const images = [...document.images].filter(image => image.getBoundingClientRect().width > 0 && !image.closest('dialog:not([open])'));
+    for (const image of images) image.loading = 'eager';
+    await Promise.all(images.map(image => image.decode()));
+  });
+}
+async function textContrast(page, selector) {
+  const results = await page.locator(selector).evaluateAll(elements => elements.map(element => {
+    const rgb = color => color.match(/[\d.]+/g)?.slice(0, 3).map(Number);
+    const luminance = channels => channels.map(value => value / 255).map(value => value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4).reduce((sum, value, index) => sum + value * [.2126, .7152, .0722][index], 0);
+    let background = element; while (background.parentElement && getComputedStyle(background).backgroundColor === 'rgba(0, 0, 0, 0)') background = background.parentElement;
+    const style = getComputedStyle(element); const surface = getComputedStyle(background).backgroundColor;
+    const a = luminance(rgb(style.color)); const b = luminance(rgb(surface) ?? [255, 255, 255]);
+    return { text: element.textContent.slice(0, 50), ratio: (Math.max(a, b) + .05) / (Math.min(a, b) + .05), target: parseFloat(style.fontSize) >= 24 || (parseFloat(style.fontSize) >= 18.66 && Number(style.fontWeight) >= 700) ? 3 : 4.5 };
+  }));
+  for (const result of results) assert(result.ratio >= result.target, `contrast ${JSON.stringify(result)}`);
+}
 
 (async () => {
   await fs.mkdir(screenshots, { recursive: true });
@@ -30,11 +48,16 @@ async function noOverflow(page, name) { assert.equal(await page.evaluate(() => d
     await page.getByRole('radio', { name: 'Dark mode', exact: true }).waitFor();
     await page.waitForFunction(() => document.querySelector('input[name="theme"]:checked')?.nextElementSibling.textContent === 'Dark mode');
     assert.equal(await page.getByRole('radio', { name: 'Dark mode', exact: true }).isChecked(), true);
-    for (const route of ['/intro', '/setup', '/onboarding', '/login']) {
+    for (const route of ['/intro', '/setup', '/onboarding', '/login', '/dashboard', '/bills/new', '/appliances/new', '/tips']) {
       await open(page, route);
       await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
+      if (route === '/bills/new') { await page.getByRole('button', { name: 'Type it', exact: true }).click(); await page.getByRole('heading', { name: 'Enter your bill details', exact: true }).waitFor(); }
+      if (route === '/appliances/new') { await page.getByRole('button', { name: 'Enter manually', exact: true }).click(); await page.getByRole('heading', { name: 'Review your appliance', exact: true }).waitFor(); }
+      if (route === '/intro') await page.waitForFunction(() => !!document.querySelector('.intro-controls button:not(:disabled)'));
       await noOverflow(page, `dark ${route}`);
-      await page.screenshot({ path: path.join(screenshots, `dark-${route.slice(1)}-390.png`), fullPage: true });
+      if (route === '/setup') { await page.getByText('0/5 Completed', { exact: true }).waitFor(); await textContrast(page, '.setup-heading h2, .setup-status, .setup-list h3'); }
+      await artwork(page);
+      await page.screenshot({ path: path.join(screenshots, `dark-${route.slice(1).replaceAll('/', '-')}-390.png`), fullPage: true });
     }
     await open(page, '/settings');
     await page.waitForFunction(() => document.querySelector('.setup-theme-options')?.disabled === false);
@@ -47,6 +70,7 @@ async function noOverflow(page, name) { assert.equal(await page.evaluate(() => d
       await noOverflow(page, `setup at ${width}`);
       const sizes = await page.locator('.setup-list li > a').evaluateAll(items => items.map(item => item.getBoundingClientRect().height));
       assert(sizes.every(height => height >= 48), 'setup touch targets');
+      await textContrast(page, '.setup-heading h2, .setup-status, .setup-list h3');
     }
     await page.setViewportSize({ width: 390, height: 844 });
     await open(page, '/setup');
@@ -80,6 +104,14 @@ async function noOverflow(page, name) { assert.equal(await page.evaluate(() => d
     await open(page, '/setup');
     await page.getByText('0/5 Completed', { exact: true }).waitFor();
     assert.equal(await page.evaluate(() => localStorage.getItem('wattsnap-ui-preview-v1')), null, 'lookup does not save or complete setup');
+    await open(page, '/onboarding');
+    await page.getByLabel('Household name', { exact: true }).waitFor();
+    await page.evaluate(() => { navigator.geolocation.getCurrentPosition = (_, denied) => denied({ code: 1 }); });
+    await page.getByRole('button', { name: 'Try preview', exact: false }).click();
+    await page.getByRole('button', { name: 'Use my current location', exact: true }).click();
+    await page.getByText('Location permission was declined.', { exact: false }).waitFor();
+    assert.equal(await page.getByLabel('Province', { exact: true }).isEnabled(), true);
+    assert.equal(lookups, 1, 'denial does not send coordinates');
     console.log('PASS: optional synthetic location lookup, correct suggestions, no implicit save');
 
     await page.evaluate(async () => { await navigator.serviceWorker.ready; });

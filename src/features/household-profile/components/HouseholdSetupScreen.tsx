@@ -103,6 +103,7 @@ export default function HouseholdSetupScreen() {
   }
 
   function exampleLocation() {
+    setLocationMessage("");
     edit({ province: "Antique", municipality: "San Jose de Buenavista", barangay: "Payao" });
     setLocationState("example");
     permission.current?.close();
@@ -113,7 +114,7 @@ export default function HouseholdSetupScreen() {
     if (!navigator.onLine) { setLocationMessage("You’re offline. Enter your home location manually."); return; }
     if (!navigator.geolocation) { setLocationMessage("This browser cannot request location. Enter your home location manually."); return; }
     if (locating || Date.now() - lastLookup.current < 1500) return;
-    setLocating(true); setLocationMessage("Finding a location suggestion…");
+    setLocating(true); setLocationState("idle"); setLocationMessage("Finding a location suggestion…");
     const request = new AbortController(); locationRequest.current = request;
     navigator.geolocation.getCurrentPosition(async position => {
       if (request.signal.aborted) return;
@@ -121,7 +122,7 @@ export default function HouseholdSetupScreen() {
       const timeout = window.setTimeout(() => request.abort(), 10000);
       try {
         const suggestion = await lookupLocation(position.coords.latitude, position.coords.longitude, request.signal);
-        edit({ ...suggestion, barangay: "" });
+        setDraft(previous => ({ ...(previous ?? values), ...suggestion, barangay: "" })); setErrors({});
         setLocationMessage("Location suggestion filled in. Check that it is your home, then confirm the provider shown on your bill.");
       } catch (issue) { setLocationMessage(issue instanceof Error && issue.name !== "AbortError" ? issue.message : "Location lookup timed out. Enter your home location manually."); }
       finally { window.clearTimeout(timeout); setLocating(false); }

@@ -18,7 +18,7 @@ Review match also includes the original five preparation steps for affected acti
 
 ## Verification
 
-The production build checks TypeScript and completes static page generation. The feature test suite contains 67 passing checks covering calculations, unknown inputs, date validation, source preservation, matching, stale inputs, saved data contracts, and preparation progress.
+The production build checks TypeScript and completes static page generation. The feature test suite contains 76 passing checks covering calculations, unknown inputs, date validation, source preservation, matching, stale inputs, saved data contracts, preparation progress, and confirmed household setup. The [onboarding implementation](./onboarding-implementation.md) adds `/welcome`, `/intro` and `/setup`, account-scoped preview records, optional appearance settings and cached offline app shells. Existing feature editors and navigation remain available.
 
 Browser verification lives in `tests/e2e`:
 

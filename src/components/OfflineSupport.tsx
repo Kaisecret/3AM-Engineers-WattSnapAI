@@ -3,7 +3,8 @@ import { useEffect } from "react";
 export default function OfflineSupport() {
   useEffect(() => {
     if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" }).then(() => navigator.serviceWorker.ready).then(() => {
+      navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" }).then(() => navigator.serviceWorker.ready).then(async () => {
+        if (!navigator.serviceWorker.controller) await new Promise<void>(resolve => navigator.serviceWorker.addEventListener("controllerchange", () => resolve(), { once: true }));
         // Warm artwork that may have loaded before the worker took control.
         const resources = performance.getEntriesByType("resource").map(entry => entry.name).filter(name => {
           const url = new URL(name); return url.origin === location.origin && (url.pathname.startsWith("/_next/image") || url.pathname.startsWith("/assets/"));

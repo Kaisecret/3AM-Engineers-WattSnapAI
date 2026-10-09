@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import Image, { getImageProps } from "next/image";
 import { ChartColumnBig, ChevronRight, House, Megaphone, PlugZap, ScanText } from "lucide-react";
 
 const navigation = [
@@ -9,6 +9,9 @@ const navigation = [
   { label: "Appliances", href: "/appliances", icon: PlugZap },
   { label: "Advisories", href: "/advisories", icon: Megaphone },
 ];
+
+const assistantArtwork = getImageProps({ src: "/assets/branding/Cheerful Bee Robot Thumbs-Up.png", alt: "", width: 120, height: 120, sizes: "64px" }).props;
+const transparentPixel = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
 export default function AppNavigation({ active }: { active?: string }) {
   return (
@@ -20,7 +23,7 @@ export default function AppNavigation({ active }: { active?: string }) {
         </Link>
       ))}
       <Link href="/assistant" className={`ws-sidebar-assistant${active === "Assistant" ? " is-active" : ""}`} aria-current={active === "Assistant" ? "page" : undefined}>
-        <span className="ws-sidebar-assistant-art"><Image src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="" width={120} height={120} sizes="64px" /></span>
+        <span className="ws-sidebar-assistant-art"><picture><source media="(min-width: 900px)" srcSet={assistantArtwork.srcSet} sizes={assistantArtwork.sizes} /><img src={transparentPixel} alt="" width={120} height={120} loading="lazy" /></picture></span>
         <span className="ws-sidebar-assistant-copy"><strong>WattSnap AI</strong><small>Ask me anything</small></span>
         <ChevronRight aria-hidden="true" />
       </Link>

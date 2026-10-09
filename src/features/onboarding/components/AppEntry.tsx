@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { readPreviewIdentity } from "@/features/auth/preview-session";
+import { hasPreviewAccounts, readPreviewIdentity } from "@/features/auth/preview-session";
 import { readIntro } from "../intro-state";
 import "../onboarding.css";
 
@@ -13,7 +13,7 @@ export default function AppEntry() {
   const [error, setError] = useState(false);
   useEffect(() => {
     try {
-      const destination = readPreviewIdentity() ? "/dashboard" : readIntro().status === "in-progress" ? "/intro" : "/login";
+      const destination = readPreviewIdentity() ? "/dashboard" : readIntro().status === "in-progress" && !hasPreviewAccounts() ? "/intro" : "/login";
       // Start navigation immediately; the logo fades only while the route opens.
       router.replace(destination);
     } catch { setError(true); }

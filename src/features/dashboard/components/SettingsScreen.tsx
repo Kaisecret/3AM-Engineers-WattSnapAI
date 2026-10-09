@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { CalendarClock, Camera, Check, ChevronRight, CircleCheck, Database, ImageUp, Lightbulb, LogOut, MapPin, Megaphone, PlugZap, ReceiptText, ShieldCheck, Sparkles, Trash2, UserRound, Wallet, Zap } from "lucide-react";
+import { CalendarClock, Camera, Check, ChevronRight, CircleCheck, Database, House, ImageUp, Lightbulb, LogOut, MapPin, Megaphone, PlugZap, ReceiptText, ShieldCheck, Sparkles, Trash2, UserRound, Wallet, Zap } from "lucide-react";
 import PageShell from "./PageShell";
 import UserAvatar from "./UserAvatar";
 import PhotoEditor from "./PhotoEditor";
@@ -98,6 +98,7 @@ export default function SettingsScreen() {
         <nav className="ui-panel st-links" aria-label="Household shortcuts">
           {[
             { href: "/setup", icon: MapPin, title: "Home setup checklist", detail: "Your five setup steps and saved progress" },
+            { href: "/onboarding", icon: House, title: "Household setup", detail: "Review your home location and electricity provider" },
             { href: "/budget", icon: Wallet, title: "Smart Energy Budget", detail: `${wholePesos(household.budget)} a month` },
             { href: "/bills", icon: ReceiptText, title: "Bill history", detail: `${household.bills.length} ${household.bills.length === 1 ? "bill" : "bills"} saved` },
             { href: "/appliances", icon: PlugZap, title: "My appliances", detail: `${household.appliances.length} added` },

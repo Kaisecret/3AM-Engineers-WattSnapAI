@@ -123,7 +123,13 @@ async function count(page, expected) {
     assert.equal(await page.evaluate(key => localStorage.getItem(key), alphaKey), savedAlpha);
     await login(page, 'alpha@example.com');
     await count(page, 5);
+    await page.evaluate(key => { localStorage.setItem(key, '{invalid record'); window.dispatchEvent(new Event('wattsnap-preview-change')); }, alphaKey);
+    await page.getByText('0/5 Completed', { exact: true }).waitFor();
+    await page.getByRole('alert').filter({ hasText: 'could not be opened' }).waitFor();
+    assert.equal(await page.evaluate(key => localStorage.getItem(key), alphaKey), '{invalid record', 'unreadable record is preserved');
+    await page.evaluate(({ key, saved }) => { localStorage.setItem(key, saved); window.dispatchEvent(new Event('wattsnap-preview-change')); }, { key: alphaKey, saved: savedAlpha });
+    await page.getByText('5/5 Completed', { exact: true }).waitFor();
     assert.deepEqual(errors, []);
-    console.log('PASS: real saves, out-of-order completion, failed storage, explicit tips review, refresh, identity isolation, legacy preservation and logout/login');
+    console.log('PASS: real saves, out-of-order completion, failed storage, explicit tips review, refresh, identity isolation, legacy preservation, unreadable-record recovery and logout/login');
   } finally { await context.close(); await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

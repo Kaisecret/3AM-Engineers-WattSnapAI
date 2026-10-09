@@ -46,3 +46,7 @@ html[data-theme="dark"] .ui-secondary { color: #89dfef; }
 html[data-theme="dark"] :is(.auth-label, .auth-preview-note, .auth-input-icon, .auth-field > label) { color: #c2d4df; }
 html[data-theme="dark"] .setup-step-icon { background: #254552; color: #89dfef; }
 html[data-theme="dark"] .is-complete .setup-step-icon { background: #24473c; color: #8ce2b2; }
+html[data-theme="dark"] .ws-home { --ws-ink: #edf6fa; --ws-muted: #c2d4df; }
+html[data-theme="dark"] :is(.ws-card, .ws-header-panel, .ws-notification-panel, .ws-account-panel) { background: #192e3d; border-color: #3b5968; }
+html[data-theme="dark"] .ws-home :is(.ws-consumption-value, .ws-bill-total, .ws-bill-amount, .ws-desktop-heading h1, .ws-profile-button, .ws-card h2) { color: #edf6fa; }
+html[data-theme="dark"] .ws-home :is(.ws-muted, .ws-bill-meta, .ws-tip-copy p, .ws-tip-copy small, .ws-updated) { color: #c2d4df; }

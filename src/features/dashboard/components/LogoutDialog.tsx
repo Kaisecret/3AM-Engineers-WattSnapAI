@@ -31,7 +31,7 @@ export default function LogoutDialog({ open, onClose, name }: { open: boolean; o
 
   return <dialog ref={dialog} className="lo-dialog" aria-labelledby="lo-title" aria-describedby="lo-text" onClose={onClose} onCancel={event => { if (leaving) event.preventDefault(); }} onClick={event => { if (event.target === event.currentTarget && !leaving) dialog.current?.close(); }}>
     <div className="lo-body">
-      <div className="lo-art" aria-hidden="true"><span /><Image src="/assets/branding/actions-1.png" alt="" width={240} height={240} sizes="130px" /></div>
+      <div className="lo-art" aria-hidden="true"><span />{open && <Image src="/assets/branding/actions-1.png" alt="" width={240} height={240} sizes="130px" />}</div>
       <h2 id="lo-title">Log out of WattSnap?</h2>
       <p id="lo-text">You&apos;ll need to log in again to see {name.split(/\s+/)[0]}&apos;s home.</p>
       {error && <p className="ui-error" role="alert">{error}</p>}
