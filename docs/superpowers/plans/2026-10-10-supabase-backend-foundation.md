@@ -2381,24 +2381,9 @@ This applies every migration file to an embedded Postgres on this machine and ch
 
 ### Apply a migration
 
-Use one method for the life of the project.
+Migrations are applied through the dashboard. Open the project, check its name at the top of the page, open SQL Editor, paste the whole migration file, and run it. If any statement fails, none of them take effect.
 
-**With the Supabase CLI.** Run once per machine:
-
-```
-npx supabase login
-npx supabase link --project-ref <project-ref>
-```
-
-Then, for each new migration:
-
-```
-npx supabase db push
-```
-
-**With the dashboard.** Open the project, check its name at the top of the page, open SQL Editor, paste the whole migration file, and run it. If any statement fails, none of them take effect.
-
-If the dashboard was used for a file and the CLI is adopted later, tell the CLI that the file is already applied before the first `db push`, or it will try to run it again:
+The Supabase CLI can also apply migrations (`npx supabase link`, then `npx supabase db push`). It has not been used on these projects. The dashboard does not record which files it has run, so before the CLI is used for the first time it must be told, once for each project, or it will try to run them again:
 
 ```
 npx supabase migration repair --status applied 20261010000000
@@ -2459,7 +2444,7 @@ Instead, delete the test project and create it again:
 | Command | What it checks | Needs |
 | --- | --- | --- |
 | `npm test` | Every unit test, and the migration in an embedded Postgres. | Nothing. |
-| `npm run test:isolation` | The same security rules through the hosted project's real API, plus file storage and the auth services. | `.env.local` with all three values. |
+| `npm run test:isolation` | The same security rules through the hosted project's real API, plus file storage and the auth services. | `.env.local` with the four values of `wattsnap-dev`. |
 
 The isolation test creates two accounts with addresses beginning `wattsnap-isolation-` in the reserved domain `example.com`, and deletes them when it finishes, including after a failure. At its start it also removes any such accounts left by an interrupted run. If Supabase refuses the addresses, set `WATTSNAP_TEST_EMAIL_DOMAIN` in `.env.local` to a domain you control.
 
@@ -2467,7 +2452,7 @@ It refuses to run unless `WATTSNAP_TEST_PROJECT_REF` in `.env.local` equals the 
 
 ## Keeping a free-plan project active
 
-Supabase pauses a free-plan project after seven days without requests, and keeps its data for 90 days. A paused project is restored from its dashboard page.
+Supabase pauses a free-plan project after seven days without requests. A paused project is restored from its dashboard page. Supabase limits how long a paused project can still be restored; the notice on the paused project gives the date.
 
 `wattsnap-dev` may pause; restore it when it is next needed. `wattsnap` holds nothing until the application uses it, so a pause before then loses nothing, but it must be restored and checked before the application is connected. Once the application is live, its own traffic keeps the project active.
 
@@ -2483,7 +2468,7 @@ Backups contain personal data and password hashes. Store them outside this repos
 
 ### What is needed
 
-`pg_dump` and `pg_restore` from PostgreSQL 17 or newer. They are part of the PostgreSQL installer for Windows (the server component is not needed). Check with:
+`pg_dump` and `pg_restore`, at least as new as the Postgres version shown on the project's dashboard (17 when this was written). They are part of the PostgreSQL installer for Windows (the server component is not needed). Check with:
 
 ```
 pg_dump --version
@@ -2513,13 +2498,16 @@ The list must include `TABLE DATA public households`, `TABLE DATA public profile
 
 ### Restore
 
-Restore into a new, empty Supabase project, never over the live one. Apply every migration to the new project first, then load the data:
+**This procedure has not been rehearsed.** Rehearse it once, by restoring a backup into a fresh `wattsnap-dev`, before real users depend on it. Until then, treat the steps below as an outline.
 
-```
-pg_restore --data-only --disable-triggers --no-owner --no-privileges --schema=auth --schema=public --dbname "<new-project-connection-string>" "<backup-folder>/wattsnap-YYYY-MM-DD.dump"
-```
+1. Restore into a new, empty Supabase project, never over the live one.
+2. Apply every migration to the new project, in order.
+3. Load the data for the `auth` and `public` schemas from the backup. Supabase's own guide, "Backup and Restore using the CLI" in its documentation, gives the exact commands and the session setting that lets a non-superuser load rows without firing triggers. Follow the current version of that guide.
+4. Compare the new project with the schema summary above.
+5. Sign in as a real account and confirm its records are present.
+6. Point the application at the new project's URL and keys.
 
-Then run `npm run test:isolation` against the new project, sign in as a real account to confirm its records are present, and point the application at the new project's URL and keys.
+Do not run the isolation test against a restored production project.
 
 Restoring is disruptive and can lose whatever was written after the backup. Decide who is responsible for it before it is needed.
 ````
