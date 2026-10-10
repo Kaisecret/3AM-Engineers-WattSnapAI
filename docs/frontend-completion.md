@@ -37,7 +37,7 @@ Baseline evidence: 76 feature tests pass; `npx.cmd tsc --noEmit` passes. Existin
 | 16 | Frontend contracts/code quality | Type-only integration contracts; unreachable sample handlers and delays removed |
 | 17 | Full local verification | Production build, TypeScript, 87 rule tests and 17 browser groups passed; existing lint blocker documented |
 | 18 | Priority review/polish | Removed remaining sample links, corrected unchanged comparisons and clarified actions/metadata |
-| 19 | Definition-of-done audit | Pending |
+| 19 | Definition-of-done audit | All twenty criteria reviewed with evidence and explicit integration/test limits |
 | 20 | Final implementation report | Pending |
 
 ## 2. Safety review
@@ -121,3 +121,7 @@ The final rerun exposed an intermittent first offline navigation during a connec
 Final validation adds three offline-shell integrity tests: stalled refresh must not block navigation, incomplete new chunks must not replace a prepared page, and API/write/external/server-component requests must bypass shell caching. All three pass alongside the 87 feature tests.
 
 Root-cause inspection found the browser harness used an async cache predicate in its polling wait, which could proceed before service-worker activation. The test now waits synchronously for the activated controller, then explicitly checks prepared shells before disconnecting. Cached-shell delivery and complete-chunk refresh remain covered independently by integrity tests.
+
+## 19. Definition-of-done audit
+
+[The complete audit](./frontend-done-audit.md) maps all twenty criteria to implementation and local evidence. The final production build, TypeScript and 90 rule/cache tests pass. All eighteen browser groups have passing results against the final build, including 70 responsive combinations and cold offline routes. One full-batch chart startup check timed out; chart, responsive, offline and final-polish groups passed in a separate run. This timing limitation is recorded honestly. The boundary guard passes; original assets, dependencies, backend/infrastructure/configuration and main remain unchanged. No merge or deployment was performed.
