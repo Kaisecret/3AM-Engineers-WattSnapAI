@@ -38,7 +38,7 @@ export function Navbar() {
         </nav>
         <div className="landing-account-actions">
           <Link href="/login" className="landing-login-link">Log in</Link>
-          <Link href="/welcome" className="btn-primary landing-nav-signup landing-create-account">
+          <Link href="/signup" className="btn-primary landing-nav-signup landing-create-account">
             <CreateAccountLabel />
           </Link>
         </div>
@@ -60,7 +60,7 @@ export function Navbar() {
           ))}
           <Link href="/dashboard" onClick={() => setMenuOpen(false)}>Household Dashboard</Link>
           <Link href="/login" onClick={() => setMenuOpen(false)}>Log in</Link>
-          <Link href="/welcome" className="btn-primary landing-create-account" onClick={() => setMenuOpen(false)}>
+          <Link href="/signup" className="btn-primary landing-create-account" onClick={() => setMenuOpen(false)}>
             <CreateAccountLabel />
           </Link>
         </nav>

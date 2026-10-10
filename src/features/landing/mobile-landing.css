@@ -5,6 +5,8 @@
 .landing-create-account .landing-create-arrow { flex-shrink: 0; width: 18px; height: 18px; }
 .wattsnap-hero .hero-signup, .post-hero .post-account-actions .post-account-signup, .landing-header .landing-create-account { gap: 9px; font-size: 16px; font-weight: 600; line-height: 1.2; letter-spacing: 0; }
 .landing-header .landing-create-account { font-size: 14px; }
+.wattsnap-hero .hero-login { position: relative; z-index: 3; margin-top: 12px; color: #47607a; font-size: 15px; }
+.wattsnap-hero .hero-login a { display: inline-flex; align-items: center; min-height: 44px; padding-inline: 4px; color: #0a72b0; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
 
 @media (max-width: 650px) {
   .landing-header { --landing-header-height: 64px; height: 64px; background: rgba(247, 254, 255, .96); }
@@ -21,6 +23,7 @@
   .wattsnap-hero .hero-title { order: 2; position: relative; z-index: 3; width: 86%; max-width: 440px; margin: 14px 0 0; }
   .wattsnap-hero .hero-title img { width: 100%; height: auto; }
   .wattsnap-hero .hero-description { order: 3; position: relative; z-index: 3; width: 100%; max-width: 360px; margin-top: 10px; font-size: clamp(14px, 4vw, 19px); line-height: 1.4; letter-spacing: -.35px; white-space: normal; text-align: center; }
+  .wattsnap-hero .hero-login { order: 4; margin-top: 6px; font-size: 14px; }
   .wattsnap-hero .hero-actions { order: 4; position: relative; z-index: 3; width: 100%; max-width: 420px; margin-top: 18px; display: flex; flex-direction: row; justify-content: center; align-items: stretch; gap: 10px; }
   .wattsnap-hero .hero-signup, .wattsnap-hero .hero-watch { flex: 1 1 0; min-width: 0; min-height: 48px; padding: 11px 9px; gap: 7px; justify-content: center; font-size: clamp(13px, 3.6vw, 16px); }
   .wattsnap-hero .hero-signup > svg { width: 18px; height: 18px; flex-shrink: 0; }

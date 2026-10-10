@@ -5,6 +5,6 @@ import { ProfileSetupStep } from "./AuthSteps";
 export function CompleteProfileForm({ defaultName }: { defaultName: string }) {
   const router = useRouter();
   return <AuthShell stepKey="profile" art={{ src: AUTH_ART.profileCard }} backHref="/login">
-    <ProfileSetupStep defaultName={defaultName} onContinue={() => { router.replace("/setup"); router.refresh(); }} />
+    <ProfileSetupStep defaultName={defaultName} onContinue={() => { router.replace("/intro"); router.refresh(); }} />
   </AuthShell>;
 }

@@ -26,7 +26,8 @@ export default function IntroScreen() {
   const screen = screens[state.step];
 
   useEffect(() => {
-    try { setState(readIntro()); } catch { setError("Your browser cannot remember progress. You can still continue."); }
+    // A finished or skipped introduction starts again from the first screen for a new account.
+    try { const saved = readIntro(); setState(saved.status === "in-progress" ? saved : initialIntro); } catch { setError("Your browser cannot remember progress. You can still continue."); }
     setReady(true);
   }, []);
   useEffect(() => { if (moved.current) heading.current?.focus(); }, [state.step]);
@@ -37,7 +38,7 @@ export default function IntroScreen() {
     catch { setError("Your browser could not save progress. You can continue without remembering it."); return false; }
   }
   function go(step: number) { moved.current = true; remember({ version: 1, step, status: "in-progress" }); }
-  function finish(status: "completed" | "skipped", destination = "/login") {
+  function finish(status: "completed" | "skipped", destination = "/setup") {
     remember({ ...state, status });
     router.push(destination);
   }
@@ -52,8 +53,8 @@ export default function IntroScreen() {
       </section>
       {error && <p className="intro-storage-error" role="status">{error}</p>}
       <footer className={`intro-footer${state.step === 0 ? " is-welcome" : ""}`}>
-        {state.step === 0 && <><button className="intro-primary" type="button" disabled={!ready} onClick={() => go(1)}>Get Started <ArrowRight aria-hidden="true" /></button><p>Already have an account? <button type="button" onClick={() => finish("skipped", "/login")}>Sign in</button></p></>}
-        <div className="intro-controls">{state.step > 0 && <button className="intro-skip" type="button" disabled={!ready} onClick={() => finish("skipped")}>Skip</button>}<nav className="intro-dots" aria-label="Onboarding progress">{screens.map((item, index) => <button key={item.title} type="button" disabled={!ready} aria-label={`Screen ${index + 1}: ${item.title} ${item.accent}`} aria-current={index === state.step ? "step" : undefined} onClick={() => go(index)}><span /></button>)}</nav>{state.step > 0 && <button className="intro-next" type="button" disabled={!ready} aria-label={state.step === 3 ? "Finish introduction and sign in" : "Next screen"} onClick={() => state.step === 3 ? finish("completed") : go(state.step + 1)}>{state.step === 3 ? <Check aria-hidden="true" /> : <ArrowRight aria-hidden="true" />}<span>{state.step === 3 ? "Finish" : "Next"}</span></button>}</div>
+        {state.step === 0 && <><button className="intro-primary" type="button" disabled={!ready} onClick={() => go(1)}>Get Started <ArrowRight aria-hidden="true" /></button></>}
+        <div className="intro-controls">{state.step > 0 && <button className="intro-skip" type="button" disabled={!ready} onClick={() => finish("skipped")}>Skip</button>}<nav className="intro-dots" aria-label="Onboarding progress">{screens.map((item, index) => <button key={item.title} type="button" disabled={!ready} aria-label={`Screen ${index + 1}: ${item.title} ${item.accent}`} aria-current={index === state.step ? "step" : undefined} onClick={() => go(index)}><span /></button>)}</nav>{state.step > 0 && <button className="intro-next" type="button" disabled={!ready} aria-label={state.step === 3 ? "Finish introduction and set up your home" : "Next screen"} onClick={() => state.step === 3 ? finish("completed") : go(state.step + 1)}>{state.step === 3 ? <Check aria-hidden="true" /> : <ArrowRight aria-hidden="true" />}<span>{state.step === 3 ? "Finish" : "Next"}</span></button>}</div>
       </footer>
     </div>
   </main>;

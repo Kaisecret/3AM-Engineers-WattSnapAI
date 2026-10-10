@@ -29,12 +29,12 @@ async function introduction(browser, width, height) {
     assert(buttons.every(item => item.width >= 44 && item.height >= 48), `navigation touch targets: ${JSON.stringify(buttons)}`);
     await page.screenshot({ path: path.join(screenshots, `intro-${index + 1}-${width}.png`), fullPage: true });
   }
-  await page.getByRole('button', { name: 'Finish introduction and sign in' }).click();
-  await page.waitForURL('**/login');
+  await page.getByRole('button', { name: 'Finish introduction and set up your home' }).click();
+  await page.waitForURL('**/setup**');
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-intro-v1')).status), 'completed');
   await page.goto(`${baseURL}/intro`);
   await page.getByRole('button', { name: 'Skip', exact: true }).first().click();
-  await page.waitForURL('**/login');
+  await page.waitForURL('**/setup**');
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-intro-v1')).status), 'skipped');
   assert.deepEqual(errors, []);
   await context.close();
@@ -45,10 +45,7 @@ async function returningUserFlow(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
   const page = await context.newPage();
   page.setDefaultNavigationTimeout(60000);
-  await page.goto(`${baseURL}/welcome`);
-  await page.waitForURL('**/intro');
-  await page.getByRole('button', { name: 'Skip', exact: true }).first().click();
-  await page.waitForURL('**/login');
+  // Signed-out visitors go straight to login; the introduction is shown after creating an account.
   await page.goto(`${baseURL}/welcome`);
   await page.waitForURL('**/login');
   await page.getByLabel('Email or Username', { exact: true }).fill('onboarding-test@example.com');
@@ -62,7 +59,6 @@ async function returningUserFlow(browser) {
   await page.locator('.lo-dialog[open] .lo-confirm').click();
   await page.waitForURL('**/login');
   assert.equal(await page.evaluate(() => localStorage.getItem('wattsnap-preview-session-v1')), null);
-  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-intro-v1')).status), 'skipped');
   await page.goto(`${baseURL}/welcome`);
   await page.waitForURL('**/login');
   await page.evaluate(() => localStorage.removeItem('wattsnap-intro-v1'));

@@ -63,11 +63,12 @@ export function HeroSection() {
             Save smarter. Be ready for brownouts.
           </p>
           <div className="hero-actions">
-            <Link href="/welcome" className="btn-primary hero-signup landing-create-account">
+            <Link href="/signup" className="btn-primary hero-signup landing-create-account">
               <CreateAccountLabel />
             </Link>
             <ProductTour />
           </div>
+          <p className="hero-login">Already have an account? <Link href="/login">Log in</Link></p>
           <ul className="hero-benefits" aria-label="WattSnap benefits">
             {benefits.map((benefit) => (
               <li key={benefit.icon}>

@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
 import { getAccount } from "@/features/auth/service";
 import { forgetAccount } from "@/features/auth/session";
-import { readIntro } from "../intro-state";
 import "../onboarding.css";
 
 export default function AppEntry() {
@@ -21,7 +20,7 @@ export default function AppEntry() {
         const account = await getAccount(getBrowserSupabase());
         if (!active) return;
         if (!account.ok) { setError(true); return; }
-        const destination = account.value ? account.value.profile.onboardedAt ? "/dashboard" : "/complete-profile" : readIntro().status === "in-progress" ? "/intro" : "/login";
+        const destination = account.value ? account.value.profile.onboardedAt ? "/dashboard" : "/complete-profile" : "/login";
         router.replace(destination);
       } catch { if (active) setError(true); }
     }
