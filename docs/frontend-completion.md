@@ -36,7 +36,7 @@ Baseline evidence: 76 feature tests pass; `npx.cmd tsc --noEmit` passes. Existin
 | 15 | Content accuracy | Honest marketing, local access, privacy, assistant and unavailable notifications |
 | 16 | Frontend contracts/code quality | Type-only integration contracts; unreachable sample handlers and delays removed |
 | 17 | Full local verification | Production build, TypeScript, 87 rule tests and 17 browser groups passed; existing lint blocker documented |
-| 18 | Priority review/polish | Pending |
+| 18 | Priority review/polish | Removed remaining sample links, corrected unchanged comparisons and clarified actions/metadata |
 | 19 | Definition-of-done audit | Pending |
 | 20 | Final implementation report | Pending |
 
@@ -111,3 +111,13 @@ Added data-only BillExtractionResult, ApplianceLabelExtractionResult, AdvisoryAn
 A fresh production build passed. TypeScript and all 87 feature rule tests passed. Seventeen browser check groups passed against that production build, including 70 responsive route/width combinations and ten cold offline household routes. Added coverage for actual simulator snapshots without modifying registered appliances, immediate offline assistant replies, reviewed preparation plans, checklist refresh and confirmed plan/advisory deletion. Camera-denial testing verifies permission is user-triggered and manual entry remains usable. Reviewed regenerated production screenshots. Tests use synthetic isolated records and make no AI requests.
 
 Existing blocker: noninteractive `npm.cmd run lint` exits 1 with the ESLint setup prompt because no ESLint configuration/dependency exists. The production build also reports this limitation. The historical prototype browser scripts rely on intentionally removed sample/sign-in flows; [test instructions](../tests/e2e/README.md) document their status and the current replacement acceptance suite. A development navigation timeout during a rebuild was resolved by running browser verification against a fresh production server. Physical camera/GPS behavior and installation on real phones still require device testing.
+
+## 18. Priority review and final polish
+
+Completed the stability/core/offline/accessibility review before final polish. Replaced two remaining Brownout Ready sample links with actual advisory entry. Equal kWh totals now say No change instead of lower/less, including dashboard, history, saved bills and assistant snapshots. Snapshot comparisons identify the previous saved bill when calendar months are missing. Appliance manual review says Add photo until a photo exists. Bill history exposes entered billing dates and notes with safe wrapping. Landing feature cards open their corresponding workflow. Existing layout and assets remain. Targeted production checks cover both 320px and desktop layouts, unchanged readings, optional metadata and destinations.
+
+The final rerun exposed an intermittent first offline navigation during a connectivity change. Shell cache v3 serves prepared public HTML immediately and refreshes it in the background only after its referenced static chunks are available. Private records and API requests remain outside this cache. An upload test also now waits for the enabled input after page initialization, matching the actual user control.
+
+Final validation adds three offline-shell integrity tests: stalled refresh must not block navigation, incomplete new chunks must not replace a prepared page, and API/write/external/server-component requests must bypass shell caching. All three pass alongside the 87 feature tests.
+
+Root-cause inspection found the browser harness used an async cache predicate in its polling wait, which could proceed before service-worker activation. The test now waits synchronously for the activated controller, then explicitly checks prepared shells before disconnecting. Cached-shell delivery and complete-chunk refresh remain covered independently by integrity tests.

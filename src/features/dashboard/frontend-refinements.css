@@ -26,3 +26,5 @@ html[data-theme="dark"] .ws-home :is(.ui-helper, .aw-muted, .aw-fields > p, .ap-
 @media (max-width: 599px) { .ws-home .np-form .ap-presets, .ws-home .ap-presets { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (prefers-reduced-motion: reduce) { .ws-home *, .ui-confirm-dialog * { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
 .ws-home-screen .ws-chart { padding-top: 24px; padding-bottom: 6px; }.ws-home-screen .ws-chart-day { min-width: 44px; }
+
+.ws-home .en-list-main { min-width: 0; overflow-wrap: anywhere; }

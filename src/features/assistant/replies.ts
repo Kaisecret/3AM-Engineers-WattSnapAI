@@ -88,7 +88,7 @@ export function householdReply(message: string, context: ChatContext = {}): Repl
     if (!context.topAppliance) return { text: "Add the appliances you use at home and I'll rank which ones use the most energy.", links: [{ label: "Add appliances", href: "/appliances" }] };
     const { name, monthlyKwh } = context.topAppliance;
     return {
-      text: `From the ${context.applianceCount ?? "saved"} appliances you've added, your ${name.toLowerCase()} uses the most: about ${monthlyKwh.toFixed(1)} kWh a month ${context.rate && context.rate > 0 ? ` (approximately ${peso(monthlyKwh * context.rate)} using your latest bill)` : ""}. Review the inputs and follow the appliance instructions. Keep essential appliances operating as needed.`,
+      text: `From the ${context.applianceCount ?? "saved"} ${context.applianceCount === 1 ? "appliance" : "appliances"} you've added, your ${name.toLowerCase()} uses the most: about ${monthlyKwh.toFixed(1)} kWh a month ${context.rate && context.rate > 0 ? ` (approximately ${peso(monthlyKwh * context.rate)} using your latest bill)` : ""}. Review the inputs and follow the appliance instructions. Keep essential appliances operating as needed.`,
       links: [{ label: "See all appliances", href: "/appliances" }],
       suggestions: ["How can I save on aircon?"],
     };

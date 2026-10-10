@@ -54,7 +54,7 @@ export default function NameplateReview({ initial, source, appliances, rate, rea
       <span className="np-eyebrow">YOUR REFERENCE</span><h2 id="np-reference-heading">{sample ? "Sample nameplate" : source.kind === "photo" ? "Your nameplate photo" : "Look for rated input"}</h2>
       {source.kind === "photo" ? <><div className="np-image-wrap"><Image src={source.url} alt="Uploaded appliance nameplate" fill sizes="(min-width: 900px) 34vw, 100vw" unoptimized /></div><p className="np-filename">{source.name}</p></> : sample ? <SampleNameplate type={source.sample} /> : <div className="np-manual-guide"><Zap aria-hidden="true" /><strong>W or kW</strong><p>Copy the power value from your appliance’s label. Model numbers are optional.</p></div>}
       {source.kind !== "manual" && <button ref={originalButton} type="button" className="ui-secondary" onClick={() => original.current?.showModal()}><FileImage size={17} aria-hidden="true" />View original</button>}
-      {onReplaceSource && <button type="button" className="ui-secondary" onClick={onReplaceSource}>Replace photo</button>}
+      {onReplaceSource && <button type="button" className="ui-secondary" onClick={onReplaceSource}>{source.kind === "photo" ? "Replace photo" : "Add photo"}</button>}
       {source.kind === "photo" && onRemoveSource && <button type="button" className="ui-secondary" onClick={onRemoveSource}>Remove photo</button>}
       <p className="ui-helper">Voltage (V) and apparent power (VA) alone cannot give us rated watts. If you do not know the wattage, leave it blank until you can check.</p>
       {source.kind === "photo" && <p className="ui-helper">Your photo stays on this device for this session. Only the reviewed values are saved.</p>}

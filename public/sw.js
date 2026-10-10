@@ -1,5 +1,5 @@
 /* Saved household records remain in browser storage. Never cache API requests. */
-const CACHE = "wattsnap-shell-v2";
+const CACHE = "wattsnap-shell-v3";
 const PAGES = new Set(["/", "/advisories", "/advisories/new", "/simulator", "/budget", "/brownout-ready", "/assistant", "/welcome", "/intro", "/login", "/signup", "/setup", "/dashboard", "/onboarding", "/bills", "/bills/new", "/appliances", "/appliances/new", "/tips", "/settings"]);
 self.addEventListener("install", event => {
   event.waitUntil((async () => {
@@ -33,9 +33,23 @@ self.addEventListener("fetch", event => {
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);
     const key = page ? url.pathname : request;
-    if (page && !self.navigator.onLine) {
+    if (page) {
       const saved = await cache.match(key, { ignoreVary: true });
-      if (saved) return saved;
+      if (saved) {
+        // Public shells load immediately, even while connectivity is changing.
+        // Prepare fresh HTML and its immutable chunks before replacing this shell.
+        if (self.navigator.onLine) event.waitUntil((async () => {
+          try {
+            const fresh = await fetch(request);
+            if (!fresh.ok || !fresh.headers.get("content-type")?.includes("text/html")) return;
+            const html = await fresh.clone().text();
+            const assets = new Set([...html.matchAll(/(?:src|href)="([^"\s]+)"/g)].map(match => match[1]).filter(path => path.startsWith("/_next/static/")));
+            await Promise.all([...assets].map(async path => { if (!await cache.match(path)) await cache.add(path); }));
+            await cache.put(key, fresh);
+          } catch { /* Keep the fully prepared shell when refresh is unavailable. */ }
+        })());
+        return saved;
+      }
     }
     if (asset) { const saved = await cache.match(key); if (saved) return saved; }
     try {

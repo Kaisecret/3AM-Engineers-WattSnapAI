@@ -100,7 +100,7 @@ export default function ChatScreen() {
             <textarea ref={input} rows={1} maxLength={300} value={draft} placeholder="Ask me anything…" aria-label="Message WattSnap AI" onChange={event => setDraft(event.target.value)} onKeyDown={onKey} />
             <button type="submit" className="chat-send" disabled={!draft.trim() || typing} aria-label="Send message"><SendHorizontal aria-hidden="true" /></button>
           </div>
-          <p className="chat-disclaimer"><Sparkles aria-hidden="true" /> Preview assistant · answers use your saved records and general energy tips</p>
+          <p className="chat-disclaimer"><Sparkles aria-hidden="true" /> Local assistant · answers use your saved records and general energy tips</p>
         </form>
       </section>
 
@@ -114,7 +114,7 @@ export default function ChatScreen() {
           <dl>
             <div><dt>Latest bill</dt><dd>{latest ? `${shortMonth(latest.month)} ${latest.month.slice(0, 4)} · ${latest.kwh} kWh` : "No bills yet"}</dd></div>
             {latest && <div><dt>Amount</dt><dd>{pesos(latest.amount)}</dd></div>}
-            {change && <div><dt>vs last month</dt><dd className={change.kwhPercent <= 0 ? "is-lower" : "is-higher"}>{change.kwhPercent <= 0 ? "↓" : "↑"} {Math.abs(change.kwhPercent).toFixed(0)}%</dd></div>}
+            {change && <div><dt>vs previous bill</dt><dd className={change.kwhPercent <= 0 ? "is-lower" : "is-higher"}>{change.kwhPercent === 0 ? "No change" : `${change.kwhPercent < 0 ? "↓" : "↑"} ${Math.abs(change.kwhPercent).toFixed(0)}%`}</dd></div>}
             {latest && <div><dt>Budget used</dt><dd>{Math.round(latest.amount / household.budget * 100)}%</dd></div>}
             {context.topAppliance && <div><dt>Top appliance</dt><dd>{context.topAppliance.name}</dd></div>}
           </dl>

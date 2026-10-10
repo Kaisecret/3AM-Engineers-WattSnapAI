@@ -13,7 +13,8 @@ import { consumptionChange } from "@/features/consumption-change/local-summary";
 const sourceLabels = { scan: "Scanned", manual: "Manual", sample: "Sample" };
 
 function Change({ percent, compact = false }: { percent: number; compact?: boolean }) {
-  const lower = percent <= 0;
+  if (percent === 0) return <span className="en-change">{compact ? "0%" : "No change"}</span>;
+  const lower = percent < 0;
   return <span className={`en-change ${lower ? "is-lower" : "is-higher"}`}>{lower ? <ArrowDown aria-hidden="true" /> : <ArrowUp aria-hidden="true" />}{Math.abs(percent).toFixed(0)}%{!compact && (lower ? " lower" : " higher")}</span>;
 }
 
@@ -65,7 +66,7 @@ export default function EnergyScreen() {
             <p className="en-eyebrow">Latest bill · {billMonth(latest.month)}</p>
             <h2 id="en-hero-title"><span>{latest.kwh}</span> kWh</h2>
             <p className="en-hero-meta">{pesos(latest.amount)}{latest.dueDate && <> · Due {dueDateLabel(latest.dueDate)}</>}</p>
-            {latestChange ? <p className={`en-hero-change ${latestChange.kwhPercent <= 0 ? "is-lower" : "is-higher"}`}>{latestChange.kwhPercent <= 0 ? <TrendingDown aria-hidden="true" /> : <TrendingUp aria-hidden="true" />}{Math.abs(latestChange.kwhPercent).toFixed(0)}% {latestChange.kwhPercent <= 0 ? "less" : "more"} than {monthName(latestChange.previous.month)}</p> : <p className="en-hero-change">Add another month to compare</p>}
+            {latestChange ? <p className={`en-hero-change ${latestChange.kwhPercent <= 0 ? "is-lower" : "is-higher"}`}>{latestChange.kwhPercent !== 0 && (latestChange.kwhPercent < 0 ? <TrendingDown aria-hidden="true" /> : <TrendingUp aria-hidden="true" />)}{latestChange.kwhPercent === 0 ? `No change from ${monthName(latestChange.previous.month)}` : `${Math.abs(latestChange.kwhPercent).toFixed(0)}% ${latestChange.kwhPercent < 0 ? "less" : "more"} than ${monthName(latestChange.previous.month)}`}</p> : <p className="en-hero-change">Add another month to compare</p>}
             <div className="en-hero-actions"><Link href="/bills/new" className="en-hero-button"><ScanText size={18} aria-hidden="true" /> Scan new bill</Link><Link href="/budget" className="en-hero-link">Budget {budgetPercent}% used <ChevronRight size={16} aria-hidden="true" /></Link></div>
           </div>
           <Image className="en-hero-art" src="/assets/branding/actions-7.png" alt="" width={260} height={260} sizes="(min-width: 900px) 190px, 130px" />
@@ -116,7 +117,7 @@ export default function EnergyScreen() {
       <ul className="en-list">
         {history.map(bill => { const change = compareWithPrevious(household.bills, bill.month); const source = bill.source ?? "manual"; return <li key={bill.id} id={`bill-${bill.id}`} className={bill.id === highlight ? "is-new" : ""}>
           <MonthTile month={bill.month} />
-          <div className="en-list-main"><strong>{billMonth(bill.month)}{bill.id === highlight && <span className="en-new">New</span>}</strong><span>{bill.dueDate ? `Due ${dueDateLabel(bill.dueDate)}` : "No due date"} · <em className={`en-source is-${source}`}>{sourceLabels[source]}</em>{bill.provider && ` · ${previewProviderName(bill.provider)}`}</span>{bill.periodStart && bill.periodEnd && <span>{dueDateLabel(bill.periodStart)} – {dueDateLabel(bill.periodEnd)}</span>}</div>
+          <div className="en-list-main"><strong>{billMonth(bill.month)}{bill.id === highlight && <span className="en-new">New</span>}</strong><span>{bill.dueDate ? `Due ${dueDateLabel(bill.dueDate)}` : "No due date"} · <em className={`en-source is-${source}`}>{sourceLabels[source]}</em>{bill.provider && ` · ${previewProviderName(bill.provider)}`}</span>{bill.periodStart && bill.periodEnd && <span>{dueDateLabel(bill.periodStart)} – {dueDateLabel(bill.periodEnd)}</span>}{bill.billingDate && <span>Bill issued {dueDateLabel(bill.billingDate)}</span>}{bill.notes && <span>Notes: {bill.notes}</span>}</div>
           <div className="en-list-values"><strong>{bill.kwh} kWh</strong><span>{pesos(bill.amount)}</span></div>
           <div className="en-list-change">{change ? <Change percent={change.kwhPercent} compact /> : <span className="en-first">First</span>}</div>
           <button type="button" className="ui-icon-button" disabled={!ready} aria-label={`Remove ${billMonth(bill.month)} bill`} onClick={() => setRemoving(bill)}><Trash2 size={17} /></button>

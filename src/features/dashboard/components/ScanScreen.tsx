@@ -20,7 +20,8 @@ const sourceLabels = { scan: "Scanned", manual: "Manual", sample: "Sample" };
 
 
 function ChangeBadge({ percent, month }: { percent: number; month: string }) {
-  const lower = percent <= 0;
+  if (percent === 0) return <span className="scan-change">No change from {monthName(month)}</span>;
+  const lower = percent < 0;
   return <span className={`scan-change ${lower ? "is-lower" : "is-higher"}`}>{lower ? <ArrowDown aria-hidden="true" /> : <ArrowUp aria-hidden="true" />}{Math.abs(percent).toFixed(0)}% {lower ? "lower" : "higher"} than {monthName(month)}</span>;
 }
 
@@ -114,8 +115,6 @@ export default function ScanScreen() {
       void element.play().catch(() => undefined);
     }
   }, [camera, phase]);
-
-
 
   function beginScan() {
     setDraft(previous => ({ ...previous, month: previous.month || currentMonth(), provider: previous.provider || household.provider || "" })); setError(""); setPhase("review");
@@ -244,8 +243,6 @@ export default function ScanScreen() {
           {phase === "camera" && <p className="scan-hint" role="status">{cameraMessage}{(camera === "blocked" || camera === "unavailable" || camera === "idle") && <button type="button" onClick={() => void startCamera()}>{camera === "idle" ? "Open camera" : "Try camera again"}</button>}</p>}
           {phase === "camera" && error && <p className="scan-toast" role="alert">{error}</p>}
 
-
-
           {phase === "camera" && <div className="scan-controls">
             <button type="button" className="scan-side" disabled={!ready || loadingFile} onClick={() => fileInput.current?.click()}><span><ImageUp aria-hidden="true" /></span>Upload</button>
             <button type="button" className="scan-shutter" disabled={!ready || loadingFile} aria-label={live ? "Capture bill photo" : "Open bill camera"} onClick={capture}><span /></button>
@@ -291,8 +288,6 @@ export default function ScanScreen() {
               {recent.map(bill => <div key={bill.id} className="scan-recent-row"><span className="scan-recent-icon"><ScanText aria-hidden="true" /></span><div><strong>{billMonth(bill.month)}</strong><small>{bill.kwh} kWh · {pesos(bill.amount)}</small></div><em className={`scan-source is-${bill.source ?? "manual"}`}>{sourceLabels[bill.source ?? "manual"]}</em></div>)}
             </div>}
           </div>}
-
-
 
           {draftNotice && <p className="br-note" role="status">{draftNotice}</p>}
           {(phase === "review" || draftNotice) && <button type="button" className="ui-secondary" onClick={() => discard.current?.showModal()}>Discard draft</button>}

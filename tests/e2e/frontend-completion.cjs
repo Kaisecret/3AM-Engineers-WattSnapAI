@@ -82,6 +82,7 @@ async function bills(browser) {
   page.on('request', request => { if (request.url().includes('/api/ai/')) ai.push(request.url()); });
   await page.goto(`${baseURL}/bills/new`);
   const upload = page.locator('input[type=file]').first();
+  await page.waitForFunction(() => { const input = document.querySelector('input[type=file]'); return input && !input.disabled; });
   await upload.setInputFiles({ name: 'bad.txt', mimeType: 'text/plain', buffer: Buffer.from('bad') });
   await page.getByRole('alert').filter({ hasText: 'Choose a JPG' }).first().waitFor();
   const photo = await fs.readFile('public/assets/branding/wattsnap-icon-192.png');
@@ -259,10 +260,13 @@ async function offline(browser) {
   await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River home', bills: [{ id: 'actual', month: '2026-09', kwh: 100, amount: 1200 }], budget: 1500, appliances: [{ id: 'fan', name: 'My fan', watts: 55, hours: 8, quantity: 1 }] })); });
   const page = await context.newPage(); const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto(`${baseURL}/dashboard`); await page.locator('.ws-chart-day').first().waitFor();
-  await page.waitForFunction(async () => { const registration = await navigator.serviceWorker.getRegistration(); if (registration?.active?.state !== 'activated' || !navigator.serviceWorker.controller) return false; const cache = await caches.open('wattsnap-shell-v2'); return !!await cache.match('/advisories/new') && !!await cache.match('/assistant'); }, undefined, { timeout: 60000 });
+  await page.waitForFunction(() => navigator.serviceWorker.controller?.state === 'activated', undefined, { timeout: 60000 });
+  assert.equal(await page.evaluate(async () => { const cache = await caches.open('wattsnap-shell-v3'); return !!await cache.match('/advisories/new', { ignoreVary: true }) && !!await cache.match('/assistant', { ignoreVary: true }); }), true, 'All shells prepared before disconnecting');
   await page.reload(); await page.locator('.ws-chart-day').first().waitFor();
   await page.evaluate(async () => { const resources = performance.getEntriesByType('resource').map(entry => entry.name).filter(name => new URL(name).pathname.startsWith('/_next/image')); await Promise.all(resources.map(url => fetch(url))); });
   await context.setOffline(true);
+  await page.waitForFunction(() => !navigator.onLine);
+  await page.locator('.ws-connectivity').waitFor();
   for (const route of ['/bills', '/appliances', '/tips', '/advisories', '/onboarding', '/budget', '/simulator', '/brownout-ready', '/assistant', '/dashboard']) {
     console.log(`Checking cached route ${route}`);
     await page.goto(`${baseURL}${route}`); await page.locator('.ws-home').waitFor(); await page.locator('.ws-connectivity').waitFor();
@@ -436,7 +440,30 @@ async function retained(browser) {
   assert.deepEqual(errors, []); assert.deepEqual(ai, []); await context.close(); console.log('PASS: actual simulator snapshots, offline local assistant, reviewed preparation plans, persistent checklist and confirmed deletion');
 }
 
+
+async function polish(browser) {
+  for (const width of [320, 1440]) {
+    console.log('Checking final polish at ' + width + 'px');
+    const context = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce' });
+    await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'My home', provider: 'anteco', budget: 1800, appliances: [], bills: [{ id: 'older', month: '2026-07', kwh: 100, amount: 1200 }, { id: 'newer', month: '2026-09', kwh: 100, amount: 1200, billingDate: '2026-09-30', notes: 'My verified meter note ' + 'A'.repeat(100) }] })); });
+    const page = await context.newPage(); const errors = []; page.on('pageerror', error => errors.push(error.message));
+    await page.goto(baseURL + '/dashboard'); await page.locator('.ws-savings').waitFor(); assert.equal((await page.locator('.ws-savings').innerText()).trim(), 'No change');
+    await page.goto(baseURL + '/bills'); await page.getByText('No change from July', { exact: true }).waitFor();
+    await page.getByText('Notes: My verified meter note', { exact: false }).waitFor(); await page.getByText('Bill issued', { exact: false }).first().waitFor();
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true, 'Long bill note fits');
+    await page.goto(baseURL + '/bills/new'); await page.getByRole('button', { name: width >= 1100 ? 'Enter bill manually' : 'Type it', exact: true }).click();
+    await page.getByLabel('Billing month', { exact: true }).fill('2026-10'); await page.getByLabel('Energy used', { exact: true }).fill('100'); await page.getByLabel('Amount due', { exact: true }).fill('1200');
+    await page.getByRole('checkbox', { name: 'I reviewed all the values above.', exact: false }).check(); await page.getByRole('button', { name: 'Save to history', exact: true }).click();
+    await page.getByText('No change from September', { exact: true }).waitFor();
+    await page.goto(baseURL + '/appliances/new'); await page.getByRole('button', { name: 'Enter manually', exact: true }).click(); await page.getByRole('button', { name: 'Add photo', exact: true }).waitFor();
+    await page.goto(baseURL + '/brownout-ready'); await page.getByRole('heading', { name: 'No preparation plan yet' }).waitFor(); assert.equal(await page.locator('a[href*="sample="]').count(), 0); assert.equal(await page.getByRole('link', { name: 'Add your provider announcement' }).count(), 1);
+    await page.goto(baseURL + '/'); assert.deepEqual(await page.locator('.post-feature-card').evaluateAll(items => items.map(item => item.getAttribute('href'))), ['/bills/new', '/bills', '/tips', '/advisories']);
+    assert.deepEqual(errors, []); await context.close();
+  }
+  console.log('PASS: neutral unchanged bills, readable optional metadata, honest photo action, actual advisory entry and feature destinations');
+}
+
 (async () => {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
-  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history', 'appliances', 'estimates', 'tips', 'advisories', 'storage', 'accessibility', 'camera', 'retained'])) await ({ design, records, household, bills, history, appliances, estimates, tips, advisories, storage, offline, accessibility, responsive, chart, content, camera, retained })[check](browser); } finally { await browser.close(); }
+  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history', 'appliances', 'estimates', 'tips', 'advisories', 'storage', 'accessibility', 'camera', 'retained'])) await ({ design, records, household, bills, history, appliances, estimates, tips, advisories, storage, offline, accessibility, responsive, chart, content, camera, retained, polish })[check](browser); } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
