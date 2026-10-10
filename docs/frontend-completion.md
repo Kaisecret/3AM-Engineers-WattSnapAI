@@ -23,7 +23,7 @@ Baseline evidence: 76 feature tests pass; `npx.cmd tsc --noEmit` passes. Existin
 | 2 | Safety and protected boundaries | Separate branch; boundary guard passes |
 | 3 | Preserve design; targeted refinement | Existing layout retained; focus and controls checked at 320–1440px |
 | 4 | Remove prototype/sample presentation | Empty states, actual-only charts, sample controls removed; legacy fixtures preserved |
-| 5 | Local household access and provider | Pending |
+| 5 | Local household access and provider | Password-free local installation; explicit manual provider and preserved scopes |
 | 6 | Bill upload/manual review/draft | Pending |
 | 7 | Actual bill history/dashboard/change | Pending |
 | 8 | Appliance capture/management | Pending |
@@ -53,3 +53,9 @@ Original colors, fonts, art, sidebar and mobile navigation remain in use. A scop
 New households start with no bills, appliances or budget and a neutral home label. Charts use only stored periods. Original fixtures remain available to rule tests. Old fixture records are filtered from real statistics without destructive writes; ordinary edits preserve those hidden fixtures. Public sample buttons/galleries and simulated refresh-state controls are removed. A bill upload now opens blank manual review instead of invented extraction. Prototype labels on shared page footers are replaced with the actual device-storage limitation. Module-specific wording and account behavior are completed in their numbered sections.
 
 Checks: empty-state/manual-entry browser flow, actual-only chart tests, fixture-preservation tests and TypeScript. The existing prototype-only browser scripts are reference tests for the earlier simulated flows; the completion suite exercises the replacement actual-data workflows.
+
+## 5. Local household and provider
+
+Public account routes now reuse the existing illustrated shell for honest local household access. They request no password, OTP or simulated Google verification. Original auth implementation files and service/repository infrastructure remain retained and unchanged. A versioned installation pointer resumes the active legacy scope (or the latest legacy identity when no unscoped home exists), without copying or deleting any previous records. One household is presented; no account chooser or multi-household management is added. Closing the household returns to the homepage without deleting storage.
+
+Location lookup remains optional, explicitly explained and user-triggered. The fabricated example location and province-based utility suggestions are removed. Provider selection is manual and reviewed before save; ANTECO and the existing list remain, with an Other provider name for wider use. GPS never confirms a provider. Browser checks cover real household saves, a custom provider, refresh and returning access. Rule tests verify legacy scope preservation and unreadable-pointer protection.

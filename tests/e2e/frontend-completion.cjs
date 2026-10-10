@@ -42,7 +42,39 @@ async function records(browser) {
   await context.close(); console.log('PASS: honest empty states, no seeding, actual-only charts and manual bill entry');
 }
 
+async function household(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  await page.goto(`${baseURL}/signup`);
+  await page.getByRole('button', { name: 'Set up my household', exact: true }).click();
+  await page.waitForURL('**/setup');
+  assert.equal(await page.locator('input[type=password]').count(), 0, 'No fake sign-in');
+  await page.goto(`${baseURL}/onboarding`);
+  await page.getByLabel('Household name', { exact: true }).fill('River household');
+  await page.getByLabel('Province', { exact: true }).fill('Antique');
+  await page.getByLabel('Municipality or city', { exact: true }).fill('San Jose de Buenavista');
+  await page.getByLabel('Barangay', { exact: true }).fill('Payao');
+  await page.getByRole('button', { name: 'Save household profile', exact: true }).click();
+  assert.equal(await page.getByRole('radio', { name: /ANTECO/ }).isChecked(), false, 'No implicit provider selection');
+  await page.getByRole('radio', { name: /Other provider/ }).check();
+  await page.getByLabel('Provider name', { exact: true }).fill('My electricity cooperative');
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await page.getByRole('button', { name: 'Save household', exact: true }).click();
+  await page.getByRole('heading', { name: 'Welcome home, River!' }).waitFor();
+  await page.reload();
+  assert.equal(await page.getByLabel('Household name', { exact: true }).inputValue(), 'River household');
+  await page.goto(`${baseURL}/welcome`); await page.waitForURL('**/dashboard');
+  await page.getByRole('heading', { name: 'River!', exact: true }).waitFor();
+  const saved = await page.evaluate(() => localStorage.getItem('wattsnap-ui-preview-v1'));
+  assert.equal(JSON.parse(saved).provider, 'custom:My%20electricity%20cooperative');
+  await page.goto(`${baseURL}/login`);
+  await page.getByRole('button', { name: 'Continue to my household' }).click();
+  await page.waitForURL('**/dashboard');
+  assert.equal(await page.evaluate(() => localStorage.getItem('wattsnap-ui-preview-v1')), saved);
+  await context.close(); console.log('PASS: local household setup, explicit custom provider, refresh and returning access without passwords');
+}
+
 (async () => {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
-  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records'])) await ({ design, records })[check](browser); } finally { await browser.close(); }
+  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household'])) await ({ design, records, household })[check](browser); } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

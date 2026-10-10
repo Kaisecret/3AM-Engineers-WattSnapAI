@@ -20,6 +20,12 @@ export const emptyPreview: PreviewHousehold = { bills: [], appliances: [], budge
 export const previewStorageKey = "wattsnap-ui-preview-v1";
 export const defaultLocation = "San Jose de Buenavista, Antique";
 export const defaultProvider = "anteco";
+export function isProviderChoice(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  if (["anteco", "akelco", "capelco", "ileco-1", "ileco-2", "ileco-3", "more-power"].includes(value)) return true;
+  if (!value.startsWith("custom:") || value.length > 300) return false;
+  try { const name = decodeURIComponent(value.slice(7)); return !!name.trim() && name.length <= 80 && !/[\u0000-\u001f\u007f]/.test(name); } catch { return false; }
+}
 export const defaultNotifications: NotificationPrefs = { brownouts: true, billReminders: true, tips: false };
 export const maxPhotoLength = 600_000;
 /** Used when a peso estimate needs a rate and no bill history exists yet. */
@@ -130,7 +136,7 @@ export function normalizePreview(value: unknown): PreviewHousehold {
     ...(isPhotoDataUrl(data.photo) ? { photo: data.photo } : {}),
     ...(typeof data.email === "string" && isEmail(data.email.trim()) ? { email: data.email.trim() } : {}),
     ...(typeof data.location === "string" && data.location.trim() ? { location: data.location.trim().slice(0, 200) } : {}),
-    ...(typeof data.provider === "string" && ["anteco", "akelco", "capelco", "ileco-1", "ileco-2", "ileco-3", "more-power"].includes(data.provider) ? { provider: data.provider } : {}),
+    ...(isProviderChoice(data.provider) ? { provider: data.provider } : {}),
     ...(data.locality && typeof data.locality.province === "string" && typeof data.locality.municipality === "string" && typeof data.locality.barangay === "string" ? { locality: { province: data.locality.province.trim().slice(0, 40), municipality: data.locality.municipality.trim().slice(0, 60), barangay: data.locality.barangay.trim().slice(0, 60) } } : {}),
     ...(notifications ? { notifications } : {}),
     bills: Array.isArray(data.bills) ? data.bills.filter(item => item && typeof item.id === "string" && typeof item.month === "string" && !validateBill(item)) : [],

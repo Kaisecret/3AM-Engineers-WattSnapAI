@@ -71,7 +71,7 @@ export default function SettingsScreen() {
     if (update({ bills: household.bills.filter(bill => bill.source !== "sample"), appliances: household.appliances.filter(item => !item.id.startsWith("sample-")) })) notify("Sample data cleared");
   }
 
-  return <PageShell title="Account settings" subtitle="Manage your profile, alerts and account" className="st-page">
+  return <PageShell title="Household settings" subtitle="Manage your household and saved records" className="st-page">
     <div className="st-layout">
       <aside className="st-side">
         <section className="st-profile" aria-labelledby="st-name">
@@ -147,8 +147,8 @@ export default function SettingsScreen() {
 
         <section className="ui-panel st-card st-logout" aria-labelledby="st-logout-title">
           <span className="st-card-icon is-red"><LogOut aria-hidden="true" /></span>
-          <div><h2 id="st-logout-title">Log out</h2><p>Sign out of WattSnap on this device.</p></div>
-          <button type="button" className="st-logout-button" disabled={!ready} onClick={() => setLogout(true)}><LogOut size={18} aria-hidden="true" /> Log out</button>
+          <div><h2 id="st-logout-title">Close household</h2><p>Return to the homepage. Your saved records stay on this device.</p></div>
+          <button type="button" className="st-logout-button" disabled={!ready} onClick={() => setLogout(true)}><LogOut size={18} aria-hidden="true" /> Close household</button>
         </section>
         <p className="st-version">WattSnap AI · Preview build</p>
       </div>
