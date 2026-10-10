@@ -29,7 +29,7 @@ Baseline evidence: 76 feature tests pass; `npx.cmd tsc --noEmit` passes. Existin
 | 8 | Appliance capture/management | Manual/photo review, familiar labels, editing and confirmed removal |
 | 9 | Appliance estimator | Validated local formula; no invented tariff or meter matching |
 | 10 | Deterministic local tips | Actual input basis; immediate offline creation and refresh |
-| 11 | Manual advisory review/history | Pending |
+| 11 | Manual advisory review/history | Upload/paste, custom providers, deliberate original retention and qualified matching |
 | 12 | Offline persistence/shell | Pending |
 | 13 | Senior accessibility | Pending |
 | 14 | Responsive verification | Pending |
@@ -81,3 +81,7 @@ Existing local calculations use watts × hours/day × quantity × days ÷ 1,000.
 ## 10. Personalized local guidance
 
 Tips now create and refresh immediately from reviewed local records, including while offline. Removed simulated delay, timeout and rate-limit outcomes. Advice names only registered devices, explains the input basis and limitations, and preserves a saved snapshot until an explicit refresh. Changed inputs show a freshness warning. The bill-review threshold matches the dashboard’s 20% threshold. Guidance avoids guaranteed savings and reducing essential refrigeration. Rule and browser checks cover relevance, stale records, offline refresh and persistence.
+
+## 11. Provider advisories
+
+Screenshot and pasted-text reviews preserve the original and provide editable provider, areas, schedule, restoration wording and reason. Custom providers now validate and persist consistently with household and bill entry. Screenshot saves require a deliberate choice to retain the original on this device; temporary uploads are not automatically persisted. Household matching remains qualified as Affected, Possibly Affected or Not Listed, with no live-status claim. Existing correction, history, source access and confirmed removal are retained. Direct incoming app sharing is unavailable; the UI supplies the screenshot-save/upload fallback without adding a backend endpoint. Browser checks cover actual uploads, consent, text saves, clear/ambiguous matching, correction and refresh.

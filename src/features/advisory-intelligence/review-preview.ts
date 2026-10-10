@@ -1,5 +1,5 @@
-import { isCalendarDate, type PreviewHousehold } from "../dashboard/preview-data";
-import { previewProviders, previewProviderName } from "../household-profile/provider-preview";
+import { isCalendarDate, isProviderChoice, type PreviewHousehold } from "../dashboard/preview-data";
+import { previewProviderName } from "../household-profile/provider-preview";
 import { advisoryTypeLabels, type AdvisoryStatus } from "./advisory-preview";
 import type { AdvisoryArea, AdvisoryDetails, AdvisoryMatch, AdvisoryOriginal, AdvisorySample, ReviewedAdvisory } from "./types";
 
@@ -9,13 +9,12 @@ export const maxOriginalText = 12000;
 export const blankArea: AdvisoryArea = { province: "", municipality: "", barangay: "", scope: "uncertain" };
 export const blankAdvisory: AdvisoryDetails = { type: "scheduled", title: "", provider: "", publisher: "", sourceUrl: "", date: "", startTime: "", endDate: "", endTime: "", expectedRestoration: "", areaText: "", areas: [{ ...blankArea }], reason: "", relatedId: "" };
 export const matchLabels: Record<AdvisoryStatus, string> = { affected: "Affected", "possibly-affected": "Possibly Affected", "not-listed": "Not Listed" };
-const providers = new Set<string>(previewProviders.map(provider => provider.id));
 const same = (a: string, b: string) => a.trim().toLocaleLowerCase("en-PH").replace(/\s+/g, " ") === b.trim().toLocaleLowerCase("en-PH").replace(/\s+/g, " ");
 const timePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 export function householdMatchSignature(household: Pick<PreviewHousehold, "location" | "provider" | "locality">) { return JSON.stringify([household.provider ?? "", household.location ?? "", household.locality?.province ?? "", household.locality?.municipality ?? "", household.locality?.barangay ?? ""]); }
 export function matchPreviewAdvisory(details: AdvisoryDetails, household: Pick<PreviewHousehold, "location" | "provider" | "locality">): { status: AdvisoryStatus; rationale: string[] } {
   const rationale: string[] = [];
-  if (details.provider && household.provider && details.provider !== household.provider) return { status: "not-listed", rationale: [`The entered advisory provider (${previewProviderName(details.provider)}) differs from your selected provider (${previewProviderName(household.provider)}).`, "This preview does not infer shared service coverage or verify the source."] };
+  if (details.provider && household.provider && details.provider !== household.provider) return { status: "not-listed", rationale: [`The entered advisory provider (${previewProviderName(details.provider)}) differs from your selected provider (${previewProviderName(household.provider)}).`, "This review does not infer shared service coverage or verify the source."] };
   if (!details.provider || !household.provider) rationale.push("An advisory provider or household provider is missing; provider relevance is unverified.");
   const home = household.locality;
   if (!home?.province.trim() || !home.municipality.trim()) return { status: "possibly-affected", rationale: [...rationale, "Your structured province and municipality are incomplete. A free-text location is not an exact locality match."] };
@@ -29,7 +28,7 @@ export function matchPreviewAdvisory(details: AdvisoryDetails, household: Pick<P
     if (!area.barangay || !home.barangay) { uncertain = true; continue; }
     if (same(area.barangay, home.barangay)) exact = true;
   }
-  if (exact && details.provider && household.provider) return { status: "affected", rationale: ["The entered provider and the full locality names match your saved household. The reviewed area scope explicitly includes this barangay or the whole municipality.", "This is a UI match against entered labels. The announcement, locality aliases, and utility coverage have not been independently verified."] };
+  if (exact && details.provider && household.provider) return { status: "affected", rationale: ["The entered provider and the full locality names match your saved household. The reviewed area scope explicitly includes this barangay or the whole municipality.", "This compares the entered locality labels. The announcement, locality aliases, and utility coverage have not been independently verified."] };
   if (exact || uncertain || !details.areas.length || rationale.length) return { status: "possibly-affected", rationale: [...rationale, "The entered area or its scope is incomplete, broad, or uncertain. Review the original and confirm relevance before making a readiness plan."] };
   return { status: "not-listed", rationale: ["Your full saved locality was not listed among the entered areas. Province and municipality are compared together; a shared barangay name alone is insufficient.", "Not Listed means not listed in this review. It does not guarantee uninterrupted power; unverified aliases or coverage may require checking the original."] };
 }
@@ -42,7 +41,7 @@ export function publishedStart(details: AdvisoryDetails) { return details.date &
 export function publishedEnd(details: AdvisoryDetails) { const date = details.endDate || details.date; return date && timePattern.test(details.endTime) ? Date.parse(`${date}T${details.endTime}:00+08:00`) : null; }
 export function validateAdvisory(details: AdvisoryDetails) {
   if (!details.areaText.trim()) return "Copy the affected-area wording from the original. If it is absent, explicitly enter ‘Not provided’.";
-  if (details.provider && !providers.has(details.provider)) return "Choose an available provider, or leave it unknown.";
+  if (details.provider && !isProviderChoice(details.provider)) return "Choose an available provider, or leave it unknown.";
   if (details.sourceUrl.trim() && !sourceLink(details.sourceUrl.trim())) return "Use a complete http or https source link, or leave it blank.";
   if ((details.date && !isCalendarDate(details.date)) || (details.endDate && !isCalendarDate(details.endDate))) return "Choose valid dates, or leave uncertain dates blank.";
   if ((details.startTime && !timePattern.test(details.startTime)) || (details.endTime && !timePattern.test(details.endTime))) return "Use valid 24-hour times, or leave uncertain times blank.";
@@ -65,6 +64,9 @@ export function advisoryInputWarnings(details: AdvisoryDetails) {
   if (details.type === "restored" && !details.relatedId) warnings.push("This restoration update has no linked earlier advisory. It will be saved separately.");
   return warnings;
 }
+export function advisorySummary(details: AdvisoryDetails) {
+  return `Your entered ${advisoryTypeLabels[details.type].toLowerCase()} lists ${details.areaText.trim() || "areas not yet entered"}. Schedule: ${details.date || "date unknown"}, ${scheduleLabel(details)}. ${details.reason.trim() ? `Stated reason: ${details.reason.trim()}.` : "A reason has not been entered."} Check the original for current information; this summary does not confirm power status.`;
+}
 export function originalIsDuplicate(original: AdvisoryOriginal, records: ReviewedAdvisory[], exceptId?: string) { return records.find(record => record.id !== exceptId && (original.kind === "image" ? record.original.image === original.image : record.original.kind !== "image" && record.original.text.trim() === original.text.trim())); }
 const strings = ["type", "title", "provider", "publisher", "sourceUrl", "date", "startTime", "endDate", "endTime", "expectedRestoration", "areaText", "reason", "relatedId"] as const;
 const sampleKinds = new Set(["scheduled", "uncertain", "not-listed", "restored", "notice"]);
@@ -79,7 +81,7 @@ export function normalizeReviewedAdvisory(value: unknown): ReviewedAdvisory | nu
   if (!details || strings.some(key => typeof details[key] !== "string" || details[key].length > (key === "areaText" || key === "reason" ? 1500 : 300)) || !["scheduled", "unscheduled", "notice", "restored"].includes(details.type) || !Array.isArray(details.areas) || details.areas.length > 20 || details.areas.some(area => !area || !["barangay", "municipality", "uncertain"].includes(area.scope) || [area.province, area.municipality, area.barangay].some(field => typeof field !== "string" || field.length > 100)) || validateAdvisory(details)) return null;
   if (!match || !["affected", "possibly-affected", "not-listed"].includes(match.status) || !Array.isArray(match.rationale) || match.rationale.some(line => typeof line !== "string") || typeof match.householdSignature !== "string" || !match.householdBasis || !Number.isFinite(Date.parse(match.matchedAt))) return null;
   const basis = match.householdBasis;
-  if (typeof basis !== "object" || (basis.location !== undefined && typeof basis.location !== "string") || (basis.provider !== undefined && (typeof basis.provider !== "string" || !providers.has(basis.provider))) || (basis.locality && [basis.locality.province, basis.locality.municipality, basis.locality.barangay].some(field => typeof field !== "string"))) return null;
+  if (typeof basis !== "object" || (basis.location !== undefined && typeof basis.location !== "string") || (basis.provider !== undefined && (typeof basis.provider !== "string" || !isProviderChoice(basis.provider))) || (basis.locality && [basis.locality.province, basis.locality.municipality, basis.locality.barangay].some(field => typeof field !== "string"))) return null;
   return record;
 }
 export function manilaDay(now = new Date()) { const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(now); const part = (type: string) => parts.find(item => item.type === type)?.value; return `${part("year")}-${part("month")}-${part("day")}`; }

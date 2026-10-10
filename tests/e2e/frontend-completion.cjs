@@ -187,6 +187,53 @@ async function tips(browser) {
   await context.close(); console.log('PASS: relevant local tips, essential-device guidance, stale inputs and offline refresh');
 }
 
+async function advisories(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River home', provider: 'custom:River%20cooperative', location: 'Payao, San Jose de Buenavista, Antique', locality: { province: 'Antique', municipality: 'San Jose de Buenavista', barangay: 'Payao' }, bills: [], budget: 0, appliances: [] })); });
+  const page = await context.newPage(); await page.goto(`${baseURL}/advisories/new`);
+  await page.waitForFunction(() => !document.querySelector('input[type=file]').disabled);
+  await page.locator('input[type=file]').setInputFiles({ name: 'notice.png', mimeType: 'image/png', buffer: await fs.readFile('public/assets/branding/wattsnap-icon-192.png') });
+  await page.getByLabel('Areas as written in the original').fill('Payao');
+  await page.getByLabel('Provider named in the advisory').selectOption('other');
+  assert.equal(await page.getByLabel('Provider name', { exact: true }).inputValue(), 'River cooperative');
+  await page.getByLabel('Province for area 1', { exact: true }).fill('Antique');
+  await page.getByLabel('Municipality for area 1', { exact: true }).fill('San Jose de Buenavista');
+  await page.getByLabel('Barangay for area 1', { exact: true }).fill('Payao');
+  await page.getByRole('heading', { name: 'Possibly Affected', exact: true }).waitFor();
+  await page.getByLabel('Scope for area 1', { exact: true }).selectOption('barangay');
+  await page.getByRole('heading', { name: 'Affected', exact: true }).waitFor();
+  await page.getByLabel('Review title (optional)', { exact: true }).fill('My provider notice');
+  await page.getByRole('checkbox', { name: /I checked the original and these fields/ }).check();
+  await page.getByRole('button', { name: 'Save reviewed advisory', exact: true }).click();
+  await page.getByRole('alert').filter({ hasText: 'Choose to keep this original screenshot' }).waitFor();
+  assert.equal(await page.evaluate(() => localStorage.getItem('wattsnap-advisories-ui-preview-v1')), null, 'Photo not saved without explicit choice');
+  await page.getByRole('checkbox', { name: /Keep the original screenshot/ }).check();
+  await page.getByRole('button', { name: 'Save reviewed advisory', exact: true }).click();
+  await page.getByRole('link', { name: 'View saved advisory', exact: true }).click();
+  await page.getByRole('heading', { name: 'My provider notice', exact: true }).waitFor();
+  await page.getByRole('link', { name: 'Correct review fields', exact: true }).click();
+  await page.getByLabel('Review title (optional)', { exact: true }).fill('Corrected provider notice');
+  await page.getByRole('checkbox', { name: /I checked the original and these fields/ }).check();
+  await page.getByRole('button', { name: 'Save corrected review', exact: true }).click();
+  await page.getByRole('link', { name: 'View saved advisory', exact: true }).click();
+  await page.getByRole('heading', { name: 'Corrected provider notice', exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Close advisory details', exact: true }).click();
+  await page.goto(`${baseURL}/advisories/new`);
+  await page.getByLabel('Original advisory text', { exact: true }).fill('Official notice: some areas may be affected. Schedule not provided.');
+  await page.getByRole('button', { name: 'Review pasted text', exact: true }).click();
+  await page.getByLabel('Areas as written in the original').fill('Some areas');
+  await page.getByRole('checkbox', { name: /I checked the original and these fields/ }).check();
+  await page.getByRole('button', { name: 'Save reviewed advisory', exact: true }).click();
+  await page.getByRole('link', { name: 'View saved advisory', exact: true }).waitFor();
+  await page.reload(); await page.goto(`${baseURL}/advisories`);
+  await page.locator('.adv-card').first().waitFor();
+  assert.equal(await page.locator('.adv-card').count(), 2);
+  const records = await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-advisories-ui-preview-v1')));
+  assert.equal(records.length, 2); assert.equal(records[0].details.provider, 'custom:River%20cooperative'); assert.equal(records[0].revision, 2);
+  assert.equal(records[1].original.text, 'Official notice: some areas may be affected. Schedule not provided.');
+  await context.close(); console.log('PASS: advisory upload consent, custom provider, exact/ambiguous matches, correction, paste and refresh');
+}
+
 async function history(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River home', budget: 0, appliances: [], bills: [{ id: 'actual-1', month: '2026-07', kwh: 100, amount: 1200, source: 'manual', periodStart: '2026-07-01', periodEnd: '2026-07-31' }, { id: 'actual-2', month: '2026-09', kwh: 150, amount: 1800, source: 'manual', periodStart: '2026-09-01', periodEnd: '2026-09-30' }] })); });
@@ -208,5 +255,5 @@ async function history(browser) {
 
 (async () => {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
-  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history', 'appliances', 'estimates', 'tips'])) await ({ design, records, household, bills, history, appliances, estimates, tips })[check](browser); } finally { await browser.close(); }
+  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history', 'appliances', 'estimates', 'tips', 'advisories'])) await ({ design, records, household, bills, history, appliances, estimates, tips, advisories })[check](browser); } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
