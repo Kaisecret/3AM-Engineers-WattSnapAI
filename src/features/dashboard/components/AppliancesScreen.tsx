@@ -71,9 +71,9 @@ export default function AppliancesScreen() {
   return <PageShell title="Appliances" subtitle="See how your appliances use energy" active="Appliances" className="ap-page">
     <section className="ap-summary" aria-labelledby="ap-summary-title">
       <div className="ap-summary-copy">
-        <p className="ap-eyebrow">Estimated from your appliances</p>
+        <p className="ap-eyebrow">Monthly estimate</p>
         <h2 id="ap-summary-title"><span>{(totalDaily * 30).toFixed(1)}</span> kWh / month</h2>
-        <p className="ap-summary-cost">{rate > 0 ? `≈ ${pesos(totalDaily * 30 * rate)} per 30 days using the latest bill’s amount ÷ kWh` : "Add a bill to include approximate peso estimates."}</p>
+        <p className="ap-summary-cost">{rate > 0 ? `≈ ${pesos(totalDaily * 30 * rate)} per month` : "Add a bill to see the cost."}</p>
         <Link className="ap-add" href="/appliances/new"><Plus aria-hidden="true" /> Add appliance</Link>
       </div>
       <dl className="ap-summary-stats">
@@ -85,7 +85,7 @@ export default function AppliancesScreen() {
 
     {items.some(item => item.source === "sample" || item.id.startsWith("sample-")) && <p className="ap-sample-note">Your list includes sample appliances for this UI preview. Add your own readings or edit their values to explore the estimates.</p>}
 
-    <section className="ui-panel ap-simulator" aria-labelledby="ap-simulator-heading"><span><SlidersHorizontal aria-hidden="true" /></span><div><h2 id="ap-simulator-heading">What could a small change save?</h2><p>Try different hours, power ratings, or appliances in Watt-If.</p></div><Link href="/simulator">Open simulator<ChevronRight size={16} aria-hidden="true" /></Link></section>
+    <section className="ui-panel ap-simulator" aria-labelledby="ap-simulator-heading"><span><SlidersHorizontal aria-hidden="true" /></span><div><h2 id="ap-simulator-heading">What could you save?</h2><p>Try changes in Watt-If.</p></div><Link href="/simulator" className="ap-simulator-link"><span className="ws-sr-only">Open simulator</span><ChevronRight size={20} aria-hidden="true" /></Link></section>
 
     <section className="ui-panel ap-list-panel" aria-labelledby="ap-list-title">
       <div className="ui-panel-heading"><div><h2 id="ap-list-title">Top energy users</h2><p>Sorted by estimated monthly use</p></div><span className="ui-count">{items.length} {items.length === 1 ? "entry" : "entries"}</span></div>
@@ -104,8 +104,8 @@ export default function AppliancesScreen() {
             <button type="button" className="ui-icon-button" disabled={!ready} aria-label={`Remove ${item.name}`} onClick={() => setRemoving(item)}><Trash2 size={16} /></button>
           </div>
         </li>; })}
-      </ul> : <div className="ap-empty"><Image src="/assets/branding/actions-7.png" alt="" width={200} height={200} sizes="120px" /><h3>No appliances yet</h3><p>Add the appliances you use at home to see which ones use the most energy.</p><Link className="ui-primary" href="/appliances/new"><Plus size={18} aria-hidden="true" /> Add appliance</Link></div>}
-      <p className="ui-helper">Monthly comparisons use watts × hours × quantity over 30 days. Each entry also shows its selected period. Appliance consumption is estimated based on the information you provide and may differ from actual meter readings. Bill-derived peso estimates include fees and are not a provider tariff.</p>
+      </ul> : <div className="ap-empty"><Image src="/assets/branding/actions-7.png" alt="" width={200} height={200} sizes="120px" /><h3>No appliances yet</h3><p>Add one to see what uses the most energy.</p><Link className="ui-primary" href="/appliances/new"><Plus size={18} aria-hidden="true" /> Add appliance</Link></div>}
+      {items.length > 0 && <p className="ui-helper">Estimates use watts × hours × quantity over 30 days and may differ from your meter.</p>}
     </section>
     <ConfirmRecordRemoval name={removing?.name ?? null} error={storageError} onKeep={() => setRemoving(null)} onRemove={() => removing ? remove(removing) : false} />
     {message && <p className="ui-success" role="status">{message}</p>}{storageError && <p className="ui-error" role="alert">{storageError}</p>}

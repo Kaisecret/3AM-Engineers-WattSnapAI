@@ -147,3 +147,8 @@
   .ap-dialog[open] { animation: ws-arrive .22s ease-out both; }
 }
 @keyframes ap-sheet { from { transform: translateY(100%); } to { transform: none; } }
+/* The whole Watt-If card opens the simulator; a round arrow shows it is tappable. */
+.ap-simulator { position: relative; flex-wrap: nowrap; }
+.ap-simulator > a.ap-simulator-link { display: grid; place-items: center; flex: 0 0 auto; width: 44px; height: 44px; min-height: 44px; padding: 0; border-radius: 50%; color: #0b9ec9; background: #e6f8fe; }
+.ap-simulator > a.ap-simulator-link::after { content: ""; position: absolute; inset: 0; }
+html[data-theme="dark"] .ap-simulator > a.ap-simulator-link { color: #89dfef; background: #203e4c; }
