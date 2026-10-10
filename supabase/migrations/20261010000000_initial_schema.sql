@@ -331,4 +331,150 @@ create trigger enforce_row_limit after insert on public.brownout_plans
 create trigger enforce_row_limit after insert on public.scenarios
   for each row execute function public.enforce_household_row_limit('50');
 
+-- =====================================================================
+-- Security rules
+-- Being signed in is never enough. Every policy names the owner.
+-- =====================================================================
+
+-- Trigger-only functions that run with the owner's rights are not callable by API roles.
+revoke all on function public.handle_new_user() from public, anon, authenticated;
+revoke all on function public.enforce_household_row_limit() from public, anon, authenticated;
+
+-- ---------------------------------------------------------------------
+-- Privileges. Start from nothing, then grant exactly what each role needs.
+-- ---------------------------------------------------------------------
+revoke all on table
+  public.providers, public.profiles, public.households, public.bills, public.appliances,
+  public.advisories, public.advisory_preparation, public.brownout_plans, public.tips_snapshots,
+  public.scenarios, public.setup_progress, public.auth_login_attempts
+from public, anon, authenticated;
+
+grant select on table public.providers to authenticated;
+
+-- Profiles and households are created by the sign-up trigger and removed with the account.
+-- Their identity columns are not in the lists below, so they cannot be changed.
+grant select on table public.profiles to authenticated;
+grant update (full_name, username, avatar_path, notify_brownouts, notify_bill_reminders, notify_tips, onboarded_at)
+  on table public.profiles to authenticated;
+grant select on table public.households to authenticated;
+grant update (name, location, province, municipality, barangay, provider_id, provider_custom_name, monthly_budget_centavos)
+  on table public.households to authenticated;
+
+grant select, insert, update, delete on table
+  public.bills, public.appliances, public.advisories, public.advisory_preparation,
+  public.brownout_plans, public.tips_snapshots, public.scenarios, public.setup_progress
+to authenticated;
+
+grant all on table
+  public.providers, public.profiles, public.households, public.bills, public.appliances,
+  public.advisories, public.advisory_preparation, public.brownout_plans, public.tips_snapshots,
+  public.scenarios, public.setup_progress, public.auth_login_attempts
+to service_role;
+
+-- ---------------------------------------------------------------------
+-- Row-level security
+-- ---------------------------------------------------------------------
+alter table public.providers enable row level security;
+create policy "providers: signed-in users read" on public.providers
+  for select to authenticated using (true);
+
+alter table public.profiles enable row level security;
+create policy "profiles: read own" on public.profiles
+  for select to authenticated using (id = (select auth.uid()));
+create policy "profiles: update own" on public.profiles
+  for update to authenticated using (id = (select auth.uid())) with check (id = (select auth.uid()));
+
+alter table public.households enable row level security;
+create policy "households: read own" on public.households
+  for select to authenticated using (owner_id = (select auth.uid()));
+create policy "households: update own" on public.households
+  for update to authenticated using (owner_id = (select auth.uid())) with check (owner_id = (select auth.uid()));
+
+-- No policies: only the secret key, which bypasses row-level security, can reach this table.
+alter table public.auth_login_attempts enable row level security;
+
+do $$
+declare
+  target text;
+  owned constant text := 'household_id in (select id from public.households where owner_id = (select auth.uid()))';
+begin
+  foreach target in array array[
+    'bills', 'appliances', 'advisories', 'advisory_preparation',
+    'brownout_plans', 'tips_snapshots', 'scenarios', 'setup_progress'
+  ] loop
+    execute format('alter table public.%I enable row level security', target);
+    execute format('create policy "own household: read" on public.%I for select to authenticated using (%s)', target, owned);
+    execute format('create policy "own household: add" on public.%I for insert to authenticated with check (%s)', target, owned);
+    execute format('create policy "own household: change" on public.%I for update to authenticated using (%s) with check (%s)', target, owned, owned);
+    execute format('create policy "own household: remove" on public.%I for delete to authenticated using (%s)', target, owned);
+  end loop;
+end;
+$$;
+
+-- =====================================================================
+-- Storage: two private buckets. Policies check the whole path.
+-- =====================================================================
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types) values
+  ('avatars', 'avatars', false, 1048576, array['image/jpeg']),
+  ('advisory-originals', 'advisory-originals', false, 2097152, array['image/jpeg', 'image/png', 'image/webp']);
+
+-- avatars: exactly one file per account, at <user id>/avatar.jpg
+create policy "avatars: read own" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'avatars' and name = (select auth.uid())::text || '/avatar.jpg');
+create policy "avatars: add own" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'avatars' and name = (select auth.uid())::text || '/avatar.jpg');
+create policy "avatars: replace own" on storage.objects
+  for update to authenticated
+  using (bucket_id = 'avatars' and name = (select auth.uid())::text || '/avatar.jpg')
+  with check (bucket_id = 'avatars' and name = (select auth.uid())::text || '/avatar.jpg');
+create policy "avatars: remove own" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'avatars' and name = (select auth.uid())::text || '/avatar.jpg');
+
+-- advisory-originals: <user id>/<advisory id>/r<revision>.<ext>, at most 60 files per account.
+-- The count lives in a function so that it can take a lock and be exact.
+-- It runs as the person uploading, so it counts exactly the files that person may read: their own.
+create function public.advisory_original_count() returns integer
+language plpgsql
+set search_path = ''
+as $$
+declare
+  owner_folder text;
+  held integer;
+begin
+  owner_folder := (select auth.uid())::text || '/';
+  -- One account's uploads are counted one at a time, so the limit is exact.
+  perform pg_advisory_xact_lock(hashtextextended('advisory-originals:' || owner_folder, 0));
+  select count(*) into held
+    from storage.objects stored
+   where stored.bucket_id = 'advisory-originals' and starts_with(stored.name, owner_folder);
+  return held;
+end;
+$$;
+revoke all on function public.advisory_original_count() from public, anon;
+grant execute on function public.advisory_original_count() to authenticated;
+
+create policy "advisory originals: read own" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'advisory-originals' and name like (select auth.uid())::text || '/%');
+create policy "advisory originals: add own" on storage.objects
+  for insert to authenticated
+  with check (
+    bucket_id = 'advisory-originals'
+    and name ~ ('^' || (select auth.uid())::text || '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/r[1-9][0-9]{0,5}\.(jpg|png|webp)$')
+    and public.advisory_original_count() < 60
+  );
+create policy "advisory originals: replace own" on storage.objects
+  for update to authenticated
+  using (bucket_id = 'advisory-originals' and name like (select auth.uid())::text || '/%')
+  with check (
+    bucket_id = 'advisory-originals'
+    and name ~ ('^' || (select auth.uid())::text || '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/r[1-9][0-9]{0,5}\.(jpg|png|webp)$')
+  );
+create policy "advisory originals: remove own" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'advisory-originals' and name like (select auth.uid())::text || '/%');
+
 commit;

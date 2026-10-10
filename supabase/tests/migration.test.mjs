@@ -179,3 +179,124 @@ test("deleting an account removes everything it owned", async () => {
     assert.equal((await sql(`select count(*)::int as n from public.${table} where ${column} = $1`, [value]))[0].n, 0, table);
   }
 });
+
+// ---------------------------------------------------------------------
+// Security rules. These run as the API roles, the way requests arrive.
+// ---------------------------------------------------------------------
+async function as(role, userId, run) {
+  await db.exec("reset role");
+  await db.query("select set_config('request.jwt.claim.sub', $1, false)", [userId ?? ""]);
+  await db.exec(`set role ${role}`);
+  try { return await run(); }
+  finally { await db.exec("reset role"); }
+}
+const asUser = (userId, run) => as("authenticated", userId, run);
+const affected = async (text, params = []) => (await db.query(text, params)).affectedRows;
+
+const OWNED = {
+  bills: "insert into public.bills (household_id, billing_month, kwh, amount_centavos, source) values ($1, '2026-01-01', 120.5, 137950, 'manual')",
+  appliances: "insert into public.appliances (household_id, name, kind, watts, hours_per_day, quantity) values ($1, 'Electric fan', 'fan', 55, 8, 2)",
+  advisories: `insert into public.advisories (household_id, revision, details, match, original_kind, original_name, original_text, original_captured_at, reviewed_at) values ($1, 1, '{"type":"scheduled"}', '{"status":"affected"}', 'text', 'Pasted advisory', 'Line maintenance in Payao', now(), now())`,
+  advisory_preparation: "insert into public.advisory_preparation (household_id, advisory_id, revision, household_signature, checked) values ($1, gen_random_uuid(), 1, '[]', '{charge}')",
+  brownout_plans: "insert into public.brownout_plans (household_id, advisory_id, advisory_snapshot, relevance_confirmed, source_confirmed, checked) values ($1, gen_random_uuid(), '{}', true, true, '{charge,work}')",
+  tips_snapshots: "insert into public.tips_snapshots (household_id, snapshot, generated_at, input_signature) values ($1, '{}', now(), '[]')",
+  scenarios: "insert into public.scenarios (household_id, title, payload) values ($1, 'My Watt-If scenario', '{}')",
+  setup_progress: "insert into public.setup_progress (household_id, reviewed_tips) values ($1, '[]')",
+};
+const ALL_TABLES = ["providers", "profiles", "households", ...Object.keys(OWNED), "auth_login_attempts"];
+
+test("every table has row-level security and anon holds no privilege", async () => {
+  assert.deepEqual((await sql("select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relkind = 'r' order by 1")).map(row => row.relname), [...ALL_TABLES].sort());
+  assert.deepEqual(await sql("select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity"), []);
+  assert.deepEqual(await sql("select table_name, privilege_type from information_schema.role_table_grants where table_schema = 'public' and grantee = 'anon'"), []);
+  assert.deepEqual(await sql("select table_name, column_name from information_schema.column_privileges where table_schema = 'public' and grantee = 'anon'"), []);
+  for (const table of ALL_TABLES) await rejects(as("anon", null, () => db.query(`select 1 from public.${table} limit 1`)), "42501", `anon reads ${table}`);
+});
+
+test("an account reads and writes only its own household", async () => {
+  for (const [table, insert] of Object.entries(OWNED)) {
+    await asUser(A, () => db.query(insert, [household.a]));
+    await asUser(B, () => db.query(insert, [household.b]));
+    assert.equal((await asUser(A, () => sql(`select household_id from public.${table}`))).every(row => row.household_id === household.a), true, `${table}: A sees only its own`);
+    assert.equal((await asUser(A, () => sql(`select 1 from public.${table} where household_id = $1`, [household.b]))).length, 0, `${table}: A cannot read B`);
+    await rejects(asUser(A, () => db.query(insert, [household.b])), "42501", `${table}: A inserts into B`);
+    assert.equal(await asUser(A, () => affected(`update public.${table} set updated_at = now() where household_id = $1`, [household.b])), 0, `${table}: A updates B`);
+    assert.equal(await asUser(A, () => affected(`delete from public.${table} where household_id = $1`, [household.b])), 0, `${table}: A deletes B`);
+    await rejects(asUser(A, () => db.query(`update public.${table} set household_id = $1 where household_id = $2`, [household.b, household.a])), "42501", `${table}: A moves a row to B`);
+    assert.equal((await sql(`select count(*)::int as n from public.${table} where household_id = $1`, [household.b]))[0].n, 1, `${table}: B's row survives`);
+    assert.equal(await asUser(A, () => affected(`update public.${table} set updated_at = now() where household_id = $1`, [household.a])), 1, `${table}: A updates its own`);
+    assert.equal(await asUser(A, () => affected(`delete from public.${table} where household_id = $1`, [household.a])), 1, `${table}: A deletes its own`);
+  }
+});
+
+test("profiles and households are private, and cannot be created, removed or re-owned", async () => {
+  assert.deepEqual((await asUser(A, () => sql("select id from public.profiles"))).map(row => row.id), [A]);
+  assert.deepEqual((await asUser(A, () => sql("select owner_id from public.households"))).map(row => row.owner_id), [A]);
+  assert.equal(await asUser(A, () => affected("update public.profiles set full_name = 'Hacked' where id = $1", [B])), 0);
+  assert.equal(await asUser(A, () => affected("update public.households set name = 'Hacked' where id = $1", [household.b])), 0);
+  assert.equal(await asUser(A, () => affected("update public.profiles set full_name = 'Ana S.', notify_tips = true where id = $1", [A])), 1);
+  assert.equal(await asUser(A, () => affected("update public.households set location = 'Payao, San Jose de Buenavista, Antique', provider_id = 'anteco', monthly_budget_centavos = 160000 where id = $1", [household.a])), 1);
+  const denied = [
+    ["insert a profile", "insert into public.profiles (id) values (gen_random_uuid())"],
+    ["delete own profile", `delete from public.profiles where id = '${A}'`],
+    ["change a profile id", `update public.profiles set id = gen_random_uuid() where id = '${A}'`],
+    ["insert a household", `insert into public.households (owner_id) values ('${A}')`],
+    ["delete own household", `delete from public.households where owner_id = '${A}'`],
+    ["re-own a household", `update public.households set owner_id = '${B}' where owner_id = '${A}'`],
+    ["edit a provider", "update public.providers set name = 'Mine' where id = 'anteco'"],
+  ];
+  for (const [label, statement] of denied) await rejects(asUser(A, () => db.query(statement)), "42501", label);
+  assert.equal((await asUser(A, () => sql("select id from public.providers"))).length, 7);
+});
+
+test("login attempts are closed to accounts and open to the service role", async () => {
+  const hash = "a".repeat(64);
+  await rejects(asUser(A, () => db.query("select 1 from public.auth_login_attempts")), "42501", "account reads attempts");
+  await rejects(asUser(A, () => db.query("insert into public.auth_login_attempts (username, ip_hash) values ('maria', $1)", [hash])), "42501", "account writes attempts");
+  await as("service_role", null, () => db.query("insert into public.auth_login_attempts (username, ip_hash) values ('maria', $1)", [hash]));
+  assert.equal((await as("service_role", null, () => sql("select count(*)::int as n from public.auth_login_attempts where username = 'maria'")))[0].n, 1);
+  assert.equal(await as("service_role", null, () => affected("delete from public.auth_login_attempts where username = 'maria'")), 1);
+});
+
+test("the service role reaches every table", async () => {
+  for (const table of ALL_TABLES) await as("service_role", null, () => db.query(`select 1 from public.${table} limit 1`));
+});
+
+test("buckets are private and limited", async () => {
+  const rows = await sql("select id, public, file_size_limit::int as file_size_limit, allowed_mime_types from storage.buckets order by id");
+  assert.deepEqual(rows, [
+    { id: "advisory-originals", public: false, file_size_limit: 2097152, allowed_mime_types: ["image/jpeg", "image/png", "image/webp"] },
+    { id: "avatars", public: false, file_size_limit: 1048576, allowed_mime_types: ["image/jpeg"] },
+  ]);
+});
+
+test("an avatar lives at exactly one path, and only its owner can touch it", async () => {
+  const put = (name, bucket = "avatars") => db.query("insert into storage.objects (bucket_id, name) values ($1, $2)", [bucket, name]);
+  await asUser(A, () => put(`${A}/avatar.jpg`));
+  await rejects(asUser(A, () => put(`${A}/other.jpg`)), "42501", "another file name");
+  await rejects(asUser(A, () => put(`${A}/avatar.png`)), "42501", "another extension");
+  await rejects(asUser(A, () => put(`${B}/avatar.jpg`)), "42501", "another account's folder");
+  await rejects(as("anon", null, () => put(`${A}/avatar.jpg`)), "42501", "no session");
+  assert.equal((await asUser(B, () => sql("select name from storage.objects where bucket_id = 'avatars'"))).length, 0);
+  assert.equal(await asUser(B, () => affected("update storage.objects set name = $1 where bucket_id = 'avatars'", [`${B}/avatar.jpg`])), 0);
+  assert.equal(await asUser(B, () => affected("delete from storage.objects where bucket_id = 'avatars'")), 0);
+  assert.equal((await asUser(A, () => sql("select name from storage.objects where bucket_id = 'avatars'"))).length, 1);
+  assert.equal(await asUser(A, () => affected("delete from storage.objects where bucket_id = 'avatars'")), 1);
+});
+
+test("advisory originals follow the path pattern and stop at 60 files", async () => {
+  const advisory = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
+  const put = name => db.query("insert into storage.objects (bucket_id, name) values ('advisory-originals', $1)", [name]);
+  await asUser(A, () => put(`${A}/${advisory}/r1.png`));
+  for (const bad of [`${A}/notes.txt`, `${A}/${advisory}/r0.png`, `${A}/${advisory}/r1.gif`, `${A}/${advisory}/r1.png/extra`, `${A}/not-a-uuid/r1.png`, `${B}/${advisory}/r1.png`]) {
+    await rejects(asUser(A, () => put(bad)), "42501", bad);
+  }
+  assert.equal((await asUser(B, () => sql("select name from storage.objects where bucket_id = 'advisory-originals'"))).length, 0);
+  assert.equal(await asUser(B, () => affected("delete from storage.objects where bucket_id = 'advisory-originals'")), 0);
+  for (let revision = 2; revision <= 60; revision += 1) await asUser(A, () => put(`${A}/${advisory}/r${revision}.jpg`));
+  assert.equal((await asUser(A, () => sql("select count(*)::int as n from storage.objects where bucket_id = 'advisory-originals'")))[0].n, 60);
+  await rejects(asUser(A, () => put(`${A}/${advisory}/r61.webp`)), "42501", "the 61st file");
+  // Another account's count is its own.
+  await asUser(B, () => put(`${B}/${advisory}/r1.webp`));
+  assert.equal(await asUser(A, () => affected("delete from storage.objects where bucket_id = 'advisory-originals'")), 60);
+});
