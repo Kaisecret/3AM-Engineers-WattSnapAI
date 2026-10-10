@@ -360,7 +360,83 @@ async function history(browser) {
   await context.close(); console.log('PASS: actual bill history, gaps, notable changes, confirmed deletion and refresh');
 }
 
+
+async function camera(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await context.addInitScript(() => {
+    window.__cameraRequests = 0;
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async () => { window.__cameraRequests++; throw new DOMException('Denied for isolated test', 'NotAllowedError'); } } });
+  });
+  const page = await context.newPage(); await page.goto(baseURL + '/bills/new');
+  assert.equal(await page.evaluate(() => window.__cameraRequests), 0, 'Camera never opens without user action');
+  await page.getByRole('button', { name: 'Open camera', exact: true }).click();
+  await page.getByText('Camera access is blocked.', { exact: false }).first().waitFor();
+  assert.equal(await page.evaluate(() => window.__cameraRequests), 1);
+  await page.getByRole('button', { name: 'Type it', exact: true }).click();
+  await page.getByLabel('Energy used', { exact: true }).waitFor();
+  assert.equal(await page.getByLabel('Energy used', { exact: true }).inputValue(), '');
+  await context.close(); console.log('PASS: user-triggered camera denial and manual fallback without invented values');
+}
+
+async function retained(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+  await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River home', provider: 'anteco', location: 'Payao, San Jose de Buenavista, Antique', locality: { province: 'Antique', municipality: 'San Jose de Buenavista', barangay: 'Payao' }, budget: 1800, bills: [{ id: 'older', month: '2026-07', kwh: 100, amount: 1200 }, { id: 'newer', month: '2026-09', kwh: 150, amount: 1500 }], appliances: [{ id: 'actual-ac', name: 'Living room air conditioner', kind: 'aircon', watts: 1000, hours: 8, quantity: 1, days: 30, source: 'manual' }] })); });
+  const page = await context.newPage(); const errors = [], ai = [];
+  page.on('pageerror', error => errors.push(error.message)); page.on('request', request => { if (/\/api\/ai\//.test(request.url())) ai.push(request.url()); });
+  await page.goto(baseURL + '/simulator');
+  await page.getByRole('button', { name: 'Use saved appliances' }).click();
+  assert.equal(await page.getByTestId('baseline-kwh').innerText(), '240.00\nkWh');
+  await page.getByLabel('Hours per day for appliance 1', { exact: true }).fill('5');
+  assert.equal(await page.getByTestId('scenario-kwh').innerText(), '150.00\nkWh');
+  assert.equal(await page.locator('.wi-costs').count(), 0, 'No implicit scenario tariff');
+  await page.getByLabel('Scenario name', { exact: true }).fill('My reviewed cooling comparison');
+  await page.getByRole('button', { name: 'Save scenario', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Scenario saved' }).waitFor();
+  await page.reload(); await page.getByRole('button', { name: 'Open My reviewed cooling comparison' }).click();
+  assert.equal(await page.getByTestId('scenario-kwh').innerText(), '150.00\nkWh');
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1')).appliances[0].hours), 8, 'Simulator does not edit the real appliance');
+  await page.goto(baseURL + '/assistant');
+  await page.getByText('Local guidance', { exact: false }).first().waitFor();
+  await page.getByLabel('Message WattSnap AI').fill('Why did my bill go higher?'); await page.keyboard.press('Enter');
+  await page.locator('.chat-row.is-bot').first().waitFor();
+  assert.match(await page.locator('.chat-row.is-bot').first().innerText(), /150 kWh, 50% more/);
+  assert.match(await page.locator('.chat-row.is-bot').first().innerText(), /totals alone do not explain why/);
+  await context.setOffline(true);
+  await page.getByLabel('Message WattSnap AI').fill('Which appliance uses the most?'); await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.querySelectorAll('.chat-row.is-bot').length === 2);
+  assert.match(await page.locator('.chat-row.is-bot').last().innerText(), /Living room air conditioner/i);
+  await context.setOffline(false); await page.getByRole('button', { name: 'Start a new chat' }).click(); assert.equal(await page.locator('.chat-row').count(), 0);
+  await page.goto(baseURL + '/advisories/new');
+  await page.getByLabel('Original advisory text', { exact: true }).fill('Provider announcement for Payao: planned work on November 10, 2030 from 8am to noon. Check official updates.');
+  await page.getByRole('button', { name: 'Review pasted text', exact: true }).click();
+  await page.getByLabel('Advisory type').selectOption('scheduled');
+  await page.getByLabel('Provider named in the advisory').selectOption('anteco');
+  await page.getByLabel('Review title (optional)').fill('My preparation notice');
+  await page.getByLabel('Interruption date', { exact: true }).fill('2030-11-10');
+  await page.getByLabel('Start time', { exact: true }).fill('08:00'); await page.getByLabel('End time', { exact: true }).fill('12:00');
+  await page.getByLabel('Areas as written in the original').fill('Payao');
+  await page.getByLabel('Province for area 1').fill('Antique'); await page.getByLabel('Municipality for area 1').fill('San Jose de Buenavista'); await page.getByLabel('Barangay for area 1').fill('Payao'); await page.getByLabel('Scope for area 1').selectOption('barangay');
+  await page.getByRole('checkbox', { name: /I checked the original and these fields/ }).check();
+  await page.getByRole('button', { name: 'Save reviewed advisory', exact: true }).click();
+  await page.getByRole('link', { name: 'View saved advisory', exact: true }).click();
+  await page.getByRole('link', { name: 'Prepare with this advisory', exact: true }).click();
+  const save = page.getByRole('button', { name: 'Save preparation plan', exact: true }); assert.equal(await save.isDisabled(), true);
+  await page.getByRole('checkbox', { name: 'I checked the original provider source and the published schedule for this preparation plan.', exact: true }).check();
+  await save.click(); await page.getByRole('region', { name: 'Saved published schedule' }).waitFor();
+  assert.match(await page.locator('.bready-schedule').innerText(), /4 hours/);
+  const checklist = page.getByRole('region', { name: 'Preparation checklist' }); await context.setOffline(true); await checklist.getByRole('checkbox').first().check();
+  await context.setOffline(false); await page.reload(); await checklist.getByRole('checkbox').first().waitFor(); assert.equal(await checklist.getByRole('checkbox').first().isChecked(), true);
+  await page.getByText('Manage this preparation plan', { exact: true }).click(); await page.getByRole('button', { name: 'Remove this plan', exact: true }).click(); await page.getByRole('button', { name: 'Keep plan', exact: true }).click();
+  assert.equal(await page.getByRole('region', { name: 'Preparation checklist' }).count(), 1);
+  await page.getByRole('button', { name: 'Remove this plan', exact: true }).click(); await page.getByRole('button', { name: 'Remove preparation plan', exact: true }).click(); await page.getByRole('heading', { name: 'No preparation plan yet' }).waitFor();
+  await page.goto(baseURL + '/advisories'); await page.getByRole('button', { name: /View My preparation notice/ }).click();
+  await page.getByText('Manage saved advisory', { exact: true }).click(); await page.getByRole('button', { name: 'Remove saved advisory', exact: true }).click(); await page.getByRole('button', { name: 'Keep advisory', exact: true }).click();
+  assert.equal(await page.getByRole('heading', { name: 'My preparation notice', exact: true }).count(), 1);
+  await page.getByRole('button', { name: 'Remove saved advisory', exact: true }).click(); await page.getByRole('button', { name: 'Remove advisory and original', exact: true }).click(); await page.getByRole('heading', { name: 'No saved advisories yet' }).waitFor();
+  assert.deepEqual(errors, []); assert.deepEqual(ai, []); await context.close(); console.log('PASS: actual simulator snapshots, offline local assistant, reviewed preparation plans, persistent checklist and confirmed deletion');
+}
+
 (async () => {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
-  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history', 'appliances', 'estimates', 'tips', 'advisories', 'storage', 'accessibility'])) await ({ design, records, household, bills, history, appliances, estimates, tips, advisories, storage, offline, accessibility, responsive, chart, content })[check](browser); } finally { await browser.close(); }
+  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history', 'appliances', 'estimates', 'tips', 'advisories', 'storage', 'accessibility', 'camera', 'retained'])) await ({ design, records, household, bills, history, appliances, estimates, tips, advisories, storage, offline, accessibility, responsive, chart, content, camera, retained })[check](browser); } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

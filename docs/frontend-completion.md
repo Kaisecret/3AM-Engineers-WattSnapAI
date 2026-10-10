@@ -35,7 +35,7 @@ Baseline evidence: 76 feature tests pass; `npx.cmd tsc --noEmit` passes. Existin
 | 14 | Responsive verification | Fourteen routes checked at 320, 390, 768, 1024 and 1440px |
 | 15 | Content accuracy | Honest marketing, local access, privacy, assistant and unavailable notifications |
 | 16 | Frontend contracts/code quality | Type-only integration contracts; unreachable sample handlers and delays removed |
-| 17 | Full local verification | Pending |
+| 17 | Full local verification | Production build, TypeScript, 87 rule tests and 17 browser groups passed; existing lint blocker documented |
 | 18 | Priority review/polish | Pending |
 | 19 | Definition-of-done audit | Pending |
 | 20 | Final implementation report | Pending |
@@ -105,3 +105,9 @@ Marketing describes photo-assisted manual review and local recommendations. Fict
 ## 16. Frontend review and future contracts
 
 Added data-only BillExtractionResult, ApplianceLabelExtractionResult, AdvisoryAnalysisResult and TipRecommendation contracts. Future extracted values require review, support unknown fields and do not make requests. Removed unreachable public sample generation/handlers and scanning animation logic; fixtures and reusable rule helpers stay available to tests. Bill progress now labels its actual input/review/save stages. Local assistant replies are immediate rather than simulating model processing. Reviewed effects, camera cleanup, accessible inputs and scope-bound persistence against the React checklist. No dependencies or backend contracts changed.
+
+## 17. Full local verification
+
+A fresh production build passed. TypeScript and all 87 feature rule tests passed. Seventeen browser check groups passed against that production build, including 70 responsive route/width combinations and ten cold offline household routes. Added coverage for actual simulator snapshots without modifying registered appliances, immediate offline assistant replies, reviewed preparation plans, checklist refresh and confirmed plan/advisory deletion. Camera-denial testing verifies permission is user-triggered and manual entry remains usable. Reviewed regenerated production screenshots. Tests use synthetic isolated records and make no AI requests.
+
+Existing blocker: noninteractive `npm.cmd run lint` exits 1 with the ESLint setup prompt because no ESLint configuration/dependency exists. The production build also reports this limitation. The historical prototype browser scripts rely on intentionally removed sample/sign-in flows; [test instructions](../tests/e2e/README.md) document their status and the current replacement acceptance suite. A development navigation timeout during a rebuild was resolved by running browser verification against a fresh production server. Physical camera/GPS behavior and installation on real phones still require device testing.
