@@ -34,7 +34,7 @@ export function authEmails(payload: unknown, links?: EmailLinks): AuthEmail[] {
     const to = email(recipient);
     const otp = token(code);
     let link = "";
-    if (links && typeof hash === "string" && hash.length > 0 && hash.length <= 512 && /^[a-z0-9_-]+$/i.test(hash)) {
+    if (action !== "reauthentication" && links && typeof hash === "string" && hash.length > 0 && hash.length <= 512 && /^[a-z0-9_-]+$/i.test(hash)) {
       const origin = new URL(links.siteUrl);
       if (origin.protocol !== "https:" && !(origin.protocol === "http:" && ["localhost", "127.0.0.1"].includes(origin.hostname))) throw new Error("Invalid app origin.");
       const confirm = new URL("/auth/confirm", origin.origin);
