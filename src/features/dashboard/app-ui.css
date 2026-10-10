@@ -192,3 +192,28 @@
   .ui-icon-button:hover { background: #fff0f0; color: #d56666; }
   .ui-upload:hover { border-color: #00b5e0; background: #ebf9ff; }
 }
+
+/* Page loading: the header and navigation stay in place while the content area shimmers. */
+.ws-skeleton { display: grid; gap: 16px; animation: ws-skel-in .2s ease .12s both; }
+.ws-skel { position: relative; overflow: hidden; border-radius: 18px; background: #e4f0f6; }
+.ws-skel::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, #ffffffb3, transparent); animation: ws-shimmer 1.3s ease-in-out infinite; }
+.ws-skel-title { width: 48%; height: 28px; border-radius: 10px; }
+.ws-skel-hero { height: 150px; }
+.ws-skel-card { height: 210px; }
+.ws-skel-row { height: 76px; border-radius: 16px; }
+.ws-skel-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.ws-skel-pair > .ws-skel { height: 118px; }
+@keyframes ws-shimmer { to { transform: translateX(100%); } }
+@keyframes ws-skel-in { from { opacity: 0; } }
+@media (min-width: 900px) {
+  .ws-skeleton { gap: 22px; }
+  .ws-skel-title { width: 30%; height: 34px; }
+  .ws-skel-hero { height: 210px; }
+  .ws-skel-card { height: 280px; }
+  .ws-skel-row { height: 88px; }
+  .ws-skel-pair { gap: 22px; }
+  .ws-skel-pair > .ws-skel { height: 150px; }
+}
+@media (prefers-reduced-motion: reduce) { .ws-skeleton { animation: none; } .ws-skel::after { display: none; } }
+html[data-theme="dark"] .ws-skel { background: #1d3442; }
+html[data-theme="dark"] .ws-skel::after { background: linear-gradient(90deg, transparent, #ffffff14, transparent); }

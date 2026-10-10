@@ -256,21 +256,15 @@ async function offline(browser) {
   const page = await context.newPage(); const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto(`${baseURL}/dashboard`); await page.locator('.ws-chart-day').first().waitFor();
   await page.waitForFunction(() => navigator.serviceWorker.controller?.state === 'activated', undefined, { timeout: 60000 });
-  assert.equal(await page.evaluate(async () => { const cache = await caches.open('wattsnap-shell-v3'); return !!await cache.match('/advisories/new', { ignoreVary: true }) && !!await cache.match('/assistant', { ignoreVary: true }); }), true, 'All shells prepared before disconnecting');
-  await page.reload(); await page.locator('.ws-chart-day').first().waitFor();
-  await page.evaluate(async () => { const resources = performance.getEntriesByType('resource').map(entry => entry.name).filter(name => new URL(name).pathname.startsWith('/_next/image')); await Promise.all(resources.map(url => fetch(url))); });
+  assert.equal(await page.evaluate(async () => { const cache = await caches.open('wattsnap-static-v2'); return !!await cache.match('/offline.html') && !await cache.match('/dashboard') && !await cache.match('/login'); }), true, 'Only static files and the offline notice are saved; pages never are');
   await context.setOffline(true);
   await page.waitForFunction(() => !navigator.onLine);
-  await page.locator('.ws-connectivity').waitFor();
-  for (const route of ['/bills', '/appliances', '/tips', '/advisories', '/onboarding', '/budget', '/simulator', '/brownout-ready', '/assistant', '/dashboard']) {
-    console.log(`Checking cached route ${route}`);
-    await page.goto(`${baseURL}${route}`); await page.locator('.ws-home').waitFor(); await page.locator('.ws-connectivity').waitFor();
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true, `${route} fits offline`);
+  for (const route of ['/bills', '/dashboard']) {
+    await page.goto(`${baseURL}${route}`);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true, `${route} offline notice fits`);
+    assert.equal(await page.locator('.ws-chart-day').count(), 0, `${route} never shows a saved signed-in page offline`);
   }
-  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Energy', exact: true }).click(); await page.waitForURL('**/bills');
-  await page.locator('.en-list > li').waitFor();
-  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1')).bills[0].kwh), 100);
-  assert.deepEqual(errors, []); await context.close(); console.log('PASS: production cached shells, cold offline navigation, saved records and no runtime errors');
+  assert.deepEqual(errors, []); await context.close(); console.log('PASS: offline notice for pages, no signed-in page saved in the service worker');
 }
 
 async function accessibility(browser) {

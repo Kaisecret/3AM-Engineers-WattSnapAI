@@ -17,7 +17,8 @@ export function AccountSynchronizer({ account, children }: { account: Account; c
         if (event === "SIGNED_OUT" || session?.user.id !== account.id) {
           setReadyId(null);
           try { forgetAccount(); } catch { /* In-memory identity has already been cleared. */ }
-          if (!session) router.replace("/login"); else router.refresh();
+          // A full page load drops every signed-in page held in memory.
+          if (!session) window.location.replace("/login"); else router.refresh();
         }
       });
       setReadyId(account.id); setError("");

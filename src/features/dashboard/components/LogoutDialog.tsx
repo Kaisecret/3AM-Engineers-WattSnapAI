@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { Check, LoaderCircle, LogOut } from "lucide-react";
 import { forgetAccount, readDisplayIdentity } from "@/features/auth/session";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
@@ -10,7 +9,6 @@ import { signOut } from "@/features/auth/service";
 /** Ends the authenticated session and optionally removes this account's local records. */
 export default function LogoutDialog({ open, onClose, name }: { open: boolean; onClose: () => void; name: string }) {
   const dialog = useRef<HTMLDialogElement>(null);
-  const router = useRouter();
   const [clearData, setClearData] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [error, setError] = useState("");
@@ -34,7 +32,8 @@ export default function LogoutDialog({ open, onClose, name }: { open: boolean; o
         keys.forEach(key => localStorage.removeItem(key));
       }
       try { forgetAccount(); } catch { /* Session and in-memory identity are already cleared. */ }
-      router.replace("/login"); router.refresh();
+      // A full page load drops every signed-in page held in memory, so Back cannot reopen one.
+      window.location.replace("/login");
     } catch { setError("Your browser could not finish logging out. Please try again."); setLeaving(false); }
   }
 

@@ -1,1 +1,1 @@
-export { default } from "@/components/AppLoading";
+export { default } from "@/features/dashboard/components/PageSkeleton";
