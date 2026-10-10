@@ -11,7 +11,7 @@ export default function HomePreparationCard() {
   const { household, ready: householdReady } = usePreviewHousehold(), saved = usePreviewAdvisories(), progress = usePreparationProgress();
   if (!householdReady || !saved.ready || !progress.ready || saved.loadError) return null;
   if (progress.loadError) return <section className="ws-card ws-checklist-error" role="alert"><p>{progress.error}</p><button type="button" onClick={progress.reload}>Retry loading checklist</button></section>;
-  const pending = pendingHomePreparation(saved.records, progress.entries, household, progress.sample);
+  const pending = pendingHomePreparation(saved.records, progress.entries, household, null);
   if (!pending) return null;
   const count = pending.checked.length, total = advisoryPreparationItems.length;
   const href = `/advisories?${pending.gallery ? "sample" : "reviewed"}=${encodeURIComponent(pending.record.id)}&checklist=1`;

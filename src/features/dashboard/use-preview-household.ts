@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { previewStorageFor, usePreviewStorageKey } from "@/features/auth/use-preview-storage-key";
-import { normalizePreview, emptyPreview, previewStorageKey, samplePreview, type PreviewHousehold } from "./preview-data";
+import { normalizePreview, emptyPreview, previewStorageKey, type PreviewHousehold } from "./preview-data";
+import { householdRecords, mergeHouseholdRecords } from "./local-records";
 import { readPreviewIdentity } from "@/features/auth/preview-session";
 
 export function usePreviewHousehold() {
@@ -16,9 +17,8 @@ export function usePreviewHousehold() {
       try {
         if (previewStorageFor(previewStorageKey) !== storageKey) { setLoadedKey(null); return; }
         const saved = localStorage.getItem(storageKey);
-        // A first visit starts with example history; anything saved afterwards wins.
         const identity = readPreviewIdentity();
-        setHousehold(saved === null ? identity ? { ...emptyPreview, name: identity.name, email: identity.email || undefined } : samplePreview : normalizePreview(JSON.parse(saved)));
+        setHousehold(saved === null ? identity ? { ...emptyPreview, name: identity.name, email: identity.email || undefined } : emptyPreview : normalizePreview(JSON.parse(saved)));
         setStorageError(""); setLoadError(false);
       }
       catch { setHousehold(emptyPreview); setLoadError(true); setStorageError("Your saved household could not be opened. Changes cannot be saved until browser storage is available and the record can be read."); }
@@ -32,8 +32,8 @@ export function usePreviewHousehold() {
   }, [storageKey]);
   function update(change: Partial<PreviewHousehold>) {
     if (!ready || loadError) return false;
-    try { if (previewStorageFor(previewStorageKey) !== storageKey) return false; const raw = localStorage.getItem(storageKey); const next = { ...(raw === null ? household : normalizePreview(JSON.parse(raw))), ...change }; localStorage.setItem(storageKey, JSON.stringify(next)); setHousehold(next); setStorageError(""); window.dispatchEvent(new Event("wattsnap-preview-change")); return true; }
+    try { if (previewStorageFor(previewStorageKey) !== storageKey) return false; const raw = localStorage.getItem(storageKey); const next = mergeHouseholdRecords(raw === null ? household : normalizePreview(JSON.parse(raw)), change); localStorage.setItem(storageKey, JSON.stringify(next)); setHousehold(next); setStorageError(""); window.dispatchEvent(new Event("wattsnap-preview-change")); return true; }
     catch { setStorageError("Your changes could not be saved in this browser. Please try again."); return false; }
   }
-  return { household: ready ? household : emptyPreview, update, ready, storageError };
+  return { household: ready ? householdRecords(household) : emptyPreview, update, ready, storageError };
 }

@@ -16,7 +16,7 @@ export interface PreviewHousehold {
   locality?: { province: string; municipality: string; barangay: string };
 }
 
-export const emptyPreview: PreviewHousehold = { bills: [], appliances: [], budget: 3500, name: "Kris" };
+export const emptyPreview: PreviewHousehold = { bills: [], appliances: [], budget: 0, name: "Your home" };
 export const previewStorageKey = "wattsnap-ui-preview-v1";
 export const defaultLocation = "San Jose de Buenavista, Antique";
 export const defaultProvider = "anteco";
@@ -135,8 +135,8 @@ export function normalizePreview(value: unknown): PreviewHousehold {
     ...(notifications ? { notifications } : {}),
     bills: Array.isArray(data.bills) ? data.bills.filter(item => item && typeof item.id === "string" && typeof item.month === "string" && !validateBill(item)) : [],
     appliances: Array.isArray(data.appliances) ? data.appliances.filter(item => item && typeof item.id === "string" && typeof item.name === "string" && !validateAppliance(item)) : [],
-    budget: typeof data.budget === "number" && Number.isFinite(data.budget) && data.budget > 0 ? data.budget : 3500,
-    name: typeof data.name === "string" && data.name.trim() ? data.name.trim() : "Kris",
+    budget: typeof data.budget === "number" && Number.isFinite(data.budget) && data.budget > 0 ? data.budget : 0,
+    name: typeof data.name === "string" && data.name.trim() ? data.name.trim() : "Your home",
   };
 }
 
@@ -151,23 +151,12 @@ export function monthlySeries(bills: PreviewBill[], count = 6) {
   return sortBillsByMonth(bills).slice(-count);
 }
 export interface ChartMonth extends PreviewBill { example: boolean; }
-const exampleShape = [1.07, 1.15, 1.1, 1.22, 1.17, 1.12];
+
 /**
- * Bars for a monthly chart. With fewer than `count` saved bills, earlier months are
- * filled with clearly marked example bars so the chart never looks empty. Saved
- * bills are never altered, and comparisons elsewhere use saved bills only.
+ * Bars use saved bills only. Missing months are never filled with invented values.
  */
 export function chartMonths(bills: PreviewBill[], count = 6): ChartMonth[] {
-  const saved = monthlySeries(bills, count).map(bill => ({ ...bill, example: false }));
-  if (!saved.length) return sampleBills.slice(-count).map(bill => ({ ...bill, id: `example-${bill.month}`, example: true }));
-  const first = saved[0];
-  const rate = first.amount / first.kwh;
-  const examples = Array.from({ length: count - saved.length }, (_, index) => {
-    const month = shiftMonth(first.month, -(index + 1));
-    const kwh = Math.round(first.kwh * exampleShape[index % exampleShape.length]);
-    return { id: `example-${month}`, month, kwh, amount: Math.round(kwh * rate * 100) / 100, example: true };
-  }).reverse();
-  return [...examples, ...saved];
+  return monthlySeries(bills, count).map(bill => ({ ...bill, example: false }));
 }
 export interface MonthComparison { previous: PreviewBill; kwhChange: number; kwhPercent: number; amountChange: number; amountPercent: number; }
 /** Compares a bill with the closest earlier recorded bill. */

@@ -28,5 +28,5 @@ export function usePreviewPlans() {
     try { localStorage.setItem(storageKey, JSON.stringify(next)); setPlans(next); setError(""); window.dispatchEvent(new Event("wattsnap-brownout-change")); return true; }
     catch { setError("This change could not be saved. Browser storage may be full or blocked. Your earlier plan and checklist are unchanged."); return false; }
   }
-  return { plans, ready, error, loadError, save: (plan: BrownoutPreviewPlan) => write(plans.some(item => item.id === plan.id) ? plans.map(item => item.id === plan.id ? plan : item) : [...plans, plan]), remove: (id: string) => write(plans.filter(plan => plan.id !== id)), reload: () => window.dispatchEvent(new Event("wattsnap-brownout-change")) };
+  return { plans: plans.filter(plan => plan.advisory.original.kind !== "sample"), ready, error, loadError, save: (plan: BrownoutPreviewPlan) => write(plans.some(item => item.id === plan.id) ? plans.map(item => item.id === plan.id ? plan : item) : [...plans, plan]), remove: (id: string) => write(plans.filter(plan => plan.id !== id)), reload: () => window.dispatchEvent(new Event("wattsnap-brownout-change")) };
 }

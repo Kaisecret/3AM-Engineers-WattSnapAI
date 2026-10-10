@@ -31,5 +31,5 @@ export function usePreviewScenarios() {
     return write(scenarios.some(item => item.id === scenario.id) ? scenarios.map(item => item.id === scenario.id ? scenario : item) : [...scenarios, scenario]);
   }
   function remove(id: string) { return write(scenarios.filter(item => item.id !== id)); }
-  return { scenarios, ready, error, save, remove };
+  return { scenarios: scenarios.filter(item => item.origin !== "sample"), ready, error, save, remove };
 }

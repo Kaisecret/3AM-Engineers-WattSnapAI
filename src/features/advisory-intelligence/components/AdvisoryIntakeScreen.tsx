@@ -26,7 +26,7 @@ export default function AdvisoryIntakeScreen() {
     if (!ready || initialized.current) return; initialized.current = true;
     const params = new URLSearchParams(window.location.search), edit = params.get("edit"), example = params.get("sample");
     if (edit) { const entry = saved.records.find(item => item.id === edit); if (entry) { setEditing(entry); setOriginal(entry.original); setInitial(entry.details); setPhase("review"); } else setError("This saved advisory could not be found. Return to your advisory list or choose a new original."); }
-    else if (example && ["scheduled", "uncertain", "not-listed", "restored", "notice"].includes(example)) { const input = sampleAdvisory(example as AdvisorySample); setOriginal(input.original); setInitial(input.details); setPhase("review"); }
+
   }, [ready, saved.records]);
   function reset() { request.current++; if (timer.current) clearTimeout(timer.current); setLoading(false); setError(""); setOriginal(null); setEditing(null); setRecord(null); setInitial(blankAdvisory); setPhase("input"); }
   function useText(text: string) { if (!text.trim()) { setError("Paste the original advisory text before continuing."); return; } if (text.length > maxOriginalText) { setError("Use an original up to 12,000 characters."); return; } setOriginal({ kind: "text", name: "Pasted provider announcement", text, capturedAt: new Date().toISOString() }); setInitial({ ...blankAdvisory, areas: [{ ...blankAdvisory.areas[0] }] }); setError(""); setPhase("review"); }

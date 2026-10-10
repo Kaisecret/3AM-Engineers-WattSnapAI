@@ -22,7 +22,7 @@ Baseline evidence: 76 feature tests pass; `npx.cmd tsc --noEmit` passes. Existin
 | 1 | Objective and architecture audit | Reviewed; baseline verified |
 | 2 | Safety and protected boundaries | Separate branch; boundary guard passes |
 | 3 | Preserve design; targeted refinement | Existing layout retained; focus and controls checked at 320–1440px |
-| 4 | Remove prototype/sample presentation | Pending |
+| 4 | Remove prototype/sample presentation | Empty states, actual-only charts, sample controls removed; legacy fixtures preserved |
 | 5 | Local household access and provider | Pending |
 | 6 | Bill upload/manual review/draft | Pending |
 | 7 | Actual bill history/dashboard/change | Pending |
@@ -47,3 +47,9 @@ The starting working tree was clean. All work is isolated on the review branch; 
 ## 3. Design preservation
 
 Original colors, fonts, art, sidebar and mobile navigation remain in use. A scoped refinement sheet adds visible input focus and comfortable existing primary/secondary controls. No new dashboard arrangement or design system is introduced. Local Chrome checks cover the unchanged logo/navigation, form focus and horizontal fit at 320, 390, 768 and 1440 pixels.
+
+## 4. Honest records and sample removal
+
+New households start with no bills, appliances or budget and a neutral home label. Charts use only stored periods. Original fixtures remain available to rule tests. Old fixture records are filtered from real statistics without destructive writes; ordinary edits preserve those hidden fixtures. Public sample buttons/galleries and simulated refresh-state controls are removed. A bill upload now opens blank manual review instead of invented extraction. Prototype labels on shared page footers are replaced with the actual device-storage limitation. Module-specific wording and account behavior are completed in their numbered sections.
+
+Checks: empty-state/manual-entry browser flow, actual-only chart tests, fixture-preservation tests and TypeScript. The existing prototype-only browser scripts are reference tests for the earlier simulated flows; the completion suite exercises the replacement actual-data workflows.

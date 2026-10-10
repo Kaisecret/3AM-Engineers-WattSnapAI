@@ -24,11 +24,11 @@ export default function BudgetScreen() {
   const recent = monthlySeries(household.bills, 6).reverse();
   const budget = household.budget;
   const spent = latest?.amount ?? 0;
-  const used = spent / budget * 100;
+  const used = budget > 0 ? spent / budget * 100 : 0;
   const status = budgetStatus(spent, budget);
   const suggestion = suggestedBudget(household.bills);
   const rate = effectiveRate(household.bills);
-  const value = draft ?? String(budget);
+  const value = draft ?? (budget > 0 ? String(budget) : "");
   const amount = parseAmount(value);
   const changed = draft !== null && amount !== budget;
   // History bars share one scale so the budget marker sits inside the track.
@@ -63,12 +63,12 @@ export default function BudgetScreen() {
           <div><p id="bg-wallet-title">Monthly budget</p><small>{latest ? `${billMonth(latest.month)} bill` : "No bills yet"}</small></div>
           <button type="button" className="bg-eye" aria-label={hidden ? "Show amounts" : "Hide amounts"} aria-pressed={hidden} onClick={() => setHidden(value => !value)}>{hidden ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}</button>
         </div>
-        <strong className="bg-wallet-amount">{money(budget)}</strong>
-        <p className="bg-wallet-left">{latest ? spent > budget ? <>Over by <b>{money(spent - budget)}</b></> : <><b>{money(budget - spent)}</b> left this month</> : "Scan a bill to see how much is left"}</p>
+        <strong className="bg-wallet-amount">{budget > 0 ? money(budget) : "Not set"}</strong>
+        <p className="bg-wallet-left">{budget <= 0 ? "Set a budget to compare your spending" : latest ? spent > budget ? <>Over by <b>{money(spent - budget)}</b></> : <><b>{money(budget - spent)}</b> left this month</> : "Scan a bill to see how much is left"}</p>
         <div className="bg-meter" role="progressbar" aria-label="Budget used by latest bill" aria-valuenow={Math.round(used)} aria-valuemin={0} aria-valuemax={Math.max(100, Math.ceil(used))}><span style={{ width: `${Math.min(used, 100)}%` }} /></div>
         <div className="bg-meter-labels"><span>{Math.round(used)}% used</span><span>{money(spent)} spent</span></div>
         <div className="bg-wallet-foot">
-          <span className="bg-status">{status === "on-track" ? <CircleCheck aria-hidden="true" /> : <TriangleAlert aria-hidden="true" />}{latest ? statusCopy[status].label : "Waiting for a bill"}</span>
+          <span className="bg-status">{status === "on-track" ? <CircleCheck aria-hidden="true" /> : <TriangleAlert aria-hidden="true" />}{budget <= 0 ? "Budget not set" : latest ? statusCopy[status].label : "Waiting for a bill"}</span>
           <span className="bg-avg">Avg bill {money(recent.length ? recent.reduce((sum, bill) => sum + bill.amount, 0) / recent.length : 0)}</span>
         </div>
         <Image className="bg-wallet-art" src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="" width={240} height={240} sizes="(min-width: 900px) 150px, 100px" />
@@ -96,12 +96,12 @@ export default function BudgetScreen() {
       <section className="ui-panel bg-history" aria-labelledby="bg-history-title">
         <div className="ui-panel-heading"><div><h2 id="bg-history-title">Bills vs budget</h2><p>Each month compared with your {whole(budget)} target.</p></div><Link href="/bills" className="bg-link">All bills <ChevronRight size={16} aria-hidden="true" /></Link></div>
         {recent.length ? <ul className="bg-months">
-          {recent.map(bill => { const share = bill.amount / budget * 100; const state = budgetStatus(bill.amount, budget); return <li key={bill.id} className={`is-${state}`}>
+          {recent.map(bill => { const share = budget > 0 ? bill.amount / budget * 100 : 0; const state = budgetStatus(bill.amount, budget); return <li key={bill.id} className={`is-${state}`}>
             <span className="bg-month-tile"><b>{shortMonth(bill.month)}</b><small>{bill.month.slice(0, 4)}</small></span>
             <div className="bg-month-main">
-              <div className="bg-month-top"><strong>{money(bill.amount)}</strong><span className="bg-month-chip">{state === "over" ? `+${whole(bill.amount - budget)}` : `${Math.round(share)}%`}</span></div>
+              <div className="bg-month-top"><strong>{money(bill.amount)}</strong><span className="bg-month-chip">{budget <= 0 ? "No target" : state === "over" ? `+${whole(bill.amount - budget)}` : `${Math.round(share)}%`}</span></div>
               <div className="bg-month-bar"><span style={{ width: `${bill.amount / scale * 100}%` }} /><i style={{ left: `${budget / scale * 100}%` }} aria-hidden="true" /></div>
-              <small>{bill.kwh} kWh · {state === "over" ? "over budget" : `${whole(budget - bill.amount)} under`}</small>
+              <small>{bill.kwh} kWh · {budget <= 0 ? "Set a budget to compare" : state === "over" ? "over budget" : `${whole(budget - bill.amount)} under`}</small>
             </div>
           </li>; })}
         </ul> : <div className="bg-empty"><ReceiptText aria-hidden="true" /><p>Scan your bills to compare them with your budget.</p><Link href="/bills/new" className="ui-primary">Scan a bill</Link></div>}

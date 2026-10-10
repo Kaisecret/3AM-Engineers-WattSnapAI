@@ -112,8 +112,7 @@ export default function ScanScreen() {
   }, [phase]);
 
   function beginScan() {
-    const next = sampleScanReading(household.bills, new Date(), () => 0.5);
-    setReading(next); setDraft(toDraft(next)); setMode("scan"); setError(""); setProgress(0); setPhase("scanning");
+    setReading(null); setDraft({ month: currentMonth(), amount: "", kwh: "", dueDate: "", periodStart: "", periodEnd: "" }); setMode("manual"); setError(""); setPhase("review");
   }
 
   function capture() {
@@ -127,7 +126,7 @@ export default function ScanScreen() {
       const photo = canvas.toDataURL("image/jpeg", 0.86);
       setImage({ src: photo, fit: "cover" });
       setSource({ name: "Camera photo", kind: "image", url: photo });
-    } else { setImage(null); setSource({ name: "Sample electricity bill", kind: "sample" }); }
+    } else { void startCamera(); return; }
     stopCamera();
     beginScan();
   }
@@ -200,8 +199,8 @@ export default function ScanScreen() {
   const savedChange = saved ? compareWithPrevious(household.bills, saved.month) : null;
   const recent = sortBillsByMonth(household.bills).slice(-3).reverse();
   const stage = phase === "camera" ? 0 : phase === "scanning" ? 1 : phase === "review" ? 2 : 3;
-  const cameraMessage = loadingFile ? "Opening your file…" : camera === "blocked" ? "Camera access is blocked. Upload a photo or enter details manually." : camera === "unavailable" ? "No camera found. Upload a photo or enter details manually." : camera === "live" ? "Fit the whole bill inside the frame" : camera === "starting" ? "Opening your camera…" : "Try a sample bill, upload, or open your camera";
-  const bubble = phase === "scanning" ? "Sample preview…" : phase === "camera" ? (live ? "Hold steady!" : "Let’s try an example!") : "Ready to review!";
+  const cameraMessage = loadingFile ? "Opening your file…" : camera === "blocked" ? "Camera access is blocked. Upload a photo or enter details manually." : camera === "unavailable" ? "No camera found. Upload a photo or enter details manually." : camera === "live" ? "Fit the whole bill inside the frame" : camera === "starting" ? "Opening your camera…" : "Upload your bill, open your camera, or type its details";
+  const bubble = phase === "scanning" ? "Sample preview…" : phase === "camera" ? (live ? "Hold steady!" : "Let’s add your bill!") : "Ready to review!";
 
   return (
     <PageShell title="Snap AI" subtitle="Scan your bill and add it to your monthly history" active="Snap AI" className="scan-page">
@@ -216,11 +215,11 @@ export default function ScanScreen() {
             <div className="scan-title"><strong>Snap AI</strong><span>Scan your electricity bill</span></div>
             {live ? <button type="button" className={`scan-round${torch ? " is-on" : ""}`} aria-label={torch ? "Turn flashlight off" : "Turn flashlight on"} aria-pressed={torch} onClick={toggleTorch}>{torch ? <Zap aria-hidden="true" /> : <ZapOff aria-hidden="true" />}</button> : <span className="scan-round is-ghost" aria-hidden="true"><Sparkles /></span>}
           </div>
-          <p className="scan-preview-tag" role="note">{offline ? "Offline UI preview · manual entry available" : "UI preview · scanning shows sample values"}</p>
+          <p className="scan-preview-tag" role="note">{offline ? "Offline · photos and manual entry work locally" : "Add a photo, then enter and review its values"}</p>
 
           <div className="scan-frame-wrap">
             <div className="scan-frame">
-              {!image && !live && <div className="scan-frame-bill"><BillArt period={shortPeriod(preview.month)} kwh={String(preview.kwh)} amount={pesos(preview.amount)} due={preview.dueDate ? dueDateLabel(preview.dueDate) : "—"} /></div>}
+              {!image && !live && <div className="scan-frame-bill"><BillArt period="Your billing period" kwh="—" amount="—" due="—" /></div>}
               <i className="scan-corner is-tl" /><i className="scan-corner is-tr" /><i className="scan-corner is-bl" /><i className="scan-corner is-br" />
               <div className="scan-track" aria-hidden="true">
                 <span className="scan-beam" />
@@ -251,23 +250,23 @@ export default function ScanScreen() {
 
           {phase === "camera" && <div className="scan-controls">
             <button type="button" className="scan-side" disabled={!ready || loadingFile} onClick={() => fileInput.current?.click()}><span><ImageUp aria-hidden="true" /></span>Upload</button>
-            <button type="button" className="scan-shutter" disabled={!ready || loadingFile} aria-label={live ? "Capture bill photo" : "Scan the sample bill"} onClick={capture}><span /></button>
+            <button type="button" className="scan-shutter" disabled={!ready || loadingFile} aria-label={live ? "Capture bill photo" : "Open bill camera"} onClick={capture}><span /></button>
             <button type="button" className="scan-side" disabled={!ready || loadingFile} onClick={enterManually}><span><Keyboard aria-hidden="true" /></span>Type it</button>
             {live && <button type="button" className="scan-side scan-stop-camera" onClick={stopCamera}><span><X aria-hidden="true" /></span>Close camera</button>}
           </div>}
 
           {phase === "camera" && !live && <div className={`scan-placeholder${dragging ? " is-dragging" : ""}`}>
             <div className="scan-placeholder-art" aria-hidden="true">
-              <span className="scan-placeholder-bill"><BillArt period={shortPeriod(preview.month)} kwh={String(preview.kwh)} amount={pesos(preview.amount)} due={preview.dueDate ? dueDateLabel(preview.dueDate) : "—"} /><i /></span>
+              <span className="scan-placeholder-bill"><BillArt period="Your billing period" kwh="—" amount="—" due="—" /><i /></span>
               <Image className="scan-placeholder-bot" src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="" width={260} height={260} sizes="150px" priority />
             </div>
             <h2>Drop your electricity bill here</h2>
-            <p>Try the scan and review flow with sample values, or manually enter the details from your own bill.</p>
+            <p>Upload or photograph your bill, then copy its values into the review form. No automatic extraction is performed.</p>
             <div className="scan-placeholder-actions">
               <button type="button" className="ui-primary" disabled={!ready || loadingFile} onClick={() => fileInput.current?.click()}><Upload size={18} aria-hidden="true" /> {loadingFile ? "Opening file…" : "Upload bill"}</button>
               <button type="button" className="ui-secondary" onClick={() => void startCamera()} disabled={camera === "starting"}><Camera size={18} aria-hidden="true" /> {camera === "starting" ? "Opening camera…" : "Use webcam"}</button>
             </div>
-            <button type="button" className="scan-text-button" disabled={!ready || loadingFile} onClick={capture}><Sparkles size={16} aria-hidden="true" /> Try it with a sample bill</button>
+
             <span className="scan-file-note">JPG, PNG, WebP or PDF · up to 10 MB</span>
             {(camera === "blocked" || camera === "unavailable") && <p className="scan-inline-note">{camera === "blocked" ? "Webcam access is blocked in this browser." : "No webcam was found."} You can still upload a bill.</p>}
             {error && <p className="ui-error" role="alert">{error}</p>}
@@ -285,7 +284,7 @@ export default function ScanScreen() {
             <h2>How Snap AI works</h2>
             <ol className="scan-how">
               <li><span><Camera aria-hidden="true" /></span><div><strong>Snap or upload</strong><p>Take a clear photo of your whole bill, or upload one.</p></div></li>
-              <li><span><Sparkles aria-hidden="true" /></span><div><strong>Preview a sample reading</strong><p>Example values show where AI results will appear.</p></div></li>
+              <li><span><Keyboard aria-hidden="true" /></span><div><strong>Enter the printed values</strong><p>Keep your photo nearby and copy the bill details.</p></div></li>
               <li><span><CircleCheck aria-hidden="true" /></span><div><strong>Review &amp; save</strong><p>Fix anything, then it joins your month-by-month history.</p></div></li>
             </ol>
             <div className="scan-tips"><h3><Lightbulb aria-hidden="true" /> Tips for a clear scan</h3><ul><li>Lay the bill flat in good light</li><li>Keep all four corners in view</li><li>Avoid glare and shadows</li></ul></div>

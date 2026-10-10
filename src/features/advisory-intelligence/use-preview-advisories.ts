@@ -22,5 +22,5 @@ export function usePreviewAdvisories() {
     try { localStorage.setItem(storageKey, JSON.stringify(next)); setRecords(next); setError(""); window.dispatchEvent(new Event("wattsnap-advisories-change")); return true; }
     catch { setError("This advisory could not be saved. Browser storage may be full or blocked. Keep your draft and try a smaller screenshot or pasted original. Earlier saved advisories are unchanged."); return false; }
   }
-  return { records, ready, error, loadError, save: (record: ReviewedAdvisory) => write(records.some(item => item.id === record.id) ? records.map(item => item.id === record.id ? record : item) : [...records, record]), remove: (id: string) => write(records.filter(record => record.id !== id)), reload: () => window.dispatchEvent(new Event("wattsnap-advisories-change")) };
+  return { records: records.filter(record => record.original.kind !== "sample"), ready, error, loadError, save: (record: ReviewedAdvisory) => write(records.some(item => item.id === record.id) ? records.map(item => item.id === record.id ? record : item) : [...records, record]), remove: (id: string) => write(records.filter(record => record.id !== id)), reload: () => window.dispatchEvent(new Event("wattsnap-advisories-change")) };
 }

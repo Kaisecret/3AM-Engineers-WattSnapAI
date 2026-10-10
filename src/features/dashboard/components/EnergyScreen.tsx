@@ -40,7 +40,7 @@ export default function EnergyScreen() {
   const lowest = series.reduce<PreviewBill | undefined>((low, bill) => !low || bill.kwh < low.kwh ? bill : low, undefined);
   const highest = series.reduce<PreviewBill | undefined>((high, bill) => !high || bill.kwh > high.kwh ? bill : high, undefined);
   const hasSamples = household.bills.some(bill => bill.source === "sample");
-  const budgetPercent = latest ? Math.round(latest.amount / household.budget * 100) : 0;
+  const budgetPercent = latest && household.budget > 0 ? Math.round(latest.amount / household.budget * 100) : 0;
   const format = (amount: number) => unit === "kwh" ? `${Math.round(amount)}` : `₱${Math.round(amount).toLocaleString("en-PH")}`;
 
   useEffect(() => {

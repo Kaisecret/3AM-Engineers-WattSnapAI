@@ -29,5 +29,5 @@ export function usePreviewTips() {
     try { if (previewStorageFor(tipsStorageKey) !== storageKey) return false; localStorage.setItem(storageKey, JSON.stringify(next)); setSnapshot(next); setError(""); window.dispatchEvent(new Event("wattsnap-tips-change")); return true; }
     catch { setError(snapshot ? "The refreshed tips could not be saved in this browser. Your previous saved tips are still available." : "The preview tips could not be saved in this browser. No tips have been saved yet; please try again."); return false; }
   }
-  return { snapshot: ready ? snapshot : null, ready, error, save };
+  return { snapshot: ready && snapshot?.origin !== "sample" && !snapshot?.context.sample ? snapshot : null, ready, error, save };
 }
