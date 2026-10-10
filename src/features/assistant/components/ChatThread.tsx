@@ -78,6 +78,7 @@ export default function ChatThread({ messages, typing, onSuggest, intro, actions
         <BotAvatar />
         <div className={`chat-bot-body${message.actions?.length && actions ? " has-actions" : ""}`}>
           <div className="chat-bubble"><Text value={message.text} /></div>
+          {message.notice && <p className="chat-notice"><CircleAlert aria-hidden="true" />{message.notice}</p>}
           {!!message.actions?.length && actions && <div className={`chat-actions${message.actions.length > 1 ? " is-multi" : ""}`}>
             <ul>{message.actions.map(item => <ActionCard key={item.id} item={item} compact={message.actions!.length > 1} onConfirm={() => actions.onConfirm(message, [item])} onCancel={() => actions.onCancel(message, item)} />)}</ul>
             {pending.length > 1 && <button type="button" className="chat-action-all" onClick={() => actions.onConfirm(message, pending)}><CheckCheck aria-hidden="true" />Confirm all {pending.length}</button>}

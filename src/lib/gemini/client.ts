@@ -42,6 +42,33 @@ interface CallGeminiOptions {
 
 export type GeminiCallResult = { text: string; functionCalls: Array<{ name: string; args: unknown }>; finishReason?: string };
 
+/** Why Gemini did not answer, in a form that is safe to show (never includes the key). */
+export type GeminiProblem = "no-key" | "key" | "model" | "busy" | "request" | "unavailable" | "empty";
+
+export class GeminiError extends Error {
+  readonly problem: GeminiProblem;
+  readonly status?: number;
+  constructor(message: string, problem: GeminiProblem, status?: number) {
+    super(message);
+    this.name = "GeminiError";
+    this.problem = problem;
+    this.status = status;
+  }
+}
+
+function problemFor(status: number, message: string): GeminiProblem {
+  if (status === 401 || status === 403 || /api key/i.test(message)) return "key";
+  if (status === 404) return "model";
+  if (status === 429) return "busy";
+  if (status === 400) return "request";
+  return "unavailable";
+}
+
+/** The problem behind any error thrown while calling Gemini. */
+export function geminiProblem(error: unknown): GeminiProblem {
+  return error instanceof GeminiError ? error.problem : "unavailable";
+}
+
 /** Joins the visible text parts and collects any function calls; internal thought parts are skipped. */
 export function readGeminiResponse(data: GeminiResponseBody): GeminiCallResult {
   const candidate = data.candidates?.[0];
@@ -55,7 +82,7 @@ export function readGeminiResponse(data: GeminiResponseBody): GeminiCallResult {
 
 export async function callGeminiApi(options: CallGeminiOptions): Promise<string> {
   const result = await callGemini(options);
-  if (!result.text) throw new Error("Gemini returned an empty response candidate.");
+  if (!result.text) throw new GeminiError("Gemini returned an empty response candidate.", "empty");
   return result.text;
 }
 
@@ -71,7 +98,7 @@ export async function callGemini({
 }: CallGeminiOptions): Promise<GeminiCallResult> {
   const apiKey = getGeminiApiKey();
   if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not configured in server environment.");
+    throw new GeminiError("GEMINI_API_KEY is not configured in server environment.", "no-key");
   }
 
   const url = `${GEMINI_API_URL}/${encodeURIComponent(model)}:generateContent`;
@@ -119,19 +146,20 @@ export async function callGemini({
         // Fall back to raw text
       }
       const message = errorData?.error?.message || `Gemini API returned status ${response.status}`;
-      throw new Error(`Gemini error (${response.status}): ${message}`);
+      throw new GeminiError(`Gemini error (${response.status}) for ${model}: ${message}`, problemFor(response.status, message), response.status);
     }
 
     const result = readGeminiResponse(await response.json());
     if (!result.text && !result.functionCalls.length) {
-      throw new Error(`Gemini returned an empty response${result.finishReason ? ` (${result.finishReason})` : ""}.`);
+      throw new GeminiError(`Gemini returned an empty response${result.finishReason ? ` (${result.finishReason})` : ""}.`, "empty");
     }
     return result;
   } catch (error) {
+    if (error instanceof GeminiError) throw error;
     if (error instanceof Error && error.name === "AbortError") {
-      throw new Error("Gemini API request timed out. Please try again.");
+      throw new GeminiError("Gemini API request timed out. Please try again.", "unavailable");
     }
-    throw error;
+    throw new GeminiError(`Gemini could not be reached: ${error instanceof Error ? error.message : "network error"}`, "unavailable");
   } finally {
     clearTimeout(timer);
   }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { hasGeminiKey } from "@/lib/gemini/client";
+import { geminiModel, hasGeminiKey } from "@/lib/gemini/client";
 import { answerLandingQuestion } from "@/lib/gemini/agent";
 import { clientAddress, parseChatRequest } from "@/lib/ai/chat-request";
 import { createRateLimiter } from "@/lib/ai/rate-limit";
@@ -13,6 +13,10 @@ export const dynamic = "force-dynamic";
 // Gemini quota for signed-in people. Limits are per server instance (best effort).
 const perVisitor = createRateLimiter({ limit: 8, windowMs: 10 * 60_000 });
 const overall = createRateLimiter({ limit: 10, windowMs: 60_000 });
+
+export async function GET() {
+  return NextResponse.json({ status: "ok", geminiConfigured: hasGeminiKey(), model: geminiModel() });
+}
 
 export async function POST(request: Request) {
   const parsed = parseChatRequest(await request.text(), { withContext: false });

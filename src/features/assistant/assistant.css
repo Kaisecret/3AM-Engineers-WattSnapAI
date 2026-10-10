@@ -50,6 +50,9 @@ html[data-theme="dark"] .chat-page {
 .chat-typing { display: flex; align-items: center; gap: 5px; min-height: 42px; padding: 14px 16px; }
 .chat-typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--chat-accent); opacity: .5; }
 
+.chat-notice { display: flex; align-items: center; gap: 5px; margin-top: -2px; padding-left: 4px; color: var(--chat-muted); font-size: 11.5px; line-height: 1.35; }
+.chat-notice svg { flex: 0 0 auto; width: 13px; height: 13px; color: #d97706; }
+
 /* Links and quick replies */
 .chat-links { display: flex; flex-wrap: wrap; gap: 6px; }
 .chat-links a { display: inline-flex; align-items: center; gap: 3px; min-height: 36px; padding: 0 10px 0 13px; border-radius: 12px; color: var(--chat-accent); background: var(--chat-accent-soft); font-size: 13px; font-weight: 800; transition: filter .2s; }

@@ -54,7 +54,7 @@ export default function ChatScreen() {
   const context = useMemo(() => buildContext(household, advisories.records), [household, advisories.records]);
   const respond = useCallback((text: string) => householdReply(text, context), [context]);
   const describe = useCallback((action: AgentAction) => describeAgentAction(action, household), [household]);
-  const { messages, typing, send, reset, setActionState } = useChat(respond, { endpoint: "/api/ai/assistant", context, describe });
+  const { messages, typing, send, reset, setActionState } = useChat(respond, { endpoint: "/api/ai/assistant", context, describe, explainFallback: true });
   const first = household.name.split(/\s+/)[0];
   const latest = context.latest;
   const change = latest ? compareWithPrevious(household.bills, latest.month) : null;

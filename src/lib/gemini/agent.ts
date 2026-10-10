@@ -1,4 +1,4 @@
-import { callGemini } from "./client";
+import { callGemini, GeminiError, geminiModel, geminiProblem, type GeminiProblem } from "./client";
 import { agentTools, parseAgentCall, type AgentAction } from "@/features/assistant/agent-actions";
 import type { ChatContext, ChatLink, Reply } from "@/features/assistant/replies";
 import type { ChatTurn } from "@/lib/ai/chat-request";
@@ -24,7 +24,16 @@ Household snapshot (JSON): ${JSON.stringify(context)}`;
 
 /** In-app agent: answers questions and proposes household changes for the person to confirm. */
 export async function runHouseholdAgent({ message, context = {}, history }: { message: string; context?: ChatContext; history?: ChatTurn[] }): Promise<AgentResult> {
-  const result = await callGemini({ systemInstruction: householdInstruction(context), parts: [{ text: conversation(history, message) }], tools: agentTools, temperature: 0.3, maxOutputTokens: 1024 });
+  const request = { systemInstruction: householdInstruction(context), parts: [{ text: conversation(history, message) }], temperature: 0.3, maxOutputTokens: 1024 };
+  let result;
+  try {
+    result = await callGemini({ ...request, tools: agentTools });
+  } catch (error) {
+    // If this model rejects the change tools, still answer the question without them.
+    if (!(error instanceof GeminiError && error.problem === "request")) throw error;
+    console.error("[wattsnap:ai] tools rejected, answering without them:", error.message);
+    result = await callGemini(request);
+  }
   const actions: AgentAction[] = [], links: ChatLink[] = [], problems: string[] = [];
   for (const call of result.functionCalls.slice(0, 8)) {
     const parsed = parseAgentCall(call.name, call.args);
@@ -46,4 +55,18 @@ export async function answerLandingQuestion({ message, history }: { message: str
   const result = await callGemini({ systemInstruction: landingInstruction, parts: [{ text: conversation(history, message) }], temperature: 0.3, maxOutputTokens: 300 });
   if (!result.text) throw new Error("Gemini returned no answer.");
   return { text: result.text };
+}
+
+/** A tiny live call that tells whether the key and model work. Uses one request of the quota. */
+export async function checkGemini(): Promise<{ ok: true; model: string } | { ok: false; model: string; problem: GeminiProblem }> {
+  const model = geminiModel();
+  try {
+    await callGemini({ parts: [{ text: "Reply with the word OK." }], maxOutputTokens: 200, temperature: 0, timeoutMs: 15000 });
+    return { ok: true, model };
+  } catch (error) {
+    // An empty answer still means Google accepted the key and the model.
+    if (geminiProblem(error) === "empty") return { ok: true, model };
+    console.error("[wattsnap:ai] check", error instanceof Error ? error.message : error);
+    return { ok: false, model, problem: geminiProblem(error) };
+  }
 }
