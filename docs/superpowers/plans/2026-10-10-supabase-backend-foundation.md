@@ -2563,12 +2563,12 @@ Expected, if not ready: every test skipped with a message naming the missing var
 - The migration is applied to `wattsnap`, and the schema summary query returns the same eight values on both projects.
 - No test account was ever created in `wattsnap`.
 
-- [ ] **Step 1: Run the local checks once more**
+- [x] **Step 1: Run the local checks once more**
 
 Run: `npm test`
 Expected: `pass 124`, `fail 0`.
 
-- [ ] **Step 2: Apply the migration to `wattsnap-dev`**
+- [x] **Step 2: Apply the migration to `wattsnap-dev`**
 
 Follow "Apply a migration" in `docs/11-database-operations.md`. This step is done by the project owner. With the dashboard method, the owner opens the **`wattsnap-dev`** project, pastes the full contents of `supabase/migrations/20261010000000_initial_schema.sql` into SQL Editor and runs it.
 
@@ -2576,12 +2576,12 @@ Expected: `Success. No rows returned`.
 
 If it fails, nothing was applied, because the file is one transaction. Read the error, correct the migration file (allowed, because production has not received it), run `npm test` again, and repeat this step. Add a case to `supabase/tests/migration.test.mjs` that would have caught the problem.
 
-- [ ] **Step 3: Run the isolation test**
+- [x] **Step 3: Run the isolation test**
 
 Run: `npm run test:isolation`
 Expected: `pass 9`, `fail 0`, `skipped 0`. It takes one to three minutes.
 
-- [ ] **Step 4: If a test fails, correct it before production sees anything**
+- [x] **Step 4: If a test fails, correct it before production sees anything**
 
 Decide which of these it is:
 
@@ -2590,12 +2590,12 @@ Decide which of these it is:
 
 Do not continue until the result is `pass 9`, `fail 0`, `skipped 0`.
 
-- [ ] **Step 5: Confirm the test cleaned up after itself**
+- [x] **Step 5: Confirm the test cleaned up after itself**
 
 In the `wattsnap-dev` dashboard, open Authentication, Users, and search for `wattsnap-isolation-`.
 Expected: no users.
 
-- [ ] **Step 6: Commit any corrections**
+- [x] **Step 6: Commit any corrections**
 
 Only if Step 4 changed files. Name what was corrected in the message, for example:
 
