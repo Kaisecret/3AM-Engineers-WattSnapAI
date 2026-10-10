@@ -100,6 +100,7 @@
 .post-hero .post-stars { display: flex; gap: 2px; margin-top: 4px; color: #ffb900; }
 .post-hero .post-quote-mark { margin-left: auto; color: #d8eefb; }
 .post-hero .post-review blockquote { margin-top: 13px; color: #526780; font-size: 14px; line-height: 1.55; }
+.post-hero .post-review-message { margin-top: 13px; color: #526780; font-size: 14px; line-height: 1.6; }.post-use-heading { display: flex; align-items: center; gap: 12px; }
 .post-hero .post-review-note { margin-top: 12px; text-align: center; color: #526d87; font-size: 11px; }
 
 .post-hero .post-account-section { padding: 8px 0 32px; }

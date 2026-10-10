@@ -10,5 +10,6 @@ export const previewProviders = [
 ] as const;
 
 export function previewProviderName(id?: string) {
+  if (id?.startsWith("custom:")) { try { return decodeURIComponent(id.slice(7)); } catch { return "Not selected"; } }
   return previewProviders.find(provider => provider.id === id)?.name ?? "Not selected";
 }

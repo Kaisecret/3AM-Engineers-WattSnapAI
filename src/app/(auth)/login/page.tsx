@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { LoginForm } from "@/features/auth/components/LoginForm";
+import LocalHouseholdEntry from "@/features/household-profile/components/LocalHouseholdEntry";
 
 export const metadata: Metadata = {
-  title: "Log in",
-  description: "Log in to your WattSnap account to monitor power consumption, manage appliances, and save on your electricity bills.",
+  title: "Open household",
+  description: "Open your household records stored on this device.",
 };
 
 export default function LoginPage() {
-  return <LoginForm />;
+  return <LocalHouseholdEntry />;
 }

@@ -1,30 +1,16 @@
-import { Quote, Star } from "lucide-react";
-
-const testimonials = [
-  { name: "Maria S.", avatar: "👩🏻", review: "WattSnap helped me understand my bill. Now I know where my money goes!", color: "blue" },
-  { name: "John R.", avatar: "👨🏻", review: "The energy tips are super helpful. Our bill is lower compared to last month!", color: "green" },
-  { name: "Anna L.", avatar: "👩🏽", review: "I love the clean and simple design. It’s very easy to use!", color: "orange" },
+import { House, Lightbulb, ReceiptText } from "lucide-react";
+const uses = [
+  { title: "Understand your bills", detail: "A clear starting point", text: "Keep your reviewed bills together and compare consumption recorded for each saved period.", color: "blue", Icon: ReceiptText },
+  { title: "Build useful habits", detail: "Practical local guidance", text: "Review your appliance inputs and try energy-saving ideas that explain why they apply to your home.", color: "green", Icon: Lightbulb },
+  { title: "Prepare your household", detail: "Your saved provider notices", text: "Keep original announcements, check their listed areas, and prepare for the published schedule.", color: "orange", Icon: House },
 ];
-
 export function TestimonialsSection() {
-  return (
-    <section id="about" className="post-testimonials">
-      <div className="post-container">
-        <h2 className="post-heading">What Users Are Saying<span className="post-heading-spark" aria-hidden="true">✦</span></h2>
-        <div className="post-review-grid">
-          {testimonials.map((testimonial) => (
-            <figure key={testimonial.name} className="post-review">
-              <figcaption>
-                <span className={`post-avatar post-avatar-${testimonial.color}`} aria-hidden="true">{testimonial.avatar}</span>
-                <div><h3>{testimonial.name}</h3><span className="post-stars" role="img" aria-label="5 out of 5 stars">{Array.from({ length: 5 }, (_, index) => <Star key={index} size={14} fill="currentColor" strokeWidth={1} aria-hidden="true" />)}</span></div>
-                <Quote className="post-quote-mark" size={29} fill="currentColor" aria-hidden="true" />
-              </figcaption>
-              <blockquote>“{testimonial.review}”</blockquote>
-            </figure>
-          ))}
-        </div>
-        <p className="post-review-note">Illustrative feedback shown for this prototype.</p>
-      </div>
-    </section>
-  );
+  return <section id="about" className="post-testimonials"><div className="post-container">
+    <h2 className="post-heading">Made for Everyday Households<span className="post-heading-spark" aria-hidden="true">✦</span></h2>
+    <div className="post-review-grid">{uses.map(({ title, detail, text, color, Icon }) => <article key={title} className="post-review">
+      <div className="post-use-heading"><span className={`post-avatar post-avatar-${color}`} aria-hidden="true"><Icon size={28} /></span><div><h3>{title}</h3><span className="post-stars">{detail}</span></div></div>
+      <p className="post-review-message">{text}</p>
+    </article>)}</div>
+    <p className="post-review-note">Photos help you enter and review values. Automatic extraction and live outage monitoring are unavailable.</p>
+  </div></section>;
 }

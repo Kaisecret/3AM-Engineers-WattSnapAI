@@ -1,4 +1,4 @@
-import { validateAppliance, validateBill, type PreviewHousehold } from "../dashboard/preview-data";
+import { isProviderChoice, validateAppliance, validateBill, type PreviewHousehold } from "../dashboard/preview-data";
 import { tipsInputSignature } from "../tipid-tips/preview-tips";
 import type { PreviewTipsSnapshot } from "../tipid-tips/types";
 
@@ -37,7 +37,7 @@ export function deriveSetupProgress(household: PreviewHousehold, tips: PreviewTi
   const records = confirmedSetupRecords(household);
   const complete = [
     !!(household.name.trim() && household.location?.trim() && household.locality?.province.trim() && household.locality?.municipality.trim()),
-    !!household.provider && ["anteco", "akelco", "capelco", "ileco-1", "ileco-2", "ileco-3", "more-power"].includes(household.provider),
+    isProviderChoice(household.provider),
     records.bills.length > 0,
     records.appliances.length > 0,
     canReviewSetupTips(household, tips) && saved.reviewedTips === tips!.inputSignature,

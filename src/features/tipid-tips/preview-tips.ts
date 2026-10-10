@@ -3,7 +3,7 @@ import { applianceSignature } from "../watt-if-simulator/calculations";
 import type { PreviewTip, PreviewTipsSnapshot } from "./types";
 
 export const tipsStorageKey = "wattsnap-tips-ui-preview-v1";
-export const notableChangeThreshold = 10;
+export const notableChangeThreshold = 20;
 const quickWins = { label: "Australian Government energy guidance", href: "https://www.energy.gov.au/households/quick-wins" };
 const fridgeGuidance = { label: "ENERGY STAR refrigerator guidance", href: "https://www.energystar.gov/products/refrigerators" };
 const lightingGuidance = { label: "U.S. DOE lighting guide", href: "https://www.energy.gov/sites/default/files/2021-08/ES-EE%20Lighting_080921.pdf" };
@@ -34,7 +34,7 @@ export function billTipContext(bills: PreviewBill[], threshold = notableChangeTh
   if (previous.kwh <= 0) limitations.push("The previous consumption is zero; a percentage change cannot be calculated.");
   if (limitations.length) return { facts, reason: "These recorded totals need qualification before calling them a monthly trend. Review the billing periods first.", limitations };
   const change = latest.kwh - previous.kwh, percent = change / previous.kwh * 100;
-  return { facts, reason: change === 0 ? "Recorded consumption is unchanged across these comparable periods." : `Recorded consumption is ${Math.abs(change).toFixed(2)} kWh (${Math.abs(percent).toFixed(1)}%) ${change > 0 ? "higher" : "lower"} across these comparable periods.${Math.abs(percent) >= threshold ? ` It crosses the ${threshold}% preview review threshold.` : ""}`, limitations };
+  return { facts, reason: change === 0 ? "Recorded consumption is unchanged across these comparable periods." : `Recorded consumption is ${Math.abs(change).toFixed(2)} kWh (${Math.abs(percent).toFixed(1)}%) ${change > 0 ? "higher" : "lower"} across these comparable periods.${Math.abs(percent) >= threshold ? ` It crosses the ${threshold}% review threshold.` : ""}`, limitations };
 }
 
 function applianceTip(item: PreviewAppliance, rank: number): PreviewTip {
@@ -61,7 +61,7 @@ export function generatePreviewTips(household: PreviewHousehold, now = new Date(
   const billContext = billTipContext(household.bills);
   const limits = [...billContext.limitations]; const tips: PreviewTip[] = [];
   const sampleBills = household.bills.some(isSampleBill), sampleAppliances = household.appliances.some(isSampleAppliance);
-  if (household.bills.length) tips.push({ id: "bill-review", category: "bill", title: household.bills.length > 1 ? "Review your bill comparison" : "Build a comparable bill history", action: "Check the recorded dates and readings. Bill differences alone cannot identify an appliance or prove why consumption changed.", reason: billContext.reason, facts: billContext.facts, assumptions: [`Notable-change review threshold: ${notableChangeThreshold}% in this preview; it is not a statistical anomaly test.`, "Appliance estimates are separate from the provider’s metered bill."], sample: sampleBills, link: { label: "Review bill history", href: "/bills" } });
+  if (household.bills.length) tips.push({ id: "bill-review", category: "bill", title: household.bills.length > 1 ? "Review your bill comparison" : "Build a comparable bill history", action: "Check the recorded dates and readings. Bill differences alone cannot identify an appliance or prove why consumption changed.", reason: billContext.reason, facts: billContext.facts, assumptions: [`Notable-change review threshold: ${notableChangeThreshold}%; it is not a statistical anomaly test.`, "Appliance estimates are separate from the provider’s metered bill."], sample: sampleBills, link: { label: "Review bill history", href: "/bills" } });
   else tips.push({ id: "first-bill", category: "getting-started", title: "Start with a reviewed bill", action: "Enter a bill and check its consumption, amount, and period. A second comparable bill can then give your tips a change-detection basis.", reason: "No saved bill history is available for this household.", facts: ["0 saved bills."], assumptions: ["No bill trend or peso savings can be inferred yet."], sample: false, link: { label: "Add a bill", href: "/bills/new" } });
   const positive = [...household.appliances].filter(item => dailyApplianceKwh(item) > 0 && Number.isFinite(dailyApplianceKwh(item) * 30)).sort((a, b) => dailyApplianceKwh(b) - dailyApplianceKwh(a) || a.id.localeCompare(b.id));
   for (const [rank, item] of positive.slice(0, 3).entries()) tips.push(applianceTip(item, rank));

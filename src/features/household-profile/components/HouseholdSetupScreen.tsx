@@ -10,7 +10,7 @@ import { previewProviders, previewProviderName } from "../provider-preview";
 import { lookupLocation } from "../location-suggestion";
 import "../household-setup.css";
 
-type Draft = { name: string; province: string; municipality: string; barangay: string; provider: string };
+type Draft = { name: string; province: string; municipality: string; barangay: string; provider: string; customProvider: string };
 type FieldErrors = Partial<Record<keyof Draft, string>>;
 const steps = ["Your household", "Electricity provider", "Review & save"];
 const provinces = ["Antique", "Aklan", "Capiz", "Iloilo"];
@@ -23,7 +23,7 @@ export default function HouseholdSetupScreen() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [complete, setComplete] = useState(false);
   const [offline, setOffline] = useState(false);
-  const [locationState, setLocationState] = useState<"idle" | "example" | "manual">("idle");
+  const [locationState, setLocationState] = useState<"idle" | "manual">("idle");
   const [locating, setLocating] = useState(false);
   const [locationMessage, setLocationMessage] = useState("");
   const locationRequest = useRef<AbortController | null>(null);
@@ -34,15 +34,16 @@ export default function HouseholdSetupScreen() {
   const moved = useRef(false);
   const parts = household.location?.split(",").map(part => part.trim()) ?? [];
   const values: Draft = draft ?? {
-    name: household.name,
+    name: household.name === "Your home" ? "" : household.name,
     province: household.locality?.province ?? parts.at(-1) ?? "",
     municipality: household.locality?.municipality ?? (parts.length > 1 ? parts.at(-2)! : ""),
     barangay: household.locality?.barangay ?? (parts.length > 2 ? parts.slice(0, -2).join(", ") : ""),
-    provider: household.provider ?? "",
+    provider: household.provider?.startsWith("custom:") ? "other" : household.provider ?? "",
+    customProvider: household.provider?.startsWith("custom:") ? previewProviderName(household.provider) : "",
   };
-  const provider = previewProviders.find(item => item.id === values.provider);
+  const provider = values.provider === "other" && values.customProvider.trim() ? { id: `custom:${encodeURIComponent(values.customProvider.trim())}`, name: values.customProvider.trim() } : previewProviders.find(item => item.id === values.provider);
   const location = [values.barangay.trim(), values.municipality.trim(), values.province.trim()].filter(Boolean).join(", ");
-  const suggestions = previewProviders.filter(item => item.area.toLowerCase() === values.province.trim().toLowerCase());
+  const providerChoices = [...previewProviders, { id: "other", name: "Other provider", detail: "Enter the utility or cooperative printed on your bill", area: "Manual entry" }];
 
   useEffect(() => {
     const sync = () => setOffline(!navigator.onLine);
@@ -102,12 +103,7 @@ export default function HouseholdSetupScreen() {
     }
   }
 
-  function exampleLocation() {
-    setLocationMessage("");
-    edit({ province: "Antique", municipality: "San Jose de Buenavista", barangay: "Payao" });
-    setLocationState("example");
-    permission.current?.close();
-  }
+
 
   function currentLocation() {
     permission.current?.close();
@@ -139,7 +135,7 @@ export default function HouseholdSetupScreen() {
   }
 
   return <PageShell title="Set up your household" subtitle="A little context for a smarter home" active="Home" className="hs-page">
-    <div className="hs-preview-note"><Info aria-hidden="true" /><p><strong>UI preview</strong> · Try the setup flow. Location and provider choices are saved only in this browser.</p></div>
+    <div className="hs-preview-note"><Info aria-hidden="true" /><p>Household details are saved on this device. Confirm your provider using your electricity bill.</p></div>
     {offline && <div className="hs-offline" role="status"><WifiOff aria-hidden="true" /><p><strong>You’re offline.</strong> You can enter your location and select a provider manually. Changes stay on this device.</p></div>}
     {!ready ? <section className="ui-panel hs-loading" role="status"><span className="hs-spinner" /> Loading your saved household…</section> : <div className="hs-layout">
       <aside className="hs-story">
@@ -155,20 +151,20 @@ export default function HouseholdSetupScreen() {
           <span className="hs-complete-icon"><CircleCheck aria-hidden="true" /></span>
           <span className="hs-eyebrow">HOUSEHOLD SAVED</span>
           <h2 ref={heading} tabIndex={-1} id="setup-heading">Welcome home, {values.name.trim().split(/\s+/)[0]}!</h2>
-          <p>Your household preview is ready. Next, add a bill to start building your energy history.</p>
+          <p>Your household is ready. Next, add a bill to start building your energy history.</p>
           <dl className="hs-review-list"><div><dt><House aria-hidden="true" /> Household</dt><dd>{values.name.trim()}</dd></div><div><dt><MapPin aria-hidden="true" /> Home location</dt><dd>{location}</dd></div><div><dt><Zap aria-hidden="true" /> Provider</dt><dd>{provider?.name}</dd></div></dl>
           <Link href="/bills/new" className="ui-primary"><ReceiptText size={18} aria-hidden="true" /> Add your first bill <ArrowRight size={17} aria-hidden="true" /></Link>
           <div className="hs-complete-links"><button type="button" onClick={() => { moved.current = true; setComplete(false); go(0); }}>Edit household</button><Link href="/setup">Continue home setup</Link><Link href="/dashboard">Go to dashboard</Link></div>
-          <p className="hs-local-note">Saved in this browser. You can revisit setup from Account settings.</p>
+          <p className="hs-local-note">Saved in this browser. You can revisit setup from Household settings.</p>
         </div> : <>
           <ol className="hs-steps" aria-label="Household setup progress">{steps.map((label, index) => <li key={label} className={index === step ? "is-current" : index < step ? "is-done" : ""}><button type="button" disabled={index > furthest} aria-current={index === step ? "step" : undefined} onClick={() => go(index)}><span>{index < step ? <Check size={15} aria-hidden="true" /> : index + 1}</span><b>{label}</b></button></li>)}</ol>
-          <div className="hs-card-heading"><span className="hs-eyebrow">STEP {step + 1} OF 3</span><h2 id="setup-heading" ref={heading} tabIndex={-1}>{["Let’s get to know your home", "Who supplies your electricity?", "Everything look right?"][step]}</h2><p>{["Enter the location of your household, even if you’re somewhere else right now.", "Check the provider name on your bill, then select it below.", "Confirm your household details before saving this preview."][step]}</p></div>
+          <div className="hs-card-heading"><span className="hs-eyebrow">STEP {step + 1} OF 3</span><h2 id="setup-heading" ref={heading} tabIndex={-1}>{["Let’s get to know your home", "Who supplies your electricity?", "Everything look right?"][step]}</h2><p>{["Enter the location of your household, even if you’re somewhere else right now.", "Check the provider name on your bill, then select it below.", "Confirm your household details before saving."][step]}</p></div>
           <form onSubmit={submit} noValidate>
             {step === 0 && <div className="hs-form">
               <label htmlFor="setup-name"><span id="setup-name-label">Household name</span><input id="setup-name" aria-labelledby="setup-name-label" autoComplete="organization" maxLength={50} placeholder="e.g. Santos household" value={values.name} onChange={event => edit({ name: event.target.value })} aria-invalid={!!errors.name} aria-describedby={errors.name ? "setup-name-error" : undefined} />{errors.name && <span className="hs-field-error" id="setup-name-error">{errors.name}</span>}</label>
-              <div className="hs-location-option"><span className="hs-location-symbol"><LocateFixed aria-hidden="true" /></span><div><strong>Start with a location suggestion</strong><p>Optional. Always check that the suggestion is your home.</p></div><button ref={locationButton} type="button" disabled={locating} onClick={() => permission.current?.showModal()}>Try preview <ArrowRight size={15} aria-hidden="true" /></button></div>
+              <div className="hs-location-option"><span className="hs-location-symbol"><LocateFixed aria-hidden="true" /></span><div><strong>Start with a location suggestion</strong><p>Optional. Always check that the suggestion is your home.</p></div><button ref={locationButton} type="button" disabled={locating} onClick={() => permission.current?.showModal()}>Use location <ArrowRight size={15} aria-hidden="true" /></button></div>
               {locationMessage && <p className="hs-inline-note" role="status">{locationMessage}</p>}
-              {locationState !== "idle" && <p className={`hs-inline-note ${locationState === "example" ? "is-example" : ""}`} role="status">{locationState === "example" ? "Example location filled in. No device location was requested. Edit it to match your household." : "Location permission skipped. Continue by entering your home location below."}</p>}
+              {locationState !== "idle" && <p className="hs-inline-note" role="status">Location permission skipped. Continue by entering your home location below.</p>}
               <div className="hs-divider"><span>or enter your home location</span></div>
               <div className="hs-fields-row">
                 <label htmlFor="setup-province"><span id="setup-province-label">Province</span><input id="setup-province" aria-labelledby="setup-province-label" list="setup-provinces" autoComplete="address-level1" maxLength={40} placeholder="e.g. Antique" value={values.province} onChange={event => edit({ province: event.target.value })} aria-invalid={!!errors.province} aria-describedby={errors.province ? "setup-province-error" : undefined} />{errors.province && <span className="hs-field-error" id="setup-province-error">{errors.province}</span>}</label>
@@ -181,15 +177,15 @@ export default function HouseholdSetupScreen() {
 
             {step === 1 && <>
               <div className="hs-home-location"><MapPin aria-hidden="true" /><span>{location}</span><button type="button" onClick={() => go(0)} aria-label="Edit household location"><Pencil size={15} /></button></div>
-              <div className="hs-suggestion"><Info size={18} aria-hidden="true" /><p>{suggestions.length === 1 ? <><strong>Example suggestion: {suggestions[0].name}</strong>Based on your province in this UI preview. Confirm against your electricity bill.</> : suggestions.length > 1 ? <><strong>Several providers may serve this province</strong>Province alone cannot identify your provider. Choose the name printed on your bill.</> : <><strong>No provider suggestion for this location</strong>You can still choose manually. Coverage verification will be added later.</>}</p></div>
-              <fieldset className="hs-provider-options" aria-describedby="setup-provider-help"><legend className="ws-sr-only">Choose your electricity provider</legend>{previewProviders.map(item => <label key={item.id} className={`hs-provider${values.provider === item.id ? " is-selected" : ""}`}><input type="radio" name="provider" value={item.id} checked={values.provider === item.id} onChange={() => edit({ provider: item.id })} /><span className="hs-provider-icon"><Zap aria-hidden="true" /></span><span className="hs-provider-copy"><strong>{item.name}</strong><small>{item.detail}</small><em>{item.area} · preview choice</em></span><span className="hs-radio-mark" aria-hidden="true">{values.provider === item.id && <Check size={14} />}</span></label>)}</fieldset>
-              <p id="setup-provider-help" className="hs-field-hint">These choices demonstrate the design. Service boundaries and provider support have not been verified.</p>
+              <div className="hs-suggestion"><Info size={18} aria-hidden="true" /><p><strong>Choose the provider printed on your bill</strong>Location can suggest a province or municipality. It cannot confirm your electricity provider.</p></div>
+              <fieldset className="hs-provider-options" aria-describedby="setup-provider-help"><legend className="ws-sr-only">Choose your electricity provider</legend>{providerChoices.map(item => <label key={item.id} className={`hs-provider${values.provider === item.id ? " is-selected" : ""}`}><input type="radio" name="provider" value={item.id} checked={values.provider === item.id} onChange={() => edit({ provider: item.id })} /><span className="hs-provider-icon"><Zap aria-hidden="true" /></span><span className="hs-provider-copy"><strong>{item.name}</strong><small>{item.detail}</small><em>{item.area}</em></span><span className="hs-radio-mark" aria-hidden="true">{values.provider === item.id && <Check size={14} />}</span></label>)}</fieldset>
+              {values.provider === "other" && <div className="hs-form"><label>Provider name<input maxLength={80} value={values.customProvider} onChange={event => edit({ customProvider: event.target.value })} placeholder="Name printed on your electricity bill" /></label></div>}<p id="setup-provider-help" className="hs-field-hint">Select manually and confirm against your bill. ANTECO is the initial validation provider; other listed providers and manual names are supported. No service boundary is inferred.</p>
               {errors.provider && <p className="ui-error" role="alert">{errors.provider}</p>}
             </>}
 
             {step === 2 && <>
               <dl className="hs-review-list"><div><dt><House aria-hidden="true" /> Household</dt><dd>{values.name.trim()}<button type="button" onClick={() => go(0)} aria-label="Edit household name"><Pencil size={15} /></button></dd></div><div><dt><MapPin aria-hidden="true" /> Home location</dt><dd>{location}<button type="button" onClick={() => go(0)} aria-label="Edit home location"><Pencil size={15} /></button></dd></div><div><dt><Zap aria-hidden="true" /> Electricity provider</dt><dd>{previewProviderName(values.provider)}<button type="button" onClick={() => go(1)} aria-label="Edit electricity provider"><Pencil size={15} /></button></dd></div></dl>
-              <div className="hs-suggestion is-save-note"><ShieldCheck size={19} aria-hidden="true" /><p><strong>Your preview stays on this device</strong>Saving updates the name, home location and provider used in this browser. You can change them later.</p></div>
+              <div className="hs-suggestion is-save-note"><ShieldCheck size={19} aria-hidden="true" /><p><strong>Your household stays on this device</strong>Saving updates the name, home location and provider used in this browser. You can change them later.</p></div>
             </>}
 
             {storageError && <p className="ui-error" role="alert">{storageError}</p>}
@@ -200,10 +196,10 @@ export default function HouseholdSetupScreen() {
     </div>}
 
     <dialog ref={permission} className="hs-permission" aria-labelledby="location-permission-title" aria-describedby="location-permission-description" onClose={() => locationButton.current?.focus()} onClick={event => { if (event.target === event.currentTarget) permission.current?.close(); }}>
-      <button type="button" className="hs-dialog-close" aria-label="Close location preview" onClick={() => permission.current?.close()}><X aria-hidden="true" /></button>
-      <span className="hs-permission-icon"><LocateFixed aria-hidden="true" /></span><span className="hs-eyebrow">OPTIONAL LOCATION</span><h2 id="location-permission-title">Find a starting point for your home</h2><p id="location-permission-description">Use an example, or allow a one-time device location lookup. The lookup shares your approximate coordinates with OpenStreetMap to suggest a province and municipality. Check the result before saving. Your precise coordinates are not saved.</p>
-      <div className="hs-permission-example"><MapPin size={18} aria-hidden="true" /><span>Payao, San Jose de Buenavista, Antique<small>Example location · confirm or edit before saving</small></span></div>
-      <button type="button" className="ui-primary" disabled={offline || locating} onClick={currentLocation}>Use my current location</button><button type="button" className="hs-back" onClick={exampleLocation}>Use example location</button><button type="button" className="hs-back" onClick={() => { setLocationState("manual"); permission.current?.close(); }}>Skip permission & enter manually</button>
+      <button type="button" className="hs-dialog-close" aria-label="Close location options" onClick={() => permission.current?.close()}><X aria-hidden="true" /></button>
+      <span className="hs-permission-icon"><LocateFixed aria-hidden="true" /></span><span className="hs-eyebrow">OPTIONAL LOCATION</span><h2 id="location-permission-title">Find a starting point for your home</h2><p id="location-permission-description">Allow a one-time device location lookup. The lookup shares your approximate coordinates with OpenStreetMap to suggest a province and municipality. Check the result before saving. Your precise coordinates are not saved.</p>
+
+      <button type="button" className="ui-primary" disabled={offline || locating} onClick={currentLocation}>Use my current location</button><button type="button" className="hs-back" onClick={() => { setLocationState("manual"); permission.current?.close(); }}>Skip permission & enter manually</button>
       <p className="hs-field-hint">Location data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a>. Permission is optional; manual entry always works.</p>
     </dialog>
   </PageShell>;

@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { ForgotPasswordFlow } from "@/features/auth/components/ForgotPasswordFlow";
+import LocalHouseholdEntry from "@/features/household-profile/components/LocalHouseholdEntry";
 
 export const metadata: Metadata = {
-  title: "Reset password",
-  description: "Get a 6-digit code to reset your WattSnap account password.",
+  title: "Open household",
+  description: "Local households do not require a password.",
 };
 
 export default function ForgotPasswordPage() {
-  return <ForgotPasswordFlow />;
+  return <LocalHouseholdEntry />;
 }

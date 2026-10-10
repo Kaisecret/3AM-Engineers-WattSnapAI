@@ -3,6 +3,7 @@ export type ApplianceKind = "fan" | "aircon" | "fridge" | "tv" | "rice-cooker" |
 export interface PreviewBill {
   id: string; month: string; amount: number; kwh: number; dueDate?: string; source?: BillSource;
   periodStart?: string; periodEnd?: string; provider?: string; sourceName?: string;
+  billingDate?: string; notes?: string;
 }
 export interface PreviewAppliance {
   id: string; name: string; watts: number; hours: number; quantity: number; kind?: ApplianceKind;
@@ -16,13 +17,19 @@ export interface PreviewHousehold {
   locality?: { province: string; municipality: string; barangay: string };
 }
 
-export const emptyPreview: PreviewHousehold = { bills: [], appliances: [], budget: 3500, name: "Kris" };
+export const emptyPreview: PreviewHousehold = { bills: [], appliances: [], budget: 0, name: "Your home" };
 export const previewStorageKey = "wattsnap-ui-preview-v1";
 export const defaultLocation = "San Jose de Buenavista, Antique";
 export const defaultProvider = "anteco";
+export function isProviderChoice(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  if (["anteco", "akelco", "capelco", "ileco-1", "ileco-2", "ileco-3", "more-power"].includes(value)) return true;
+  if (!value.startsWith("custom:") || value.length > 300) return false;
+  try { const name = decodeURIComponent(value.slice(7)); return !!name.trim() && name.length <= 80 && !/[\u0000-\u001f\u007f]/.test(name); } catch { return false; }
+}
 export const defaultNotifications: NotificationPrefs = { brownouts: true, billReminders: true, tips: false };
 export const maxPhotoLength = 600_000;
-/** Used when a peso estimate needs a rate and no bill history exists yet. */
+/** Example-only rate retained for scanner rule fixtures. */
 export const fallbackRate = 11.45;
 
 const sample = (month: string, kwh: number, amount: number, dueDate: string): PreviewBill => ({ id: `sample-${month}`, month, kwh, amount, dueDate, source: "sample" });
@@ -91,6 +98,8 @@ export function validateBill(bill: Omit<PreviewBill, "id">) {
   if (!Number.isFinite(bill.amount) || bill.amount <= 0) return "Enter a bill amount greater than zero.";
   if (!Number.isFinite(bill.kwh) || bill.kwh <= 0) return "Enter consumption greater than zero.";
   if (bill.dueDate && !isCalendarDate(bill.dueDate)) return "Choose a valid due date.";
+  if (bill.billingDate && !isCalendarDate(bill.billingDate)) return "Choose a valid billing date.";
+  if (bill.billingDate && bill.dueDate && bill.billingDate > bill.dueDate) return "The due date cannot be before the billing date.";
   if (Boolean(bill.periodStart) !== Boolean(bill.periodEnd)) return "Enter both billing period dates, or leave both blank.";
   if (bill.periodStart && bill.periodEnd) {
     if (!isCalendarDate(bill.periodStart) || !isCalendarDate(bill.periodEnd)) return "Choose valid billing period dates.";
@@ -130,13 +139,13 @@ export function normalizePreview(value: unknown): PreviewHousehold {
     ...(isPhotoDataUrl(data.photo) ? { photo: data.photo } : {}),
     ...(typeof data.email === "string" && isEmail(data.email.trim()) ? { email: data.email.trim() } : {}),
     ...(typeof data.location === "string" && data.location.trim() ? { location: data.location.trim().slice(0, 200) } : {}),
-    ...(typeof data.provider === "string" && ["anteco", "akelco", "capelco", "ileco-1", "ileco-2", "ileco-3", "more-power"].includes(data.provider) ? { provider: data.provider } : {}),
+    ...(isProviderChoice(data.provider) ? { provider: data.provider } : {}),
     ...(data.locality && typeof data.locality.province === "string" && typeof data.locality.municipality === "string" && typeof data.locality.barangay === "string" ? { locality: { province: data.locality.province.trim().slice(0, 40), municipality: data.locality.municipality.trim().slice(0, 60), barangay: data.locality.barangay.trim().slice(0, 60) } } : {}),
     ...(notifications ? { notifications } : {}),
     bills: Array.isArray(data.bills) ? data.bills.filter(item => item && typeof item.id === "string" && typeof item.month === "string" && !validateBill(item)) : [],
     appliances: Array.isArray(data.appliances) ? data.appliances.filter(item => item && typeof item.id === "string" && typeof item.name === "string" && !validateAppliance(item)) : [],
-    budget: typeof data.budget === "number" && Number.isFinite(data.budget) && data.budget > 0 ? data.budget : 3500,
-    name: typeof data.name === "string" && data.name.trim() ? data.name.trim() : "Kris",
+    budget: typeof data.budget === "number" && Number.isFinite(data.budget) && data.budget > 0 ? data.budget : 0,
+    name: typeof data.name === "string" && data.name.trim() ? data.name.trim() : "Your home",
   };
 }
 
@@ -151,23 +160,12 @@ export function monthlySeries(bills: PreviewBill[], count = 6) {
   return sortBillsByMonth(bills).slice(-count);
 }
 export interface ChartMonth extends PreviewBill { example: boolean; }
-const exampleShape = [1.07, 1.15, 1.1, 1.22, 1.17, 1.12];
+
 /**
- * Bars for a monthly chart. With fewer than `count` saved bills, earlier months are
- * filled with clearly marked example bars so the chart never looks empty. Saved
- * bills are never altered, and comparisons elsewhere use saved bills only.
+ * Bars use saved bills only. Missing months are never filled with invented values.
  */
 export function chartMonths(bills: PreviewBill[], count = 6): ChartMonth[] {
-  const saved = monthlySeries(bills, count).map(bill => ({ ...bill, example: false }));
-  if (!saved.length) return sampleBills.slice(-count).map(bill => ({ ...bill, id: `example-${bill.month}`, example: true }));
-  const first = saved[0];
-  const rate = first.amount / first.kwh;
-  const examples = Array.from({ length: count - saved.length }, (_, index) => {
-    const month = shiftMonth(first.month, -(index + 1));
-    const kwh = Math.round(first.kwh * exampleShape[index % exampleShape.length]);
-    return { id: `example-${month}`, month, kwh, amount: Math.round(kwh * rate * 100) / 100, example: true };
-  }).reverse();
-  return [...examples, ...saved];
+  return monthlySeries(bills, count).map(bill => ({ ...bill, example: false }));
 }
 export interface MonthComparison { previous: PreviewBill; kwhChange: number; kwhPercent: number; amountChange: number; amountPercent: number; }
 /** Compares a bill with the closest earlier recorded bill. */
@@ -191,7 +189,7 @@ export function averageKwh(bills: PreviewBill[]) {
 /** Peso per kWh from the latest bill, used to label appliance cost estimates. */
 export function effectiveRate(bills: PreviewBill[]) {
   const latest = latestBill(bills);
-  return latest ? latest.amount / latest.kwh : fallbackRate;
+  return latest && latest.kwh > 0 && latest.amount > 0 ? latest.amount / latest.kwh : 0;
 }
 export function shiftMonth(month: string, delta: number) {
   const [year, value] = month.split("-").map(Number);
@@ -209,7 +207,7 @@ export function sampleScanReading(bills: PreviewBill[], now = new Date(), random
   const latest = latestBill(bills);
   const month = latest ? shiftMonth(latest.month, 1) : currentMonth(now);
   const kwh = Math.max(1, Math.round((latest?.kwh ?? 120) * (0.9 + random() * 0.16)));
-  const amount = Math.round(kwh * effectiveRate(bills) * 100) / 100;
+  const amount = Math.round(kwh * (effectiveRate(bills) || fallbackRate) * 100) / 100;
   return { month, kwh, amount, dueDate: `${shiftMonth(month, 1)}-10`, source: "scan" };
 }
 

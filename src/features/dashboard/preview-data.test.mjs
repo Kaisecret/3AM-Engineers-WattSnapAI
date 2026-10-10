@@ -33,7 +33,7 @@ test("bill dates reject nonexistent days and reversed or incomplete periods", ()
 test("invalid browser records are ignored without breaking the page", () => {
   const value = normalizePreview({ name: "  Maria  ", budget: -100, bills: [null, { id: "bad", month: "2026-99", amount: 1000, kwh: 100 }], appliances: [{ id: "bad", name: "Fan", watts: 60, hours: 99, quantity: 1 }] });
   assert.equal(value.name, "Maria");
-  assert.equal(value.budget, 3500);
+  assert.equal(value.budget, 0, "Invalid data cannot fabricate a saved budget");
   assert.deepEqual(value.bills, []);
   assert.deepEqual(value.appliances, []);
 });
@@ -95,14 +95,13 @@ test("profile validation needs a name and location, and a real email when given"
   assert.ok(validateProfile({ name: "Kris", email: "kris@", location: "San Jose" }));
   assert.ok(validateProfile({ name: "Kris", email: "", location: "" }));
 });
-test("monthly charts fill earlier months with marked examples until there are enough bills", () => {
+test("monthly charts use stored bills and never invent missing months", () => {
   const one = chartMonths([{ id: "oct", month: "2026-10", amount: 1225.59, kwh: 107 }]);
-  assert.equal(one.length, 6);
-  assert.deepEqual(one.map(bar => bar.month), ["2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10"]);
-  assert.deepEqual(one.map(bar => bar.example), [true, true, true, true, true, false]);
-  assert.equal(one[5].id, "oct");
-  assert.ok(one.slice(0, 5).every(bar => bar.kwh > 0 && bar.amount > 0));
-  assert.ok(chartMonths([]).every(bar => bar.example));
+  assert.equal(one.length, 1);
+  assert.deepEqual(one.map(bar => bar.month), ["2026-10"]);
+  assert.deepEqual(one.map(bar => bar.example), [false]);
+  assert.equal(one[0].id, "oct");
+  assert.deepEqual(chartMonths([]), []);
   assert.ok(chartMonths(sampleBills).every(bar => !bar.example));
 });
 test("budget helpers suggest, parse, validate, and classify spending", () => {
@@ -117,4 +116,11 @@ test("budget helpers suggest, parse, validate, and classify spending", () => {
   assert.equal(budgetStatus(1200, 1600), "on-track");
   assert.equal(budgetStatus(1400, 1600), "near");
   assert.equal(budgetStatus(1700, 1600), "over");
+});
+
+test("optional billing date must exist and cannot be after the due date", () => {
+  const bill = { month: '2026-10', amount: 1200, kwh: 100 };
+  assert.ok(validateBill({ ...bill, billingDate: '2026-02-30' }));
+  assert.ok(validateBill({ ...bill, billingDate: '2026-10-16', dueDate: '2026-10-15' }));
+  assert.equal(validateBill({ ...bill, billingDate: '2026-10-01', dueDate: '2026-10-15' }), null);
 });

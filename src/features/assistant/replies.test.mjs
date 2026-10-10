@@ -29,7 +29,8 @@ test("household answers explain missing data instead of inventing it", () => {
 });
 
 test("intents route to the matching household topic", () => {
-  assert.match(householdReply("How can I save on aircon?", context).text, /24–25°C/);
+  assert.match(householdReply("How can I save on aircon?", context).text, /rated watts and operating hours/);
+  assert.doesNotMatch(householdReply("How can I save on aircon?", context).text, /900 W|162 kWh/);
   assert.match(householdReply("Any brownout today?", context).text, /Brgy\. Payao/);
   assert.match(householdReply("Which appliance uses the most?", context).text, /refrigerator uses the most/);
   assert.match(householdReply("how much of my budget did I use", context).text, /78% of your ₱1,600\.00 budget/);
@@ -41,8 +42,8 @@ test("intents route to the matching household topic", () => {
 test("landing answers stay within the product description", () => {
   assert.match(landingReply("What is WattSnap?").text, /home electricity assistant/);
   assert.match(landingReply("Does it work offline?").text, /work offline/);
-  assert.match(landingReply("Does it work offline?").text, /already open preview/);
-  assert.match(landingReply("How does bill scanning work?").text, /AI extraction is not connected/);
+  assert.match(landingReply("Does it work offline?").text, /successful online visit prepares the app shell/);
+  assert.match(landingReply("How does bill scanning work?").text, /AI extraction is not available/);
   assert.match(landingReply("Is my data private?").text, /same browser profile/);
   assert.match(landingReply("Which areas are covered?").text, /Antique with ANTECO/);
   assert.equal(landingReply("how do I sign up").links[0].href, "/signup");

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, Minus, Pencil, Plus, SlidersHorizontal, Trash2, X, Zap } from "lucide-react";
 import AppliancePicker, { applianceIcons as kindIcons } from "@/features/appliance-registration/components/appliance-picker";
+import ConfirmRecordRemoval from "@/components/ui/ConfirmRecordRemoval";
 import PageShell from "./PageShell";
 import { usePreviewHousehold } from "../use-preview-household";
 import { appliancePresets, dailyApplianceKwh, effectiveRate, guessApplianceKind, pesos, validateAppliance, type ApplianceKind, type PreviewAppliance } from "../preview-data";
@@ -17,6 +18,7 @@ const trim = (value: number) => Number(value.toFixed(2)).toString();
 export default function AppliancesScreen() {
   const { household, update, ready, storageError } = usePreviewHousehold();
   const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const [removing, setRemoving] = useState<PreviewAppliance | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -63,7 +65,7 @@ export default function AppliancesScreen() {
   }
 
   function remove(item: PreviewAppliance) {
-    if (update({ appliances: household.appliances.filter(appliance => appliance.id !== item.id) })) setMessage(`${item.name} removed.`);
+    if (update({ appliances: household.appliances.filter(appliance => appliance.id !== item.id) })) { setMessage(`${item.name} removed.`); return true; } return false;
   }
 
   return <PageShell title="Appliances" subtitle="See how your appliances use energy" active="Appliances" className="ap-page">
@@ -71,7 +73,7 @@ export default function AppliancesScreen() {
       <div className="ap-summary-copy">
         <p className="ap-eyebrow">Estimated from your appliances</p>
         <h2 id="ap-summary-title"><span>{(totalDaily * 30).toFixed(1)}</span> kWh / month</h2>
-        <p className="ap-summary-cost">≈ {pesos(totalDaily * 30 * rate)} a month at {pesos(rate)}/kWh</p>
+        <p className="ap-summary-cost">{rate > 0 ? `≈ ${pesos(totalDaily * 30 * rate)} per 30 days using the latest bill’s amount ÷ kWh` : "Add a bill to include approximate peso estimates."}</p>
         <Link className="ap-add" href="/appliances/new"><Plus aria-hidden="true" /> Add appliance</Link>
       </div>
       <dl className="ap-summary-stats">
@@ -92,19 +94,20 @@ export default function AppliancesScreen() {
           <span className={`ap-icon is-${kind}`}><Icon aria-hidden="true" /></span>
           <div className="ap-item-main">
             <div className="ap-item-top"><h3>{item.name}</h3><strong>{(daily * 30).toFixed(1)} <small>kWh/mo</small></strong></div>
-            <p>{trim(item.watts)} W · {trim(item.hours)} hrs/day{item.quantity > 1 && ` · ×${item.quantity}`}<span>≈ {pesos(daily * 30 * rate)}/mo</span></p>
+            <p>{trim(item.watts)} W · {trim(item.hours)} hrs/day{item.quantity > 1 && ` · ×${item.quantity}`}{rate > 0 && <span>≈ {pesos(daily * 30 * rate)}/30 days</span>}</p>
             <p className="ap-item-detail">{item.model && `${item.model} · `}{item.source === "sample" || item.id.startsWith("sample-") ? "Sample" : "Manual"} · {item.wattageBasis === "nameplate" ? "Nameplate watts" : "Approximate watts"}</p>
             {item.days !== undefined && <p className="ap-item-detail">{item.days} days selected · {(daily * item.days).toFixed(2)} kWh for this period</p>}
             <div className="ap-share" role="img" aria-label={`${share.toFixed(0)} percent of estimated appliance use`}><span style={{ width: `${share > 0 ? Math.max(share, 2) : 0}%` }} /><em>{share.toFixed(0)}%</em></div>
           </div>
           <div className="ap-item-actions">
             <button type="button" className="ui-icon-button ap-edit" disabled={!ready} aria-label={`Edit ${item.name}`} onClick={() => open(item)}><Pencil size={16} /></button>
-            <button type="button" className="ui-icon-button" disabled={!ready} aria-label={`Remove ${item.name}`} onClick={() => remove(item)}><Trash2 size={16} /></button>
+            <button type="button" className="ui-icon-button" disabled={!ready} aria-label={`Remove ${item.name}`} onClick={() => setRemoving(item)}><Trash2 size={16} /></button>
           </div>
         </li>; })}
       </ul> : <div className="ap-empty"><Image src="/assets/branding/actions-7.png" alt="" width={200} height={200} sizes="120px" /><h3>No appliances yet</h3><p>Add the appliances you use at home to see which ones use the most energy.</p><Link className="ui-primary" href="/appliances/new"><Plus size={18} aria-hidden="true" /> Add appliance</Link></div>}
-      <p className="ui-helper">Monthly comparisons use watts × hours × quantity over 30 days. Each entry also shows its selected period. These estimates cover registered appliances only; actual use varies with settings, age, and cycling.</p>
+      <p className="ui-helper">Monthly comparisons use watts × hours × quantity over 30 days. Each entry also shows its selected period. Appliance consumption is estimated based on the information you provide and may differ from actual meter readings. Bill-derived peso estimates include fees and are not a provider tariff.</p>
     </section>
+    <ConfirmRecordRemoval name={removing?.name ?? null} error={storageError} onKeep={() => setRemoving(null)} onRemove={() => removing ? remove(removing) : false} />
     {message && <p className="ui-success" role="status">{message}</p>}{storageError && <p className="ui-error" role="alert">{storageError}</p>}
 
     <dialog ref={dialog} className="ap-dialog" aria-labelledby="ap-dialog-title" onClose={() => opener.current?.focus()} onClick={event => { if (event.target === event.currentTarget) close(); }}>
@@ -128,7 +131,7 @@ export default function AppliancesScreen() {
           <Zap aria-hidden="true" />
           <div><strong>{validEstimate ? `${draftDaily.toFixed(2)} kWh` : "—"}</strong><span>per day</span></div>
           <div><strong>{validEstimate ? `${(draftDaily * Number(draft.days)).toFixed(1)} kWh` : "—"}</strong><span>in {draft.days || "—"} days</span></div>
-          <div><strong>{validEstimate ? pesos(draftDaily * Number(draft.days) * rate) : "—"}</strong><span>est. for period</span></div>
+          <div><strong>{validEstimate && rate > 0 ? pesos(draftDaily * Number(draft.days) * rate) : "—"}</strong><span>est. for period</span></div>
         </div>
         {error && <p className="ui-error" role="alert">{error}</p>}
         {storageError && <p className="ui-error" role="alert">{storageError}</p>}

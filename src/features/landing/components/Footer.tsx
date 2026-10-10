@@ -4,12 +4,12 @@ import Link from "next/link";
 const productLinks = [
   { label: "Features", href: "#features" },
   { label: "How It Works", href: "#how-it-works" },
-  { label: "Create account", href: "/welcome" },
-  { label: "Log in", href: "/login" },
+  { label: "Set up household", href: "/welcome" },
+  { label: "Open household", href: "/login" },
 ];
 
-const capabilities = ["Bill Scanner AI", "Watt-If Simulator", "Tipid Tips & Budget", "Brownout Ready Mode"];
-const coverage = ["Antique (ANTECO)", "Panay Utilities", "Offline-First Access", "Local SQLite Storage"];
+const capabilities = ["Bill Photo & Review", "Watt-If Simulator", "Tipid Tips & Budget", "Brownout Ready Mode"];
+const coverage = ["ANTECO validation", "Manual provider selection", "Saved offline access", "Browser storage"];
 
 export function Footer() {
   return (
