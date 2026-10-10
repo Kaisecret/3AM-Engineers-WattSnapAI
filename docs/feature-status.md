@@ -25,9 +25,14 @@ An ANTECO receipt shows the total kWh and the amount, for example **192 kWh and 
 | 11 | Smart budget | Overspending is noticed only when the bill arrives | Budget | 🟡 | Peso budget with On track / near limit / Over budget works. No kWh target, no "days left / at risk" forecast, and device estimates are not used. |
 | 12 | Brownout Ready | Families are unprepared when an interruption starts | Brownout Ready | ✅ | – Summary from a saved advisory, countdown and preparation checklist. |
 
-Gemini 2.5 Flash is wired into the server (`src/lib/gemini/`, needs `GEMINI_API_KEY`). The **assistant** page uses it. The `bills`, `appliances` and `tips` routes in `src/app/api/ai/` can read images and write tips, but **no screen calls them yet**, so the bill form, Add device and Tips still work as described above. The `advisories` route is still a placeholder.
+Gemini 3.5 Flash-Lite is wired into the server (`src/lib/gemini/`, needs `GEMINI_API_KEY`; `GEMINI_MODEL` can name another model). Two chats use it:
 
-Also in the app but not in the proposal: accounts (email, username or Google, with a 6-digit email code), intro slides after sign-up, the Home setup checklist and completion celebration, the WattSnap AI assistant page (answers with Gemini), settings and dark mode.
+- **WattSnap AI in the app** (`/api/ai/assistant`, signed-in accounts only) answers questions and can **make changes for you**: set the monthly budget or subsidy, add, change or remove appliances, save a monthly bill, and open a page. Every change appears on a card and is saved only when you tap **Confirm** (or **Confirm all**). Records stay in the browser; the chat sends a summary of them with each message.
+- **The landing page chat** (`/api/ai/landing`, public) answers questions about WattSnap only. It gets no household data and cannot change anything. Each visitor gets 8 questions per 10 minutes.
+
+When Gemini is not set, busy, over its limit or offline, both chats fall back to the built-in answers. Each account can send 20 messages per 5 minutes, and limits are kept per server instance (best effort). The `bills`, `appliances` and `tips` routes also need a signed-in account and can read photos and write tips, but **no screen calls them yet**, so the bill form, Add device and Tips still work as described above. The `advisories` route is still a placeholder.
+
+Also in the app but not in the proposal: accounts (email, username or Google, with a 6-digit email code), intro slides after sign-up, the Home setup checklist and completion celebration, the WattSnap AI chat (answers with Gemini and can set up your budget, bills and appliances after you confirm), settings and dark mode.
 
 ## Entering an ANTECO receipt
 

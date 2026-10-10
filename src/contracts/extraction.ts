@@ -14,7 +14,10 @@ export interface BillExtractionResult extends ReviewableExtraction {
   periodStart?: string | null;
   periodEnd?: string | null;
   billingDate?: string | null;
+  /** Current month bill before any subsidy or past balance (what WattSnap saves as the bill amount). */
   amountDue?: number | null;
+  /** Government subsidy deducted on the bill, e.g. Antique PEPS. */
+  subsidy?: number | null;
   dueDate?: string | null;
   consumptionKwh?: number | null;
   notes?: string | null;

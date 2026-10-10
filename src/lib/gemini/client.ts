@@ -13,7 +13,12 @@ import type {
 import type { Reply } from "@/features/assistant/replies";
 
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models";
-const DEFAULT_MODEL: GeminiModel = "gemini-2.5-flash";
+const DEFAULT_MODEL: GeminiModel = "gemini-3.5-flash-lite";
+
+/** The model to call: GEMINI_MODEL if set, otherwise Gemini 3.5 Flash-Lite. */
+export function geminiModel(): GeminiModel {
+  return process.env.GEMINI_MODEL?.trim() || DEFAULT_MODEL;
+}
 
 export function getGeminiApiKey(): string | null {
   const key = process.env.GEMINI_API_KEY?.trim();
@@ -26,6 +31,7 @@ export function hasGeminiKey(): boolean {
 
 interface CallGeminiOptions {
   model?: GeminiModel;
+  tools?: GeminiRequestBody["tools"];
   systemInstruction?: string;
   parts: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }>;
   jsonMode?: boolean;
@@ -34,21 +40,41 @@ interface CallGeminiOptions {
   timeoutMs?: number;
 }
 
-export async function callGeminiApi({
-  model = DEFAULT_MODEL,
+export type GeminiCallResult = { text: string; functionCalls: Array<{ name: string; args: unknown }>; finishReason?: string };
+
+/** Joins the visible text parts and collects any function calls; internal thought parts are skipped. */
+export function readGeminiResponse(data: GeminiResponseBody): GeminiCallResult {
+  const candidate = data.candidates?.[0];
+  const parts = candidate?.content?.parts ?? [];
+  return {
+    text: parts.filter(part => !part.thought && typeof part.text === "string").map(part => part.text).join("").trim(),
+    functionCalls: parts.flatMap(part => part.functionCall?.name ? [{ name: part.functionCall.name, args: part.functionCall.args ?? {} }] : []),
+    finishReason: candidate?.finishReason,
+  };
+}
+
+export async function callGeminiApi(options: CallGeminiOptions): Promise<string> {
+  const result = await callGemini(options);
+  if (!result.text) throw new Error("Gemini returned an empty response candidate.");
+  return result.text;
+}
+
+export async function callGemini({
+  model = geminiModel(),
   systemInstruction,
   parts,
+  tools,
   jsonMode = false,
   temperature = 0.2,
   maxOutputTokens = 2048,
   timeoutMs = 25000,
-}: CallGeminiOptions): Promise<string> {
+}: CallGeminiOptions): Promise<GeminiCallResult> {
   const apiKey = getGeminiApiKey();
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY is not configured in server environment.");
   }
 
-  const url = `${GEMINI_API_URL}/${model}:generateContent?key=${apiKey}`;
+  const url = `${GEMINI_API_URL}/${encodeURIComponent(model)}:generateContent`;
 
   const requestBody: GeminiRequestBody = {
     contents: [
@@ -62,6 +88,7 @@ export async function callGeminiApi({
       maxOutputTokens,
       ...(jsonMode ? { responseMimeType: "application/json" } : {}),
     },
+    ...(tools ? { tools } : {}),
     ...(systemInstruction
       ? {
           systemInstruction: {
@@ -77,7 +104,8 @@ export async function callGeminiApi({
   try {
     const response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      // The key travels in a header, not the URL, so it cannot end up in request logs.
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify(requestBody),
       signal: controller.signal,
     });
@@ -94,15 +122,11 @@ export async function callGeminiApi({
       throw new Error(`Gemini error (${response.status}): ${message}`);
     }
 
-    const data: GeminiResponseBody = await response.json();
-    const candidate = data.candidates?.[0];
-    const textPart = candidate?.content?.parts?.[0]?.text;
-
-    if (!textPart) {
-      throw new Error("Gemini returned an empty response candidate.");
+    const result = readGeminiResponse(await response.json());
+    if (!result.text && !result.functionCalls.length) {
+      throw new Error(`Gemini returned an empty response${result.finishReason ? ` (${result.finishReason})` : ""}.`);
     }
-
-    return textPart.trim();
+    return result;
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
       throw new Error("Gemini API request timed out. Please try again.");
@@ -144,7 +168,8 @@ Fields:
 - "periodEnd": End date of billing period in YYYY-MM-DD. Use null if unknown.
 - "billingDate": Bill date/reading date in YYYY-MM-DD. Use null if unknown.
 - "dueDate": Payment due date in YYYY-MM-DD. Use null if unknown.
-- "amountDue": Total amount due in Philippine Pesos (PHP) as a number (e.g. 2450.50). Do not include currency symbols. Use null if unknown.
+- "amountDue": The CURRENT MONTH BILL in Philippine Pesos as a number (e.g. 3072.60): the charge for this month BEFORE any subsidy or past balance. On ANTECO receipts use the "CURRENT MONTH BILL" line, not "AMOUNT DUE". Do not include currency symbols. Use null if unknown.
+- "subsidy": Any government subsidy deducted on the bill (e.g. "Provincial Electric Power Subsidy") as a positive number in pesos. Use null if none.
 - "consumptionKwh": Total kilowatt-hours (kWh) consumed as a number (e.g. 185.0). Use null if unknown.
 - "notes": Brief notes on any unreadable or ambiguous fields.
 Never invent numbers. If a field is blurred, cut off, or not printed, set it to null.`;
@@ -177,7 +202,8 @@ Never invent numbers. If a field is blurred, cut off, or not printed, set it to 
     periodStart: parsed.periodStart ?? null,
     periodEnd: parsed.periodEnd ?? null,
     billingDate: parsed.billingDate ?? null,
-    amountDue: typeof parsed.amountDue === "number" ? parsed.amountDue : null,
+    amountDue: typeof parsed.amountDue === "number" && parsed.amountDue > 0 ? parsed.amountDue : null,
+    subsidy: typeof parsed.subsidy === "number" && parsed.subsidy > 0 ? Math.abs(parsed.subsidy) : null,
     dueDate: parsed.dueDate ?? null,
     consumptionKwh: typeof parsed.consumptionKwh === "number" ? parsed.consumptionKwh : null,
     notes: parsed.notes ?? null,

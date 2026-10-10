@@ -24,7 +24,7 @@ export default function AppNavigation({ active }: { active?: string }) {
       ))}
       <Link href="/assistant" className={`ws-sidebar-assistant${active === "Assistant" ? " is-active" : ""}`} aria-current={active === "Assistant" ? "page" : undefined}>
         <span className="ws-sidebar-assistant-art"><picture><source media="(min-width: 900px)" srcSet={assistantArtwork.srcSet} sizes={assistantArtwork.sizes} /><img src={transparentPixel} alt="" width={120} height={120} loading="lazy" /></picture></span>
-        <span className="ws-sidebar-assistant-copy"><strong>WattSnap AI</strong><small>Local energy guidance</small></span>
+        <span className="ws-sidebar-assistant-copy"><strong>WattSnap AI</strong><small>Ask or set up by chat</small></span>
         <ChevronRight aria-hidden="true" />
       </Link>
     </nav>

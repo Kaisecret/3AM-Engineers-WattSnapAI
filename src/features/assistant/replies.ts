@@ -1,6 +1,6 @@
 /**
- * Rule-based replies for the WattSnap AI preview. No model is connected yet, so
- * answers come from the household's saved records and the product description.
+ * Rule-based replies, used when Gemini is not configured, unreachable or rate-limited.
+ * Answers come from the household's saved records and the product description.
  */
 export interface ChatLink { label: string; href: string; }
 export interface Reply { text: string; links?: ChatLink[]; suggestions?: string[]; }
@@ -15,6 +15,11 @@ export interface ChatContext {
   applianceCount?: number;
   location?: string;
   advisory?: { title: string; when: string; area: string; reason: string };
+  /** Extra details for the AI agent so it can refer to and change the household's records. */
+  provider?: string;
+  monthlySubsidy?: number;
+  bills?: Array<ChatBill & { subsidy?: number }>;
+  appliances?: Array<{ name: string; watts: number; hours: number; quantity: number; days?: number }>;
 }
 
 export const householdSuggestions = ["Why did my bill change?", "How can I save on aircon?", "Any brownout today?", "Which appliance uses the most?"];
@@ -124,9 +129,9 @@ export function landingReply(message: string): Reply {
   if (has(text, patterns.simulator)) return { text: "The Watt-If simulator lets you compare habits, like running the aircon 5 hours instead of 8, and estimates the kWh and pesos you'd save." };
   if (has(text, patterns.budget)) return { text: "Set a monthly budget in pesos and compare it with your latest saved electricity bill.", links: [join] };
   if (has(text, patterns.appliances)) return { text: "Pick a labeled appliance type, enter reviewed watts and usage, and optionally upload its nameplate as a reference. Estimates use watts, hours, quantity and days in the period. Unknown wattage stays blank until you enter it; nameplate AI is not connected." };
-  if (has(text, patterns.privacy)) return { text: "Household values stay in browser storage. Anyone using the same browser profile can access them. This local household does not use account authentication. Clearing browser data can remove records; screenshot originals are retained only when you choose to save them.", links: [join] };
+  if (has(text, patterns.privacy)) return { text: "Your household records are saved in this browser under your WattSnap account, so anyone using the same browser profile can access them. In the app, WattSnap AI reads a summary of them to answer you and asks before changing anything. Clearing browser data can remove records.", links: [join] };
   if (has(text, patterns.price)) return { text: "You can set up a local household without a payment step.", links: [join] };
-  if (has(text, patterns.signup)) return { text: "Set up one household on this device, choose a provider, and save reviewed records locally. Returning access opens the same household without a password.", links: [join] };
+  if (has(text, patterns.signup)) return { text: "Tap Sign up to create your free account, then set up your home in a few quick steps.", links: [join] };
   if (has(text, patterns.save)) return { text: "Create local Tipid Tips from your saved bills and appliances. Each suggestion explains its inputs, assumptions and freshness; savings are not guaranteed.", links: [join] };
   if (has(text, patterns.about)) return {
     text: "WattSnap AI is your home electricity assistant. It helps you:\n\n• Scan bills and compare usage month by month\n• Estimate which appliances use the most\n• Get Tipid Tips and set an energy budget\n• Understand brownout advisories and get ready",

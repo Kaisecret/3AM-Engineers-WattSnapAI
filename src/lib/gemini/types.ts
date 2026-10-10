@@ -2,10 +2,13 @@ import type { ApplianceKind } from "@/features/dashboard/preview-data";
 import type { BillExtractionResult, ApplianceLabelExtractionResult, TipRecommendation } from "@/contracts/extraction";
 import type { ChatContext, Reply } from "@/features/assistant/replies";
 
-export type GeminiModel = "gemini-2.5-flash" | "gemini-1.5-flash";
+/** Any Gemini model ID, e.g. "gemini-3.5-flash-lite". */
+export type GeminiModel = string;
 
 export interface GeminiPart {
   text?: string;
+  thought?: boolean;
+  functionCall?: { name: string; args?: Record<string, unknown>; id?: string };
   inlineData?: {
     mimeType: string;
     data: string;
@@ -30,11 +33,12 @@ export interface GeminiRequestBody {
     parts: Array<{ text: string }>;
   };
   generationConfig?: GeminiGenerationConfig;
+  tools?: ReadonlyArray<{ functionDeclarations: ReadonlyArray<unknown> }>;
 }
 
 export interface GeminiCandidate {
   content?: {
-    parts?: Array<{ text?: string }>;
+    parts?: GeminiPart[];
     role?: string;
   };
   finishReason?: string;
