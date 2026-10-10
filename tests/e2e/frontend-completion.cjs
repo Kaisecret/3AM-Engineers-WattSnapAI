@@ -155,6 +155,20 @@ async function appliances(browser) {
   await context.close(); console.log('PASS: actual appliance photo review, manual wattage, editing, calculation and confirmed removal');
 }
 
+async function estimates(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River home', bills: [], budget: 0, appliances: [{ id: 'my-fan', name: 'My fan', watts: 55, hours: 8, quantity: 2, days: 20 }] })); });
+  const page = await context.newPage(); await page.goto(`${baseURL}/appliances`);
+  await page.getByText('My fan', { exact: true }).waitFor();
+  assert.match(await page.locator('.ap-summary-cost').innerText(), /Add a bill/);
+  assert.match(await page.locator('.ap-list').innerText(), /17.60 kWh for this period/);
+  assert.match(await page.locator('.ap-summary-copy').innerText(), /26.4/);
+  await page.evaluate(() => { const key = 'wattsnap-ui-preview-v1', home = JSON.parse(localStorage.getItem(key)); home.bills = [{ id: 'my-bill', month: '2026-09', kwh: 100, amount: 1200 }]; localStorage.setItem(key, JSON.stringify(home)); window.dispatchEvent(new Event('wattsnap-preview-change')); });
+  await page.getByText(/316.80 per 30 days/).waitFor();
+  assert.match(await page.locator('.ap-summary-copy').innerText(), /26.4/, 'Bill does not force the appliance estimate to match');
+  await context.close(); console.log('PASS: energy formula, selected days, unknown rate and genuine bill-derived costs');
+}
+
 async function history(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River home', budget: 0, appliances: [], bills: [{ id: 'actual-1', month: '2026-07', kwh: 100, amount: 1200, source: 'manual', periodStart: '2026-07-01', periodEnd: '2026-07-31' }, { id: 'actual-2', month: '2026-09', kwh: 150, amount: 1800, source: 'manual', periodStart: '2026-09-01', periodEnd: '2026-09-30' }] })); });
@@ -176,5 +190,5 @@ async function history(browser) {
 
 (async () => {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
-  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history', 'appliances'])) await ({ design, records, household, bills, history, appliances })[check](browser); } finally { await browser.close(); }
+  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history', 'appliances', 'estimates'])) await ({ design, records, household, bills, history, appliances, estimates })[check](browser); } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -67,10 +67,8 @@ export function householdReply(message: string, context: ChatContext = {}): Repl
   }
 
   if (has(text, patterns.aircon)) {
-    const rate = context.rate ?? 11.45;
-    const monthly = 0.9 * 6 * 30;
     return {
-      text: `Aircons are usually the biggest energy users at home. A 900 W unit running 6 hours a day uses about ${monthly.toFixed(0)} kWh a month, roughly ${peso(monthly * rate)} at your rate.\n\n• Set it to 24–25°C instead of 18–20°C\n• Clean the filter every 2–4 weeks\n• Use the timer or sleep mode at night\n• Close doors and windows, and pair it with a fan`,
+      text: "Review your air conditioner’s rated watts and operating hours in Appliances. Use timers when appropriate, clean filters according to the manufacturer’s instructions, and keep doors and windows closed while cooling. Estimated consumption uses your entered values; it does not measure compressor cycling.",
       links: [{ label: "Add your aircon", href: "/appliances" }],
       suggestions: ["Which appliance uses the most?"],
     };
@@ -90,7 +88,7 @@ export function householdReply(message: string, context: ChatContext = {}): Repl
     if (!context.topAppliance) return { text: "Add the appliances you use at home and I'll rank which ones use the most energy.", links: [{ label: "Add appliances", href: "/appliances" }] };
     const { name, monthlyKwh } = context.topAppliance;
     return {
-      text: `From the ${context.applianceCount ?? "saved"} appliances you've added, your ${name.toLowerCase()} uses the most: about ${monthlyKwh.toFixed(1)} kWh a month (${peso(monthlyKwh * (context.rate ?? 11.45))}). Cutting its daily hours is the quickest way to save.`,
+      text: `From the ${context.applianceCount ?? "saved"} appliances you've added, your ${name.toLowerCase()} uses the most: about ${monthlyKwh.toFixed(1)} kWh a month ${context.rate && context.rate > 0 ? ` (approximately ${peso(monthlyKwh * context.rate)} using your latest bill)` : ""}. Cutting its daily hours is the quickest way to save.`,
       links: [{ label: "See all appliances", href: "/appliances" }],
       suggestions: ["How can I save on aircon?"],
     };

@@ -29,7 +29,8 @@ test("household answers explain missing data instead of inventing it", () => {
 });
 
 test("intents route to the matching household topic", () => {
-  assert.match(householdReply("How can I save on aircon?", context).text, /24–25°C/);
+  assert.match(householdReply("How can I save on aircon?", context).text, /rated watts and operating hours/);
+  assert.doesNotMatch(householdReply("How can I save on aircon?", context).text, /900 W|162 kWh/);
   assert.match(householdReply("Any brownout today?", context).text, /Brgy\. Payao/);
   assert.match(householdReply("Which appliance uses the most?", context).text, /refrigerator uses the most/);
   assert.match(householdReply("how much of my budget did I use", context).text, /78% of your ₱1,600\.00 budget/);

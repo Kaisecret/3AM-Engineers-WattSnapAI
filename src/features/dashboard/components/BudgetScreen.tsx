@@ -80,16 +80,16 @@ export default function BudgetScreen() {
           <label className="bg-amount">
             <span className="ws-sr-only">Monthly budget in pesos</span>
             <span className="bg-amount-field"><em aria-hidden="true">₱</em><input inputMode="decimal" autoComplete="off" value={value} placeholder="0" style={{ width: `${Math.max(value.length, 1) + 0.6}ch` }} aria-invalid={!!error} aria-describedby="bg-amount-hint" onChange={event => type(event.target.value)} /></span>
-            <small id="bg-amount-hint">{Number.isFinite(amount) && amount > 0 ? `≈ ${Math.round(amount / rate)} kWh a month at ${pesos(rate)}/kWh` : "Enter an amount in pesos"}</small>
+            <small id="bg-amount-hint">{Number.isFinite(amount) && amount > 0 && rate > 0 ? `≈ ${Math.round(amount / rate)} kWh a month at ${pesos(rate)}/kWh` : "Enter an amount in pesos. A saved bill is needed for a kWh estimate."}</small>
           </label>
           {suggestion && <button type="button" className="bg-suggest" onClick={() => { setDraft(String(suggestion)); setError(""); }}><Sparkles aria-hidden="true" /><span>Suggested <b>{whole(suggestion)}</b><small>Your recent average plus a little room</small></span><ChevronRight aria-hidden="true" /></button>}
           <div className="bg-presets" role="group" aria-label="Quick amounts">
             {budgetPresets.map(preset => <button type="button" key={preset} className={amount === preset ? "is-selected" : ""} aria-pressed={amount === preset} onClick={() => { setDraft(String(preset)); setError(""); }}>
-              <strong>{whole(preset)}</strong><small>≈ {Math.round(preset / rate)} kWh</small>{amount === preset && <span className="bg-check"><Check aria-hidden="true" /></span>}
+              <strong>{whole(preset)}</strong><small>{rate > 0 ? `≈ ${Math.round(preset / rate)} kWh` : "Monthly target"}</small>{amount === preset && <span className="bg-check"><Check aria-hidden="true" /></span>}
             </button>)}
           </div>
           {(error || storageError) && <p className="ui-error" role="alert">{error || storageError}</p>}
-          <button type="submit" className="ui-primary bg-save" disabled={!ready || !changed}>{changed ? <>Set budget to {Number.isFinite(amount) ? whole(amount) : "—"}</> : <><Check size={18} aria-hidden="true" /> Budget saved</>}</button>
+          <button type="submit" className="ui-primary bg-save" disabled={!ready || !changed}>{changed ? <>Set budget to {Number.isFinite(amount) ? whole(amount) : "—"}</> : <><Check size={18} aria-hidden="true" /> {budget > 0 ? "Budget saved" : "Enter a budget"}</>}</button>
         </form>
       </section>
 

@@ -73,7 +73,7 @@ export default function AppliancesScreen() {
       <div className="ap-summary-copy">
         <p className="ap-eyebrow">Estimated from your appliances</p>
         <h2 id="ap-summary-title"><span>{(totalDaily * 30).toFixed(1)}</span> kWh / month</h2>
-        <p className="ap-summary-cost">≈ {pesos(totalDaily * 30 * rate)} a month at {pesos(rate)}/kWh</p>
+        <p className="ap-summary-cost">{rate > 0 ? `≈ ${pesos(totalDaily * 30 * rate)} per 30 days using the latest bill’s amount ÷ kWh` : "Add a bill to include approximate peso estimates."}</p>
         <Link className="ap-add" href="/appliances/new"><Plus aria-hidden="true" /> Add appliance</Link>
       </div>
       <dl className="ap-summary-stats">
@@ -94,7 +94,7 @@ export default function AppliancesScreen() {
           <span className={`ap-icon is-${kind}`}><Icon aria-hidden="true" /></span>
           <div className="ap-item-main">
             <div className="ap-item-top"><h3>{item.name}</h3><strong>{(daily * 30).toFixed(1)} <small>kWh/mo</small></strong></div>
-            <p>{trim(item.watts)} W · {trim(item.hours)} hrs/day{item.quantity > 1 && ` · ×${item.quantity}`}<span>≈ {pesos(daily * 30 * rate)}/mo</span></p>
+            <p>{trim(item.watts)} W · {trim(item.hours)} hrs/day{item.quantity > 1 && ` · ×${item.quantity}`}{rate > 0 && <span>≈ {pesos(daily * 30 * rate)}/30 days</span>}</p>
             <p className="ap-item-detail">{item.model && `${item.model} · `}{item.source === "sample" || item.id.startsWith("sample-") ? "Sample" : "Manual"} · {item.wattageBasis === "nameplate" ? "Nameplate watts" : "Approximate watts"}</p>
             {item.days !== undefined && <p className="ap-item-detail">{item.days} days selected · {(daily * item.days).toFixed(2)} kWh for this period</p>}
             <div className="ap-share" role="img" aria-label={`${share.toFixed(0)} percent of estimated appliance use`}><span style={{ width: `${share > 0 ? Math.max(share, 2) : 0}%` }} /><em>{share.toFixed(0)}%</em></div>
@@ -105,7 +105,7 @@ export default function AppliancesScreen() {
           </div>
         </li>; })}
       </ul> : <div className="ap-empty"><Image src="/assets/branding/actions-7.png" alt="" width={200} height={200} sizes="120px" /><h3>No appliances yet</h3><p>Add the appliances you use at home to see which ones use the most energy.</p><Link className="ui-primary" href="/appliances/new"><Plus size={18} aria-hidden="true" /> Add appliance</Link></div>}
-      <p className="ui-helper">Monthly comparisons use watts × hours × quantity over 30 days. Each entry also shows its selected period. These estimates cover registered appliances only; actual use varies with settings, age, and cycling.</p>
+      <p className="ui-helper">Monthly comparisons use watts × hours × quantity over 30 days. Each entry also shows its selected period. Appliance consumption is estimated based on the information you provide and may differ from actual meter readings. Bill-derived peso estimates include fees and are not a provider tariff.</p>
     </section>
     <ConfirmRecordRemoval name={removing?.name ?? null} error={storageError} onKeep={() => setRemoving(null)} onRemove={() => removing ? remove(removing) : false} />
     {message && <p className="ui-success" role="status">{message}</p>}{storageError && <p className="ui-error" role="alert">{storageError}</p>}
@@ -131,7 +131,7 @@ export default function AppliancesScreen() {
           <Zap aria-hidden="true" />
           <div><strong>{validEstimate ? `${draftDaily.toFixed(2)} kWh` : "—"}</strong><span>per day</span></div>
           <div><strong>{validEstimate ? `${(draftDaily * Number(draft.days)).toFixed(1)} kWh` : "—"}</strong><span>in {draft.days || "—"} days</span></div>
-          <div><strong>{validEstimate ? pesos(draftDaily * Number(draft.days) * rate) : "—"}</strong><span>est. for period</span></div>
+          <div><strong>{validEstimate && rate > 0 ? pesos(draftDaily * Number(draft.days) * rate) : "—"}</strong><span>est. for period</span></div>
         </div>
         {error && <p className="ui-error" role="alert">{error}</p>}
         {storageError && <p className="ui-error" role="alert">{storageError}</p>}

@@ -29,7 +29,7 @@ export function isProviderChoice(value: unknown): value is string {
 }
 export const defaultNotifications: NotificationPrefs = { brownouts: true, billReminders: true, tips: false };
 export const maxPhotoLength = 600_000;
-/** Used when a peso estimate needs a rate and no bill history exists yet. */
+/** Example-only rate retained for scanner rule fixtures. */
 export const fallbackRate = 11.45;
 
 const sample = (month: string, kwh: number, amount: number, dueDate: string): PreviewBill => ({ id: `sample-${month}`, month, kwh, amount, dueDate, source: "sample" });
@@ -189,7 +189,7 @@ export function averageKwh(bills: PreviewBill[]) {
 /** Peso per kWh from the latest bill, used to label appliance cost estimates. */
 export function effectiveRate(bills: PreviewBill[]) {
   const latest = latestBill(bills);
-  return latest ? latest.amount / latest.kwh : fallbackRate;
+  return latest && latest.kwh > 0 && latest.amount > 0 ? latest.amount / latest.kwh : 0;
 }
 export function shiftMonth(month: string, delta: number) {
   const [year, value] = month.split("-").map(Number);
@@ -207,7 +207,7 @@ export function sampleScanReading(bills: PreviewBill[], now = new Date(), random
   const latest = latestBill(bills);
   const month = latest ? shiftMonth(latest.month, 1) : currentMonth(now);
   const kwh = Math.max(1, Math.round((latest?.kwh ?? 120) * (0.9 + random() * 0.16)));
-  const amount = Math.round(kwh * effectiveRate(bills) * 100) / 100;
+  const amount = Math.round(kwh * (effectiveRate(bills) || fallbackRate) * 100) / 100;
   return { month, kwh, amount, dueDate: `${shiftMonth(month, 1)}-10`, source: "scan" };
 }
 
