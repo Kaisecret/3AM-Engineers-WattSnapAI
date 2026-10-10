@@ -189,3 +189,21 @@ test("the account is read with its profile, or is null when signed out", async (
   const offline = fakeClient({ getUser: { data: { user: null }, error: { name: "AuthRetryableFetchError", status: 0, message: "Failed to fetch" } } });
   assert.equal((await service.getAccount(offline.client)).kind, "network");
 });
+
+test("anonymous Supabase users cannot establish a household account", async () => {
+  const anonymous = fakeClient({ getUser: { data: { user: { ...user, is_anonymous: true } }, error: null } });
+  assert.deepEqual(await service.getAccount(anonymous.client), { ok: true, value: null });
+  const result = await service.completeProfile(anonymous.client, { fullName: "Maria", username: "maria" });
+  assert.equal(result.ok, false);
+  assert.equal(result.kind, "authentication");
+});
+
+test("default-provider signup and recovery links return through the PKCE callback", async () => {
+  const { client, calls } = fakeClient();
+  await service.signUpWithEmail(client, { ...good, origin: "https://wattsnap.example" });
+  await service.requestPasswordReset(client, { email: good.email, origin: "https://wattsnap.example" });
+  await service.resendSignupCode(client, { email: good.email, origin: "https://wattsnap.example" });
+  assert.equal(calls[0][1].options.emailRedirectTo, "https://wattsnap.example/auth/callback?next=%2Fcomplete-profile");
+  assert.equal(calls[1][2].redirectTo, "https://wattsnap.example/auth/callback?next=%2Freset-password");
+  assert.equal(calls[2][1].options.emailRedirectTo, "https://wattsnap.example/auth/callback?next=%2Fcomplete-profile");
+});

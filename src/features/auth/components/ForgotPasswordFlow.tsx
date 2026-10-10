@@ -6,9 +6,12 @@ import { useRouter } from "next/navigation";
 import { Mail } from "lucide-react";
 import { AUTH_ART, AuthShell } from "./AuthShell";
 import { VerifyCodeStep } from "./AuthSteps";
-import { AuthAlert, AuthField, EMAIL_PATTERN, PrimaryButton, fakeDelay } from "./AuthUi";
+import { AuthAlert, AuthField, EMAIL_PATTERN, PrimaryButton } from "./AuthUi";
 
-/** Forgot password sequence (UI only): email -> 6-digit code -> /reset-password */
+import { getBrowserSupabase } from "../../../lib/supabase/browser";
+import { requestPasswordReset } from "../service";
+
+/** Forgot password sequence: email -> 6-digit code -> /reset-password */
 type ForgotStep = "email" | "verify";
 
 export function ForgotPasswordFlow() {
@@ -26,9 +29,11 @@ export function ForgotPasswordFlow() {
       return;
     }
     setLoading(true);
-    await fakeDelay();
-    setLoading(false);
-    setStep("verify");
+    try {
+      const result = await requestPasswordReset(getBrowserSupabase(), { email, origin: window.location.origin });
+      if (!result.ok) setError(result.message); else setStep("verify");
+    } catch { setError("The reset code could not be sent. Please try again."); }
+    finally { setLoading(false); }
   };
 
   if (step === "verify") {
@@ -40,7 +45,7 @@ export function ForgotPasswordFlow() {
         showArtOnMobile
         onBack={() => setStep("email")}
       >
-        <VerifyCodeStep email={email} title="Check Your Email" onVerified={() => router.push("/reset-password")} />
+        <VerifyCodeStep purpose="recovery" email={email} title="Check Your Email" onVerified={() => router.push("/reset-password")} />
       </AuthShell>
     );
   }

@@ -69,12 +69,12 @@ async function attempt<T>(run: () => Promise<AuthResult<T>>): Promise<AuthResult
   catch (error) { return toFailure(error); }
 }
 
-export async function signUpWithEmail(client: Client, input: { fullName: string; email: string; password: string; captchaToken?: string }): Promise<AuthResult<{ email: string }>> {
+export async function signUpWithEmail(client: Client, input: { fullName: string; email: string; password: string; captchaToken?: string; origin?: string }): Promise<AuthResult<{ email: string }>> {
   const issue = validateFullName(input.fullName) ?? validateEmail(input.email) ?? validatePassword(input.password);
   if (issue) return invalid(issue);
   const email = normalizeEmail(input.email);
   return attempt(async () => {
-    const { error } = await client.auth.signUp({ email, password: input.password, options: { data: { full_name: input.fullName.trim() }, captchaToken: input.captchaToken } });
+    const { error } = await client.auth.signUp({ email, password: input.password, options: { data: { full_name: input.fullName.trim() }, captchaToken: input.captchaToken, ...(input.origin ? { emailRedirectTo: `${input.origin}/auth/callback?next=%2Fcomplete-profile` } : {}) } });
     // An address that already has an account answers exactly like a new one, so addresses cannot be probed.
     if (error && error.code !== "user_already_exists" && error.code !== "email_exists") return toFailure(error);
     return ok({ email });
@@ -90,11 +90,11 @@ export async function verifySignupCode(client: Client, input: { email: string; c
   });
 }
 
-export async function resendSignupCode(client: Client, input: { email: string; captchaToken?: string }): Promise<AuthResult> {
+export async function resendSignupCode(client: Client, input: { email: string; captchaToken?: string; origin?: string }): Promise<AuthResult> {
   const issue = validateEmail(input.email);
   if (issue) return invalid(issue);
   return attempt(async () => {
-    const { error } = await client.auth.resend({ type: "signup", email: normalizeEmail(input.email), options: { captchaToken: input.captchaToken } });
+    const { error } = await client.auth.resend({ type: "signup", email: normalizeEmail(input.email), options: { captchaToken: input.captchaToken, ...(input.origin ? { emailRedirectTo: `${input.origin}/auth/callback?next=%2Fcomplete-profile` } : {}) } });
     return error ? toFailure(error) : done();
   });
 }
@@ -117,11 +117,11 @@ export async function signInWithGoogle(client: Client, input: { origin: string; 
 }
 
 /** Succeeds whether or not the address is registered. Supabase does not reveal which. */
-export async function requestPasswordReset(client: Client, input: { email: string; captchaToken?: string }): Promise<AuthResult> {
+export async function requestPasswordReset(client: Client, input: { email: string; captchaToken?: string; origin?: string }): Promise<AuthResult> {
   const issue = validateEmail(input.email);
   if (issue) return invalid(issue);
   return attempt(async () => {
-    const { error } = await client.auth.resetPasswordForEmail(normalizeEmail(input.email), { captchaToken: input.captchaToken });
+    const { error } = await client.auth.resetPasswordForEmail(normalizeEmail(input.email), { captchaToken: input.captchaToken, ...(input.origin ? { redirectTo: `${input.origin}/auth/callback?next=%2Freset-password` } : {}) });
     return error ? toFailure(error) : done();
   });
 }
@@ -157,7 +157,7 @@ export async function completeProfile(client: Client, input: { fullName: string;
   return attempt(async () => {
     const { data: { user }, error } = await client.auth.getUser();
     if (error) return isSignedOut(asError(error)) ? fail("authentication", SESSION_ENDED) : toFailure(error);
-    if (!user) return fail("authentication", SESSION_ENDED);
+    if (!user || user.is_anonymous) return fail("authentication", SESSION_ENDED);
     const { data: current, error: readError } = await client.from("profiles").select("onboarded_at").eq("id", user.id).maybeSingle();
     if (readError) return toFailure(readError, "profile");
     if (!current) return fail("authorization", PROFILE_MISSING);
@@ -185,7 +185,7 @@ export async function getAccount(client: Client): Promise<AuthResult<Account | n
   return attempt<Account | null>(async () => {
     const { data: { user }, error } = await client.auth.getUser();
     if (error) return isSignedOut(asError(error)) ? ok(null) : toFailure(error);
-    if (!user) return ok(null);
+    if (!user || user.is_anonymous) return ok(null);
     const { data: row, error: readError } = await client.from("profiles")
       .select("full_name, username, avatar_path, onboarded_at, notify_brownouts, notify_bill_reminders, notify_tips")
       .eq("id", user.id).maybeSingle();

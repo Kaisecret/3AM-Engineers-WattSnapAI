@@ -3,11 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Check, LoaderCircle, LogOut } from "lucide-react";
-import { previewStorageKey } from "../preview-data";
-import { endPreviewSession } from "@/features/auth/preview-session";
-import { previewStorageFor } from "@/features/auth/use-preview-storage-key";
+import { forgetAccount, readDisplayIdentity } from "@/features/auth/session";
+import { getBrowserSupabase } from "@/lib/supabase/browser";
+import { signOut } from "@/features/auth/service";
 
-/** Confirms logging out; optionally removes this browser's saved preview data. */
+/** Ends the authenticated session and optionally removes this account's local records. */
 export default function LogoutDialog({ open, onClose, name }: { open: boolean; onClose: () => void; name: string }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const router = useRouter();
@@ -22,11 +22,20 @@ export default function LogoutDialog({ open, onClose, name }: { open: boolean; o
     else if (!open && element.open) element.close();
   }, [open]);
 
-  function confirm() {
-    setLeaving(true);
-    try { if (clearData) localStorage.removeItem(previewStorageFor(previewStorageKey)); endPreviewSession(); }
-    catch { setError("Your browser could not finish logging out. Please try again."); setLeaving(false); return; }
-    window.setTimeout(() => router.push("/login"), 700);
+  async function confirm() {
+    setLeaving(true); setError("");
+    try {
+      const identity = readDisplayIdentity();
+      const result = await signOut(getBrowserSupabase());
+      if (!result.ok) { setError(result.message); setLeaving(false); return; }
+      if (clearData && identity) {
+        const suffix = `:household:${encodeURIComponent(identity.id)}`;
+        const keys = Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index)).filter((key): key is string => !!key && key.endsWith(suffix));
+        keys.forEach(key => localStorage.removeItem(key));
+      }
+      try { forgetAccount(); } catch { /* Session and in-memory identity are already cleared. */ }
+      router.replace("/login"); router.refresh();
+    } catch { setError("Your browser could not finish logging out. Please try again."); setLeaving(false); }
   }
 
   return <dialog ref={dialog} className="lo-dialog" aria-labelledby="lo-title" aria-describedby="lo-text" onClose={onClose} onCancel={event => { if (leaving) event.preventDefault(); }} onClick={event => { if (event.target === event.currentTarget && !leaving) dialog.current?.close(); }}>
