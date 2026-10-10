@@ -70,12 +70,12 @@ Tasks 1 to 8 need no Supabase project. Tasks 9 to 11 need both projects, and the
 - A secret key supplied as the publishable key is refused.
 - Importing `env.ts` with no variables set does not throw.
 
-- [ ] **Step 1: Install the Supabase client**
+- [x] **Step 1: Install the Supabase client**
 
 Run: `npm install @supabase/supabase-js@^2`
 Expected: `package.json` gains `@supabase/supabase-js` under `dependencies`; exit code 0.
 
-- [ ] **Step 2: Add the test script**
+- [x] **Step 2: Add the test script**
 
 In `package.json`, replace the `scripts` block with:
 
@@ -92,7 +92,7 @@ In `package.json`, replace the `scripts` block with:
 Run: `npm test`
 Expected: `pass 76`, `fail 0`.
 
-- [ ] **Step 3: Write the environment template**
+- [x] **Step 3: Write the environment template**
 
 Write `.env.example`:
 
@@ -115,7 +115,7 @@ SUPABASE_SECRET_KEY=
 WATTSNAP_TEST_PROJECT_REF=
 ```
 
-- [ ] **Step 4: Write the failing test**
+- [x] **Step 4: Write the failing test**
 
 Create `src/lib/config/env.test.mjs`:
 
@@ -157,12 +157,12 @@ test("the secret key is named when missing and returned when present", () => {
 });
 ```
 
-- [ ] **Step 5: Run the test to verify it fails**
+- [x] **Step 5: Run the test to verify it fails**
 
 Run: `node --test src/lib/config/env.test.mjs`
 Expected: FAIL. `readPublicSupabaseEnv is not a function`, because `env.ts` is empty.
 
-- [ ] **Step 6: Write the implementation**
+- [x] **Step 6: Write the implementation**
 
 Write `src/lib/config/env.ts`:
 
@@ -206,17 +206,17 @@ export function readSupabaseSecretKey(value: string | undefined = process.env.SU
 }
 ```
 
-- [ ] **Step 7: Run the tests to verify they pass**
+- [x] **Step 7: Run the tests to verify they pass**
 
 Run: `npm test`
 Expected: `pass 81`, `fail 0`.
 
-- [ ] **Step 8: Check types**
+- [x] **Step 8: Check types**
 
 Run: `npx tsc --noEmit`
 Expected: no output, exit code 0.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add package.json package-lock.json .env.example src/lib/config/env.ts src/lib/config/env.test.mjs
@@ -248,7 +248,7 @@ git commit -m "feat: add Supabase client dependency and environment validation"
 - `parseIdentifier` treats a value containing `@` as an email and anything else as a username, ignoring surrounding spaces and letter case.
 - `safeNextPath` accepts `/bills` and returns `/dashboard` for `//evil.example`, `https://evil.example`, `/\evil.example`, an empty string and `null`.
 
-- [ ] **Step 1: Write the types**
+- [x] **Step 1: Write the types**
 
 Write `src/features/auth/types.ts`:
 
@@ -270,7 +270,7 @@ export interface Account { id: string; email: string; profile: AccountProfile }
 export type Identifier = { kind: "email"; email: string } | { kind: "username"; username: string };
 ```
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 Create `src/features/auth/schemas.test.mjs`:
 
@@ -325,12 +325,12 @@ test("only same-site paths may follow a sign-in", () => {
 });
 ```
 
-- [ ] **Step 3: Run the test to verify it fails**
+- [x] **Step 3: Run the test to verify it fails**
 
 Run: `node --test src/features/auth/schemas.test.mjs`
 Expected: FAIL. `normalizeEmail is not a function`, because `schemas.ts` is empty.
 
-- [ ] **Step 4: Write the implementation**
+- [x] **Step 4: Write the implementation**
 
 Write `src/features/auth/schemas.ts`:
 
@@ -391,12 +391,12 @@ export function safeNextPath(value: string | null | undefined, fallback = "/dash
 }
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `npm test`
 Expected: `pass 88`, `fail 0`.
 
-- [ ] **Step 6: Check types and commit**
+- [x] **Step 6: Check types and commit**
 
 Run: `npx tsc --noEmit`
 Expected: no output.
@@ -440,7 +440,7 @@ git commit -m "feat: add auth validation rules and result types"
 - `updatePassword` signs out every session after the password changes.
 - `completeProfile` reports a taken username as a `conflict` with "That username is taken."
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `src/features/auth/service.test.mjs`:
 
@@ -638,12 +638,12 @@ test("the account is read with its profile, or is null when signed out", async (
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `node --test src/features/auth/service.test.mjs`
 Expected: FAIL. `service.signUpWithEmail is not a function`, because `service.ts` is empty.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Write `src/features/auth/service.ts`:
 
@@ -852,7 +852,7 @@ export async function getAccount(client: Client): Promise<AuthResult<Account | n
 }
 ```
 
-- [ ] **Step 4: Write the public exports**
+- [x] **Step 4: Write the public exports**
 
 Write `src/features/auth/index.ts`:
 
@@ -864,12 +864,12 @@ export * from "./service";
 // client, so only server code may import it, and it does so by its own path.
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `npm test`
 Expected: `pass 102`, `fail 0`.
 
-- [ ] **Step 6: Check types and commit**
+- [x] **Step 6: Check types and commit**
 
 Run: `npx tsc --noEmit`
 Expected: no output.
@@ -905,7 +905,7 @@ git commit -m "feat: add auth service functions with safe failure mapping"
 - `recordFailure` deletes records older than 24 hours.
 - The stored address hash is 64 hex characters and does not contain the address.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `src/features/auth/repository.test.mjs`:
 
@@ -997,12 +997,12 @@ test("a database failure throws its code and never the raw text", async () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `node --test src/features/auth/repository.test.mjs`
 Expected: FAIL. `attemptAllowed is not a function`, because `repository.ts` is empty.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Write `src/features/auth/repository.ts`:
 
@@ -1063,12 +1063,12 @@ export async function recordFailure(admin: Admin, input: { username: string; ipH
 
 Note for the test in Step 1: `countRecentFailures` runs its two counts with `Promise.all`, and the stand-in logs each query when it is awaited, so the username query is logged first.
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `npm test`
 Expected: `pass 108`, `fail 0`.
 
-- [ ] **Step 5: Check types and commit**
+- [x] **Step 5: Check types and commit**
 
 Run: `npx tsc --noEmit`
 Expected: no output.
@@ -1098,7 +1098,7 @@ git commit -m "feat: add username lookup and login attempt limiter"
 - Every out-of-range value in the test's constraint table is refused with the listed SQLSTATE.
 - Each of the six capped tables accepts exactly its cap and refuses the next row: bills 240, appliances 150, advisories 200, advisory_preparation 500, brownout_plans 100, scenarios 50.
 
-- [ ] **Step 1: Install the embedded Postgres and extend the test script**
+- [x] **Step 1: Install the embedded Postgres and extend the test script**
 
 Run: `npm install --save-dev @electric-sql/pglite`
 Expected: `package.json` gains `@electric-sql/pglite` under `devDependencies`.
@@ -1109,7 +1109,7 @@ In `package.json`, change the `test` script to:
     "test": "node --test \"src/**/*.test.mjs\" supabase/tests/migration.test.mjs"
 ```
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 Create `supabase/tests/migration.test.mjs`:
 
@@ -1297,14 +1297,14 @@ test("deleting an account removes everything it owned", async () => {
 });
 ```
 
-- [ ] **Step 3: Run the test to verify it fails**
+- [x] **Step 3: Run the test to verify it fails**
 
 Run: `node --test supabase/tests/migration.test.mjs`
 Expected: FAIL in the `before` hook with `relation "public.households" does not exist`, because no migration file exists yet.
 
 If instead the failure mentions `create role`, `set role`, or an unknown `error.code`, the embedded Postgres differs from what this test assumes. Stop and report that message; do not weaken the test.
 
-- [ ] **Step 4: Write the migration, part one**
+- [x] **Step 4: Write the migration, part one**
 
 Create `supabase/migrations/20261010000000_initial_schema.sql`:
 
@@ -1645,14 +1645,14 @@ create trigger enforce_row_limit after insert on public.scenarios
 commit;
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `npm test`
 Expected: `pass 116`, `fail 0` (108 from before, plus the 8 tests in this file).
 
 If a constraint case fails with a different SQLSTATE than listed, read the error message first. Change the test only when the database refused the value for the same reason under a different code; otherwise fix the SQL.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add package.json package-lock.json supabase/migrations/20261010000000_initial_schema.sql supabase/tests/migration.test.mjs
@@ -1678,7 +1678,7 @@ git commit -m "feat: add initial schema with constraints, sign-up trigger and ro
 - `avatars` accepts only `<user id>/avatar.jpg`. `advisory-originals` accepts only `<user id>/<uuid>/r<revision>.<jpg|png|webp>` and at most 60 files per account.
 - `auth_login_attempts` is closed to `authenticated` and usable by `service_role`.
 
-- [ ] **Step 1: Append the failing tests**
+- [x] **Step 1: Append the failing tests**
 
 Append to `supabase/tests/migration.test.mjs`:
 
@@ -1806,12 +1806,12 @@ test("advisory originals follow the path pattern and stop at 60 files", async ()
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `node --test supabase/tests/migration.test.mjs`
 Expected: the 8 tests from Task 5 pass; the 8 new tests FAIL. The first reports that tables lack row-level security.
 
-- [ ] **Step 3: Add the security rules to the migration**
+- [x] **Step 3: Add the security rules to the migration**
 
 The file ends with the line `commit;`. Insert the following immediately above that line, so the security rules are inside the same transaction and `commit;` stays last.
 
@@ -1966,12 +1966,12 @@ create policy "advisory originals: remove own" on storage.objects
   using (bucket_id = 'advisory-originals' and name like (select auth.uid())::text || '/%');
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `npm test`
 Expected: `pass 124`, `fail 0`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add supabase/migrations/20261010000000_initial_schema.sql supabase/tests/migration.test.mjs
@@ -1996,7 +1996,7 @@ git commit -m "feat: add row-level security, grants and storage rules"
 - With them, it creates two accounts in the test domain, proves every bullet under "Isolation test" in the specification through the real API, and deletes both accounts even when an assertion fails.
 - It never prints a key.
 
-- [ ] **Step 1: Add the script**
+- [x] **Step 1: Add the script**
 
 In `package.json`, add this line to `scripts`, after `test`:
 
@@ -2004,7 +2004,7 @@ In `package.json`, add this line to `scripts`, after `test`:
     "test:isolation": "node --env-file-if-exists=.env.local --test supabase/tests/isolation.test.mjs"
 ```
 
-- [ ] **Step 2: Write the test**
+- [x] **Step 2: Write the test**
 
 Create `supabase/tests/isolation.test.mjs`:
 
@@ -2303,17 +2303,17 @@ test("each capped table accepts its cap and refuses the next row", options, asyn
 });
 ```
 
-- [ ] **Step 3: Run it without configuration to verify it skips**
+- [x] **Step 3: Run it without configuration to verify it skips**
 
 Run: `npm run test:isolation`
 Expected: 9 tests, each marked as skipped with `Supabase is not configured. Missing environment variables: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY. See .env.example.`; `fail 0`; exit code 0.
 
-- [ ] **Step 4: Confirm the other tests are unaffected**
+- [x] **Step 4: Confirm the other tests are unaffected**
 
 Run: `npm test`
 Expected: `pass 124`, `fail 0`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add package.json supabase/tests/isolation.test.mjs
@@ -2335,7 +2335,7 @@ git commit -m "test: add isolation test for the hosted project"
 - The document tells a person how to apply a migration by either method, run both tests, keep a free-plan project active, back up and restore.
 - `npm run build` succeeds with no `.env.local` present.
 
-- [ ] **Step 1: Write the document**
+- [x] **Step 1: Write the document**
 
 Create `docs/11-database-operations.md`:
 
@@ -2512,7 +2512,7 @@ Do not run the isolation test against a restored production project.
 Restoring is disruptive and can lose whatever was written after the backup. Decide who is responsible for it before it is needed.
 ````
 
-- [ ] **Step 2: Build with no configuration**
+- [x] **Step 2: Build with no configuration**
 
 Run: `ls .env.local`
 Expected: `No such file or directory`. If the file exists, skip this step; the build without configuration was already demonstrated before the file was created, or will be recorded as not verified.
@@ -2520,12 +2520,12 @@ Expected: `No such file or directory`. If the file exists, skip this step; the b
 Run: `npm run build`
 Expected: the build completes and lists the same routes as on `main`, with no error.
 
-- [ ] **Step 3: Confirm only planned files changed**
+- [x] **Step 3: Confirm only planned files changed**
 
 Run: `git diff main --stat -- . ":(exclude)docs/superpowers"`
 Expected: only `.env.example`, `docs/11-database-operations.md`, `package.json`, `package-lock.json`, `src/features/auth/*`, `src/lib/config/*`, `supabase/migrations/*`, `supabase/tests/*`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add docs/11-database-operations.md
