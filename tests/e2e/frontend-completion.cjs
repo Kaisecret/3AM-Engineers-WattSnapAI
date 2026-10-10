@@ -274,6 +274,40 @@ async function offline(browser) {
   assert.deepEqual(errors, []); await context.close(); console.log('PASS: production cached shells, cold offline navigation, saved records and no runtime errors');
 }
 
+async function accessibility(browser) {
+  const context = await browser.newContext({ viewport: { width: 320, height: 800 }, reducedMotion: 'reduce' });
+  const page = await context.newPage(); await page.goto(`${baseURL}/appliances/new`);
+  await page.getByRole('button', { name: 'Enter manually', exact: true }).click();
+  const refrigerator = page.getByRole('radio', { name: 'Refrigerator', exact: true }); await refrigerator.focus(); await page.keyboard.press('Space');
+  assert.equal(await refrigerator.isChecked(), true);
+  assert.equal(await refrigerator.evaluate(input => { const label = input.closest('label'), style = getComputedStyle(label), rect = label.getBoundingClientRect(); return rect.width >= 44 && rect.height >= 44 && parseFloat(style.fontSize) >= 14; }), true);
+  assert.equal(await page.getByLabel('Appliance name', { exact: true }).evaluate(input => parseFloat(getComputedStyle(input).fontSize) >= 16), true);
+  await page.getByLabel('Rated power', { exact: true }).focus();
+  assert.equal(await page.getByLabel('Rated power', { exact: true }).evaluate(input => getComputedStyle(input).outlineStyle !== 'none'), true);
+  assert.equal(await page.getByRole('button', { name: 'Save appliance', exact: true }).evaluate(button => button.getBoundingClientRect().height >= 44), true);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
+  await context.close(); console.log('PASS: keyboard appliance choice, readable fields, visible focus and senior touch targets');
+}
+
+async function responsive(browser) {
+  await fs.mkdir('docs/frontend-review', { recursive: true });
+  for (const width of [320, 390, 768, 1024, 1440]) {
+    const context = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce' });
+    await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River household', provider: 'anteco', location: 'Payao, San Jose de Buenavista, Antique', locality: { province: 'Antique', municipality: 'San Jose de Buenavista', barangay: 'Payao' }, bills: [7, 8, 9].map((month, i) => ({ id: `my-bill-${i}`, month: `2026-0${month}`, kwh: 100 + i * 30, amount: 1200 + i * 350, source: 'manual' })), budget: 2000, appliances: [{ id: 'fan', name: 'Living room electric fan', watts: 55, hours: 8, quantity: 2, days: 30 }, { id: 'fridge', name: 'Kitchen refrigerator', watts: 80, hours: 16, quantity: 1, days: 30 }] })); });
+    const page = await context.newPage(); const errors = []; page.on('pageerror', error => errors.push(error.message));
+    for (const route of ['/dashboard', '/bills', '/bills/new', '/appliances', '/appliances/new', '/tips', '/advisories', '/advisories/new', '/onboarding', '/settings', '/simulator', '/brownout-ready', '/assistant', '/setup']) {
+      await page.goto(`${baseURL}${route}`); await page.getByRole('navigation', { name: 'Main navigation' }).waitFor();
+      await page.waitForFunction(() => !!document.querySelector('.ws-home'));
+      const fit = await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1);
+      if (!fit) console.log(await page.evaluate(() => [...document.querySelectorAll('main *')].filter(el => el.getBoundingClientRect().right > innerWidth + 2).slice(0, 6).map(el => ({ tag: el.tagName, class: el.className, right: el.getBoundingClientRect().right }))));
+      assert.equal(fit, true, `${route} fits ${width}px`);
+      if (route === '/dashboard' && (width === 390 || width === 1440)) { await page.locator('.ws-chart-day').first().waitFor(); await page.evaluate(() => document.fonts.ready.then(() => true)); await page.screenshot({ path: `docs/frontend-review/dashboard-${width}.png`, fullPage: true }); }
+      if (route === '/appliances/new' && width === 390) { await page.getByRole('button', { name: 'Enter manually', exact: true }).click(); await page.screenshot({ path: 'docs/frontend-review/appliance-mobile.png', fullPage: true }); }
+    }
+    assert.deepEqual(errors, []); await context.close(); console.log(`PASS: fourteen household pages fit ${width}px without runtime errors`);
+  }
+}
+
 async function history(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River home', budget: 0, appliances: [], bills: [{ id: 'actual-1', month: '2026-07', kwh: 100, amount: 1200, source: 'manual', periodStart: '2026-07-01', periodEnd: '2026-07-31' }, { id: 'actual-2', month: '2026-09', kwh: 150, amount: 1800, source: 'manual', periodStart: '2026-09-01', periodEnd: '2026-09-30' }] })); });
@@ -295,5 +329,5 @@ async function history(browser) {
 
 (async () => {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
-  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history', 'appliances', 'estimates', 'tips', 'advisories', 'storage'])) await ({ design, records, household, bills, history, appliances, estimates, tips, advisories, storage, offline })[check](browser); } finally { await browser.close(); }
+  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history', 'appliances', 'estimates', 'tips', 'advisories', 'storage', 'accessibility'])) await ({ design, records, household, bills, history, appliances, estimates, tips, advisories, storage, offline, accessibility, responsive })[check](browser); } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

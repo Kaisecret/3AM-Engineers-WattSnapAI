@@ -240,7 +240,7 @@ export default function ScanScreen() {
           <div className="scan-topbar">
             <Link href="/dashboard" className="scan-round" aria-label="Close scanner"><X aria-hidden="true" /></Link>
             <div className="scan-title"><strong>Snap AI</strong><span>Scan your electricity bill</span></div>
-            {live ? <button type="button" className={`scan-round${torch ? " is-on" : ""}`} aria-label={torch ? "Turn flashlight off" : "Turn flashlight on"} aria-pressed={torch} onClick={toggleTorch}>{torch ? <Zap aria-hidden="true" /> : <ZapOff aria-hidden="true" />}</button> : <span className="scan-round is-ghost" aria-hidden="true"><Sparkles /></span>}
+            {live ? <button type="button" className={`scan-round${torch ? " is-on" : ""}`} disabled={!torchAvailable} aria-label={!torchAvailable ? "Flashlight unavailable on this camera" : torch ? "Turn flashlight off" : "Turn flashlight on"} aria-pressed={torch} onClick={toggleTorch}>{torch ? <Zap aria-hidden="true" /> : <ZapOff aria-hidden="true" />}</button> : <span className="scan-round is-ghost" aria-hidden="true"><Sparkles /></span>}
           </div>
           <p className="scan-preview-tag" role="note">{offline ? "Offline · photos and manual entry work locally" : "Add a photo, then enter and review its values"}</p>
 

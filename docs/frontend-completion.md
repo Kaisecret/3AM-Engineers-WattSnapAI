@@ -31,7 +31,7 @@ Baseline evidence: 76 feature tests pass; `npx.cmd tsc --noEmit` passes. Existin
 | 10 | Deterministic local tips | Actual input basis; immediate offline creation and refresh |
 | 11 | Manual advisory review/history | Upload/paste, custom providers, deliberate original retention and qualified matching |
 | 12 | Offline persistence/shell | Expanded cached shells, scope-bound writes and unreadable-data protection |
-| 13 | Senior accessibility | Pending |
+| 13 | Senior accessibility | Readable labels, touch targets, focus, reduced motion and hardware feedback |
 | 14 | Responsive verification | Pending |
 | 15 | Content accuracy | Pending |
 | 16 | Frontend contracts/code quality | Pending |
@@ -89,3 +89,7 @@ Screenshot and pasted-text reviews preserve the original and provide editable pr
 ## 12. Offline and data protection
 
 The existing service worker now prepares all household routes and original public mascot art. Cache updates remove only obsolete public shell caches; household localStorage is retained. Offline links use cached document navigation instead of requiring an uncached server-component response. A clear connectivity indicator explains local availability. API, POST, third-party and household-photo requests remain outside shell caching. Household edits preserve unknown legacy fields. Feature reads/writes are bound to the installation scope; unreadable records and competing-tab changes block overwrites. Offline use requires a successful online shell installation. Browser clearing still removes locally stored records. Production-shell tests and storage-failure tests are included in local verification.
+
+## 13. Accessible existing controls
+
+Targeted styles improve secondary-text contrast, 16px form labels, 44px controls and readable appliance choices. Smaller screens wrap full appliance names into the existing grid. Selected choices retain text and selection state as well as color. Focus remains visible and reduced-motion preferences stop decorative transitions. Unsupported camera flashlights are explicitly unavailable rather than clickable without feedback. Confirmation dialogs retain keyboard cancellation and restore focus. Local checks cover keyboard operation, readable names, reduced motion and measured touch targets.

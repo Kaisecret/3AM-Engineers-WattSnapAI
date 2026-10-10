@@ -1,5 +1,5 @@
 /* Small refinements to the existing controls; preserve layout and artwork. */
-.ws-home :is(input, select, textarea):focus-visible { outline: 3px solid #1687b2; outline-offset: 2px; }
+.ws-home :is(input, select, textarea):focus-visible { outline: 3px solid #1687b2 !important; outline-offset: 2px; }
 .ws-home :is(.ui-primary, .ui-secondary) { min-height: 44px; font-size: 16px; }
 .ws-home :is(button, input, select, textarea):disabled { cursor: not-allowed; }
 .ws-home :is(input, select, textarea) { max-width: 100%; }
@@ -12,3 +12,16 @@ html[data-theme="dark"] .ui-confirm-dialog { color: #edf6fa; background: #192e3d
 .en-chart { overflow-x: auto; }.en-col { min-width: 44px; }.en-bar { display: block; }.ws-chart { overflow-x: auto; }.ws-chart-day { min-width: 44px; }.ws-day-label small { display: block; }
 .en-col { border: 0; padding: 0; background: transparent; }.en-plot, .en-labels { min-width: 314px; }.en-labels span { min-width: 44px; }.en-col:focus-visible { outline: 3px solid #1687b2; outline-offset: 2px; }.en-compare .ui-note { margin-top: 16px; font-size: 14px; line-height: 1.6; }
 .ws-connectivity { background: #fff5d7; color: #59420c; padding: 12px 20px; font-size: 16px; line-height: 1.5; text-align: center; }
+/* Existing cards and buttons retain their arrangement, with readable secondary text. */
+.ws-home :is(.ui-icon-button, .ap-close, .bg-eye, .aw-remove-area) { min-width: 44px; min-height: 44px; }
+.ws-home :is(.ui-helper, .aw-muted, .aw-fields > p, .ap-item-detail, .en-list-main > span, .ap-empty p) { font-size: 14px; line-height: 1.6; color: #496272; }
+.ws-home :is(.aw-fields label, .ap-fields label, .ap-field > span, .aw-confirm label, .ap-edit-confirm) { font-size: 16px; line-height: 1.5; }
+.ws-home :is(.aw-fields input, .aw-fields select, .aw-fields textarea, .ap-fields input, .ap-fields select) { font-size: 16px; min-height: 48px; }
+.ws-home :is(.ap-stepper button, .adv-filters button, .aw-detail-buttons button, .aw-manage button, .aw-remove-area, .wi-rate-options button) { min-height: 44px; font-size: 14px; }
+.ws-home .ap-presets label { min-height: 84px; font-size: 14px; color: #17394d; }.ws-home .ap-presets label span { white-space: normal; overflow: visible; overflow-wrap: anywhere; }.ws-home .ap-presets label.is-selected { color: white; background: #08738e; }
+.ws-home .ap-presets label svg { width: 26px; height: 26px; }.ws-home .ap-stepper button { min-width: 44px; }
+.ws-home :is(.aw-confirm label, .ap-edit-confirm) { min-height: 48px; padding-block: 12px; }.ws-home :is(button, a):focus-visible { outline: 3px solid #1687b2; outline-offset: 3px; }
+.ws-home .en-bar b, .ws-home .en-labels span { font-size: 13px; color: #3d566e; }.ws-home .en-labels span { overflow-wrap: anywhere; }
+html[data-theme="dark"] .ws-home :is(.ui-helper, .aw-muted, .aw-fields > p, .ap-item-detail, .en-list-main > span, .ap-empty p, .ap-presets label, .en-bar b, .en-labels span) { color: #c2d4df; }
+@media (max-width: 599px) { .ws-home .np-form .ap-presets, .ws-home .ap-presets { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (prefers-reduced-motion: reduce) { .ws-home *, .ui-confirm-dialog * { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
