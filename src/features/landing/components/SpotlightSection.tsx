@@ -9,7 +9,7 @@ export function SpotlightSection() {
         <article className="post-spotlight post-spotlight-ready">
           <div className="post-spotlight-copy">
             <h2>Be Ready for<br />What’s Next <Zap size={24} fill="#ffd61a" stroke="#ffbd00" aria-hidden="true" /></h2>
-            <p>Understand power advisories, outages, and maintenance schedules in your area.</p>
+            <p>Review provider announcements you save, check listed areas, and plan for their published schedules.</p>
             <a href="/advisories" className="post-small-link">Review advisories <ArrowRight size={17} aria-hidden="true" /></a>
           </div>
           <div className="post-readiness-art" aria-hidden="true">

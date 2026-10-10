@@ -3,7 +3,7 @@ import { GlossyIcon } from "./GlossyIcon";
 
 const steps = [
   { title: "Scan Your Bill", description: "Take a photo of your electricity bill.", color: "blue" },
-  { title: "AI Analysis", description: "AI reads the details for you to review and confirm.", color: "green" },
+  { title: "Review the Details", description: "Enter the printed values and confirm them before saving.", color: "green" },
   { title: "View Insights", description: "See your consumption, bill history, and trends.", color: "orange" },
   { title: "Take Action", description: "Get tips and prepare for advisories to save energy and money.", color: "purple" },
 ];

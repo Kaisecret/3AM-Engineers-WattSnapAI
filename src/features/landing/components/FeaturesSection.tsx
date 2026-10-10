@@ -4,10 +4,10 @@ import { GlossyIcon, type GlossyIconName } from "./GlossyIcon";
 import { MobileLandingDetails } from "./MobileLandingDetails";
 
 const features: { title: string; description: string; icon: GlossyIconName | "bill"; color: string }[] = [
-  { title: "Scan Your Electricity Bill", description: "Take a clear photo and let AI extract the important details for you to review.", icon: "bill", color: "blue" },
+  { title: "Scan Your Electricity Bill", description: "Upload a clear photo, copy its important details, and confirm your bill.", icon: "bill", color: "blue" },
   { title: "Track Your Consumption", description: "View confirmed monthly usage and consumption trends in easy-to-read charts.", icon: "chart", color: "green" },
-  { title: "Get Energy-Saving Tips", description: "Receive personalized recommendations to help you save.", icon: "bulb", color: "yellow" },
-  { title: "Stay Updated", description: "Understand advisories and announcements from your electricity provider.", icon: "bell", color: "red" },
+  { title: "Get Energy-Saving Tips", description: "Create practical local tips from your saved bills and appliance inputs.", icon: "bulb", color: "yellow" },
+  { title: "Review Provider Notices", description: "Understand advisories and announcements from your electricity provider.", icon: "bell", color: "red" },
 ];
 
 export function FeaturesSection() {

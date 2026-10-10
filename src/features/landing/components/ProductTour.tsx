@@ -5,10 +5,10 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight, Pause, Play, X } from "lucide-react";
 
 const steps = [
-  { title: "Scan your electricity bill", description: "Upload a photo, then review sample fields or enter your bill manually in this UI preview.", label: "Sample bill review", value: "180 kWh", detail: "Confirm the consumption before saving" },
-  { title: "Understand your consumption", description: "Compare confirmed bills and estimate how much energy your appliances use.", label: "Appliance estimate", value: "240 kWh", detail: "1,000 W · 8 hours a day · 30 days" },
-  { title: "Explore ways to save", description: "Try a Watt-If scenario and get practical, personalized Tipid Tips.", label: "Watt-If savings", value: "90 kWh", detail: "Reduce use from 8 to 5 hours a day" },
-  { title: "Be ready for brownouts", description: "Review an advisory and keep your locally saved checklist available in the open preview.", label: "Sample published schedule", value: "1–5 PM", detail: "Charge devices · Prepare lights · Save work" },
+  { title: "Scan your electricity bill", description: "Upload a photo as a reference, then enter and confirm the printed values.", label: "Illustrative bill review", value: "180 kWh", detail: "Confirm the consumption before saving" },
+  { title: "Understand your consumption", description: "Compare confirmed bills and estimate how much energy your appliances use.", label: "Illustrative appliance estimate", value: "240 kWh", detail: "1,000 W · 8 hours a day · 30 days" },
+  { title: "Explore ways to save", description: "Try a Watt-If scenario and get practical, personalized Tipid Tips.", label: "Illustrative energy difference", value: "90 kWh", detail: "Reduce use from 8 to 5 hours a day" },
+  { title: "Be ready for brownouts", description: "Review an advisory and keep your locally saved checklist available after the app shell is prepared online.", label: "Illustrative published schedule", value: "1–5 PM", detail: "Charge devices · Prepare lights · Save work" },
 ];
 
 export function ProductTour() {

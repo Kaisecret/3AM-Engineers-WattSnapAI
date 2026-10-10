@@ -321,6 +321,26 @@ async function chart(browser) {
   console.log('PASS: chart values remain visible with usable touch targets at mobile and desktop widths');
 }
 
+async function content(browser) {
+  for (const width of [390, 1440]) {
+    const context = await browser.newContext({ viewport: { width, height: 900 } });
+    const page = await context.newPage(); await page.goto(`${baseURL}/`);
+    await page.getByRole('heading', { name: 'Made for Everyday Households' }).waitFor();
+    const text = await page.locator('body').innerText();
+    assert.doesNotMatch(text, /What Users Are Saying|AI reads the details|let AI extract|Local SQLite Storage/);
+    assert.match(text, /Review the Details/); assert.match(text, /Automatic extraction and live outage monitoring are unavailable/);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
+    await page.goto(`${baseURL}/settings`);
+    await page.getByRole('heading', { name: 'Your saved information', exact: true }).waitFor();
+    assert.equal(await page.getByRole('switch').count(), 0, 'Unavailable automatic alerts are not interactive');
+    assert.equal(await page.getByLabel('Home location', { exact: true }).inputValue(), '', 'No invented household locality');
+    await page.goto(`${baseURL}/assistant`);
+    await page.getByText('Local guidance · saved records', { exact: true }).waitFor();
+    await context.close();
+  }
+  console.log('PASS: honest landing capabilities, local access, shared-browser privacy and manual assistant');
+}
+
 async function history(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River home', budget: 0, appliances: [], bills: [{ id: 'actual-1', month: '2026-07', kwh: 100, amount: 1200, source: 'manual', periodStart: '2026-07-01', periodEnd: '2026-07-31' }, { id: 'actual-2', month: '2026-09', kwh: 150, amount: 1800, source: 'manual', periodStart: '2026-09-01', periodEnd: '2026-09-30' }] })); });
@@ -342,5 +362,5 @@ async function history(browser) {
 
 (async () => {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
-  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history', 'appliances', 'estimates', 'tips', 'advisories', 'storage', 'accessibility'])) await ({ design, records, household, bills, history, appliances, estimates, tips, advisories, storage, offline, accessibility, responsive, chart })[check](browser); } finally { await browser.close(); }
+  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history', 'appliances', 'estimates', 'tips', 'advisories', 'storage', 'accessibility'])) await ({ design, records, household, bills, history, appliances, estimates, tips, advisories, storage, offline, accessibility, responsive, chart, content })[check](browser); } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

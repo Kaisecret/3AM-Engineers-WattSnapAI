@@ -28,7 +28,7 @@ export default function SettingsScreen() {
   const [logout, setLogout] = useState(false);
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
-  const saved: Draft = { name: household.name, email: household.email ?? "", location: household.location ?? defaultLocation };
+  const saved: Draft = { name: household.name, email: household.email ?? "", location: household.location ?? "" };
   const values = draft ?? saved;
   const dirty = draft !== null && (draft.name !== saved.name || draft.email !== saved.email || draft.location !== saved.location);
   const prefs = household.notifications ?? defaultNotifications;
@@ -81,7 +81,7 @@ export default function SettingsScreen() {
           </div>
           <h2 id="st-name">{household.name}</h2>
           <p className="st-email">{household.email ?? "Add your email below"}</p>
-          <div className="st-chips"><span><MapPin aria-hidden="true" />{household.location ?? defaultLocation}</span><span><Zap aria-hidden="true" />{previewProviderName(household.provider)}</span></div>
+          <div className="st-chips"><span><MapPin aria-hidden="true" />{household.location || "Add your household location"}</span><span><Zap aria-hidden="true" />{previewProviderName(household.provider)}</span></div>
           <div className="st-photo-actions">
             <button type="button" disabled={!ready} onClick={() => fileInput.current?.click()}><ImageUp aria-hidden="true" /> {household.photo ? "Change photo" : "Upload photo"}</button>
             {household.photo && <button type="button" className="is-remove" disabled={!ready} onClick={removePhoto}><Trash2 aria-hidden="true" /> Remove</button>}
@@ -111,10 +111,10 @@ export default function SettingsScreen() {
         <section className="ui-panel st-card" aria-labelledby="st-profile-title">
           <div className="st-card-head"><span className="st-card-icon"><UserRound aria-hidden="true" /></span><div><h2 id="st-profile-title">Profile details</h2><p>How WattSnap greets you and matches advisories to your area.</p></div></div>
           <form className="st-form" onSubmit={saveProfile} noValidate>
-            <label><span className="st-label">Full name</span><input value={values.name} maxLength={50} autoComplete="name" required onChange={event => edit({ name: event.target.value })} /></label>
+            <label><span className="st-label">Household name</span><input value={values.name} maxLength={50} autoComplete="name" required onChange={event => edit({ name: event.target.value })} /></label>
             <label><span className="st-label">Email <small>optional</small></span><input type="email" value={values.email} maxLength={120} autoComplete="email" placeholder="maria@gmail.com" onChange={event => edit({ email: event.target.value })} /></label>
             <label className="st-wide"><span className="st-label">Home location</span><span className="st-icon-input"><MapPin aria-hidden="true" /><input value={values.location} maxLength={200} placeholder="Municipality, province" required onChange={event => edit({ location: event.target.value })} /></span></label>
-            <div className="st-wide st-provider"><span className="st-label">Electricity provider</span><div className="st-provider-box"><span className="st-provider-logo"><Zap aria-hidden="true" /></span><span><strong>{previewProviderName(household.provider)}</strong><small>Household UI preview</small></span><Link href="/onboarding" className="st-verified"><ChevronRight size={15} aria-hidden="true" /> Change</Link></div><small className="st-hint">Choose and confirm your provider in Household setup.</small></div>
+            <div className="st-wide st-provider"><span className="st-label">Electricity provider</span><div className="st-provider-box"><span className="st-provider-logo"><Zap aria-hidden="true" /></span><span><strong>{previewProviderName(household.provider)}</strong><small>Your manually selected provider</small></span><Link href="/onboarding" className="st-verified"><ChevronRight size={15} aria-hidden="true" /> Change</Link></div><small className="st-hint">Choose and confirm your provider in Household setup.</small></div>
             {(error || storageError) && <p className="ui-error st-wide" role="alert">{error || storageError}</p>}
             <div className="st-form-actions st-wide">
               {dirty && <span className="st-unsaved">Unsaved changes</span>}
@@ -125,22 +125,18 @@ export default function SettingsScreen() {
         </section>
 
         <section className="ui-panel st-card" aria-labelledby="st-alerts-title">
-          <div className="st-card-head"><span className="st-card-icon is-orange"><Megaphone aria-hidden="true" /></span><div><h2 id="st-alerts-title">Notifications</h2><p>Choose what WattSnap reminds you about.</p></div></div>
+          <div className="st-card-head"><span className="st-card-icon is-orange"><Megaphone aria-hidden="true" /></span><div><h2 id="st-alerts-title">Your saved information</h2><p>Open the information you entered. Automatic notifications are unavailable.</p></div></div>
           <div className="st-rows">
-            {alerts.map(({ key, title, detail, icon: Icon, tone }) => <label key={key} className="st-row">
-              <span className={`st-row-icon ${tone}`}><Icon aria-hidden="true" /></span>
-              <span className="st-row-copy"><strong>{title}</strong><small>{detail}</small></span>
-              <input type="checkbox" role="switch" className="st-switch" checked={prefs[key]} disabled={!ready} onChange={() => toggle(key)} aria-label={title} />
-            </label>)}
+            {alerts.map(({ key, title, icon: Icon, tone }) => <Link key={key} className="st-row" href={key === "brownouts" ? "/advisories" : key === "billReminders" ? "/bills" : "/tips"}><span className={`st-row-icon ${tone}`}><Icon aria-hidden="true" /></span><span className="st-row-copy"><strong>{title}</strong><small>{key === "brownouts" ? "Review saved provider notices" : key === "billReminders" ? "Check due dates on saved bills" : "Read tips created from your records"}</small></span><ChevronRight aria-hidden="true" /></Link>)}
           </div>
         </section>
 
         <ThemeSettings />
 
         <section className="ui-panel st-card" aria-labelledby="st-data-title">
-          <div className="st-card-head"><span className="st-card-icon is-green"><ShieldCheck aria-hidden="true" /></span><div><h2 id="st-data-title">Privacy &amp; data</h2><p>Your household&apos;s records are private to your account.</p></div></div>
+          <div className="st-card-head"><span className="st-card-icon is-green"><ShieldCheck aria-hidden="true" /></span><div><h2 id="st-data-title">Privacy &amp; data</h2><p>Anyone using this browser profile can view these records.</p></div></div>
           <div className="st-rows">
-            <div className="st-row"><span className="st-row-icon is-green"><Database aria-hidden="true" /></span><span className="st-row-copy"><strong>Saved on this device</strong><small>In this preview, bills, appliances and your photo stay in this browser.</small></span></div>
+            <div className="st-row"><span className="st-row-icon is-green"><Database aria-hidden="true" /></span><span className="st-row-copy"><strong>Saved on this device</strong><small>Bills and appliances stay in this browser. Clearing browser data can remove them. Photos are saved only when you choose to keep them.</small></span></div>
             {sampleBills + sampleAppliances > 0 && <div className="st-row"><span className="st-row-icon"><Sparkles aria-hidden="true" /></span><span className="st-row-copy"><strong>Sample data</strong><small>{sampleBills} sample bills and {sampleAppliances} sample appliances</small></span><button type="button" className="st-row-button" disabled={!ready} onClick={clearSamples}>Clear</button></div>}
           </div>
         </section>
@@ -150,7 +146,7 @@ export default function SettingsScreen() {
           <div><h2 id="st-logout-title">Close household</h2><p>Return to the homepage. Your saved records stay on this device.</p></div>
           <button type="button" className="st-logout-button" disabled={!ready} onClick={() => setLogout(true)}><LogOut size={18} aria-hidden="true" /> Close household</button>
         </section>
-        <p className="st-version">WattSnap AI · Preview build</p>
+        <p className="st-version">WattSnap AI · Saved on this device</p>
       </div>
     </div>
 

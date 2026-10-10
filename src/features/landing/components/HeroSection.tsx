@@ -10,14 +10,14 @@ const benefits: { icon: GlossyIconName; title: string; description: string; mobi
   { icon: "home", title: "Understand\nYour Bills", description: "Easy and clear\nexplanations", mobileDescription: "Easy and clear explanations." },
   { icon: "chart", title: "Monitor\nUsage", description: "Track your monthly\nelectricity trends", mobileDescription: "Track your monthly trends." },
   { icon: "bulb", title: "Save Energy\nSave Money", description: "Get practical tips\nfor a more efficient home", mobileDescription: "Practical tips for an efficient home." },
-  { icon: "heart", title: "Helpful AI\nGuidance", description: "Understand your usage\nwith personalized tips", mobileDescription: "Personalized tips just for you." },
+  { icon: "heart", title: "Practical\nGuidance", description: "Understand your usage\nwith personalized tips", mobileDescription: "Personalized tips just for you." },
 ];
 
 const callouts: { name: string; icon: GlossyIconName; title: string; description: string; href: string }[] = [
-  { name: "scan", icon: "camera", title: "Scan\nYour Bill", description: "Take a photo and\nget instant insights", href: "#features" },
+  { name: "scan", icon: "camera", title: "Scan\nYour Bill", description: "Take a photo and\nreview your bill", href: "#features" },
   { name: "tips", icon: "bulb", title: "Get\nEnergy Tips", description: "Simple ways\nto save energy\nand money", href: "#features" },
   { name: "track", icon: "chart", title: "Track Your\nConsumption", description: "See usage trends\nand take control", href: "#features" },
-  { name: "advisory", icon: "bell", title: "Provider\nAdvisories", description: "Stay updated\non maintenance\nand power interruptions", href: "#how-it-works" },
+  { name: "advisory", icon: "bell", title: "Provider\nAdvisories", description: "Review saved\nmaintenance and\ninterruption notices", href: "#how-it-works" },
 ];
 
 const mobilePhone = {
@@ -59,8 +59,8 @@ export function HeroSection() {
             />
           </h1>
           <p className="hero-description">
-            Understand your bills. Save energy.<br />
-            Be ready for brownouts.
+            Snap your bill. Understand your usage.<br />
+            Save smarter. Be ready for brownouts.
           </p>
           <div className="hero-actions">
             <Link href="/welcome" className="btn-primary hero-signup landing-create-account">

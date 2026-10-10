@@ -16,7 +16,7 @@ import { useChat } from "../use-chat";
 import ChatThread, { BotAvatar } from "./ChatThread";
 
 const starters = [
-  { text: householdSuggestions[0], hint: "Compare with last month", icon: ReceiptText },
+  { text: householdSuggestions[0], hint: "Compare saved periods", icon: ReceiptText },
   { text: householdSuggestions[1], hint: "Cooling without the cost", icon: AirVent },
   { text: householdSuggestions[2], hint: "Check your area", icon: Megaphone },
   { text: householdSuggestions[3], hint: "Find your biggest user", icon: PlugZap },
@@ -80,7 +80,7 @@ export default function ChatScreen() {
   const intro = <div className={`chat-welcome${messages.length ? " is-compact" : ""}`}>
     <div className="chat-welcome-art" aria-hidden="true"><span /><Image src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="" width={300} height={300} sizes="160px" priority /></div>
     <h2>Hi {first}! I&apos;m WattSnap AI</h2>
-    <p>Ask me about your bills, appliances, savings, or brownouts. I answer using what you&apos;ve saved in WattSnap.</p>
+    <p>Ask me about your bills, appliances, savings, or brownouts. I use local rules and what you&apos;ve saved in WattSnap. I cannot identify why a bill changed or confirm live power status.</p>
     {!messages.length && <div className="chat-starters">{starters.map(({ text, hint, icon: Icon }) => <button type="button" key={text} onClick={() => send(text)}><span><Icon aria-hidden="true" /></span><strong>{text}</strong><small>{hint}</small></button>)}</div>}
   </div>;
 
@@ -91,7 +91,7 @@ export default function ChatScreen() {
         <header className="chat-head">
           <Link href="/dashboard" className="chat-icon-button chat-back" aria-label="Back to home"><ChevronLeft aria-hidden="true" /></Link>
           <BotAvatar size="md" />
-          <div className="chat-head-copy"><strong>WattSnap AI</strong><span><i aria-hidden="true" /> Online · your energy buddy</span></div>
+          <div className="chat-head-copy"><strong>WattSnap AI</strong><span><i aria-hidden="true" /> Local guidance · saved records</span></div>
           <button type="button" className="chat-icon-button" onClick={() => { reset(); input.current?.focus(); }} disabled={!messages.length && !typing} aria-label="Start a new chat"><RotateCcw aria-hidden="true" /></button>
         </header>
         <ChatThread messages={messages} typing={typing} onSuggest={send} intro={intro} />

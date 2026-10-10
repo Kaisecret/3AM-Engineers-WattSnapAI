@@ -4,10 +4,10 @@ import { ChevronRight, Refrigerator } from "lucide-react";
 import { GlossyIcon } from "./GlossyIcon";
 
 const features = [
-  { title: "Scan Your Bill", description: "Take a photo and understand your bill.", icon: "camera" },
-  { title: "Manage Appliances", description: "See which devices use the most energy.", icon: "appliances" },
+  { title: "Scan Your Bill", description: "Photograph your bill and review its printed values.", icon: "camera" },
+  { title: "Manage Appliances", description: "Estimate use from your own appliance details.", icon: "appliances" },
   { title: "Get Energy Tips", description: "Simple ways to save energy and money.", icon: "bulb" },
-  { title: "Provider Advisories", description: "Stay updated on maintenance and outages.", icon: "bell" },
+  { title: "Provider Advisories", description: "Review notices you save from your provider.", icon: "bell" },
 ] as const;
 
 export function MobileLandingDetails() {

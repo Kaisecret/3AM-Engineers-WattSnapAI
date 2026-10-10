@@ -42,8 +42,8 @@ test("intents route to the matching household topic", () => {
 test("landing answers stay within the product description", () => {
   assert.match(landingReply("What is WattSnap?").text, /home electricity assistant/);
   assert.match(landingReply("Does it work offline?").text, /work offline/);
-  assert.match(landingReply("Does it work offline?").text, /already open preview/);
-  assert.match(landingReply("How does bill scanning work?").text, /AI extraction is not connected/);
+  assert.match(landingReply("Does it work offline?").text, /successful online visit prepares the app shell/);
+  assert.match(landingReply("How does bill scanning work?").text, /AI extraction is not available/);
   assert.match(landingReply("Is my data private?").text, /same browser profile/);
   assert.match(landingReply("Which areas are covered?").text, /Antique with ANTECO/);
   assert.equal(landingReply("how do I sign up").links[0].href, "/signup");

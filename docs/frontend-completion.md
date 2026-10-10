@@ -33,7 +33,7 @@ Baseline evidence: 76 feature tests pass; `npx.cmd tsc --noEmit` passes. Existin
 | 12 | Offline persistence/shell | Expanded cached shells, scope-bound writes and unreadable-data protection |
 | 13 | Senior accessibility | Readable labels, touch targets, focus, reduced motion and hardware feedback |
 | 14 | Responsive verification | Fourteen routes checked at 320, 390, 768, 1024 and 1440px |
-| 15 | Content accuracy | Pending |
+| 15 | Content accuracy | Honest marketing, local access, privacy, assistant and unavailable notifications |
 | 16 | Frontend contracts/code quality | Pending |
 | 17 | Full local verification | Pending |
 | 18 | Priority review/polish | Pending |
@@ -97,3 +97,7 @@ Targeted styles improve secondary-text contrast, 16px form labels, 44px controls
 ## 14. Responsive review
 
 The completion suite checks fourteen household pages at five viewport widths, preserving the existing desktop sidebar and mobile navigation. Visual review found a clipped selected chart value; added chart space and full-width touch targets fix it without changing bar values or page arrangement. The desktop budget card now shows the saved target and actual bill usage instead of always asking for setup. Existing dialog constraints and responsive form grids remain. Representative mobile dashboard, desktop dashboard and appliance-form screenshots are saved in [frontend-review](./frontend-review). Checks report no document overflow or browser runtime exceptions.
+
+## 15. Content corrections
+
+Marketing describes photo-assisted manual review and local recommendations. Fictional testimonials are replaced with household use cases in the existing card section. Calls to action open local household setup/access; provider coverage and storage no longer imply verified mapping or SQLite. Settings explain shared-browser access and replace unavailable automatic notification switches with links to saved information. The assistant identifies its local rules, distinguishes cost changes from kWh changes, avoids inferred causes and protects essential appliance usage. Fake unread indicators and the fixed time-of-day greeting are removed. Existing original logo and artwork are unchanged.
