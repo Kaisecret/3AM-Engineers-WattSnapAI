@@ -15,7 +15,7 @@ An ANTECO receipt shows the total kWh and the amount, for example **192 kWh and 
 | 1 | Household profile and provider | Not sure which cooperative serves you | Home setup → Household profile | ✅ | – Location button suggests province and town, then matching providers. Manual and custom providers work. |
 | 2 | Bill scanner | Typing and keeping fading paper receipts | Snap AI | 🟡 | The screen does not use Gemini yet (the server route exists). The photo is kept as a reference and the user types the values. |
 | 3 | Bill history and dashboard | Old receipts get lost, months are hard to compare | Home, Energy | ✅ | – |
-| 4 | Appliance registration | The bill does not say which device costs the most | Appliances → Add device | 🟡 | Icon types and manual entry work, with typical-watts guidance. AI does not read the nameplate photo. |
+| 4 | Appliance registration | The bill does not say which device costs the most | Appliances → Add appliance | 🟡 | One popup: take or upload a label photo, or type it in, then a short form with icon types and typical-watts guidance. AI does not read the label photo yet. |
 | 5 | Appliance estimate | Manual calculation is hard | Appliances | ✅ | – Shows kWh and pesos per device, and how much of the latest bill the devices explain. |
 | 6 | Change detection | Increases go unnoticed until the bill is high | Home, Energy | ✅ | – Changes of 20% or more are flagged. |
 | 7 | Tipid Tips | Saving advice is generic | Tips | 🟡 | Tips come from fixed local rules, not Gemini. They do target your top devices. |
@@ -30,7 +30,7 @@ Gemini 3.5 Flash-Lite is wired into the server (`src/lib/gemini/`, needs `GEMINI
 - **WattSnap AI in the app** (`/api/ai/assistant`, signed-in accounts only) answers questions and can **make changes for you**: set the monthly budget or subsidy, add, change or remove appliances, save a monthly bill, and open a page. Every change appears on a card and is saved only when you tap **Confirm** (or **Confirm all**). Records stay in the browser; the chat sends a summary of them with each message.
 - **The landing page chat** (`/api/ai/landing`, public) answers questions about WattSnap only. It gets no household data and cannot change anything. Each visitor gets 8 questions per 10 minutes.
 
-When Gemini is not set, busy, over its limit or offline, both chats fall back to the built-in answers. In the app, such an answer says why underneath (for example "Basic answer · Gemini did not accept the API key"). To check a deployment, open `/api/ai/assistant` (shows whether the key is set and which model is used), or, while logged in, `/api/ai/assistant?check=1` (makes one real call to Gemini and reports `reachable` or the problem). Vercel only gives a new environment variable to deployments made after it was added, so redeploy after adding or changing `GEMINI_API_KEY`. Each account can send 20 messages per 5 minutes, and limits are kept per server instance (best effort). The `bills`, `appliances` and `tips` routes also need a signed-in account and can read photos and write tips, but **no screen calls them yet**, so the bill form, Add device and Tips still work as described above. The `advisories` route is still a placeholder.
+When Gemini is not set, busy, over its limit or offline, both chats fall back to the built-in answers. In the app, such an answer says why underneath (for example "Basic answer · Gemini did not accept the API key"). To check a deployment, open `/api/ai/assistant` (shows whether the key is set and which model is used), or, while logged in, `/api/ai/assistant?check=1` (makes one real call to Gemini and reports `reachable` or the problem). Vercel only gives a new environment variable to deployments made after it was added, so redeploy after adding or changing `GEMINI_API_KEY`. Each account can send 20 messages per 5 minutes, and limits are kept per server instance (best effort). The `bills`, `appliances` and `tips` routes also need a signed-in account and can read photos and write tips, but **no screen calls them yet**, so the bill form, Add appliance and Tips still work as described above. The `advisories` route is still a placeholder.
 
 **Staying signed in.** A login lasts until you tap Log out (the session cookie is kept for 400 days and refreshed automatically). Opening the site, the installed app, or the login and sign-up pages while signed in goes straight into the app, including after the phone's Back button. A weak connection no longer signs you out.
 
@@ -72,19 +72,19 @@ Not yet: Watt-If and Tipid Tips do not mention that savings stop lowering what y
 
 ## Adding devices
 
-Appliances → Add device → Enter manually. These are the fields exactly as the app shows them:
+Appliances → **Add appliance** opens a popup: **Take photo**, **Upload photo** or **Type it in**. Each opens the same short form (a photo stays at the top for reference and is not saved). Editing an appliance uses the same form. The fields:
 
 | Field | What to type | Example |
 |---|---|---|
 | Appliance type | Electric fan, Air conditioner, Refrigerator, Television, Rice cooker, Washing machine, Lighting, Computer, Phone charger, Microwave, Iron, or Other appliance | Electric fan |
-| Appliance name | A name you will recognise | Bedroom fan |
+| Name | A name you will recognise | Bedroom fan |
 | Model (optional) | From the label, if you want | – |
-| Rated power + Power unit | The watts on the label. Units: W, kW, VA, V | 60 W |
-| Where did the wattage come from? | Rated power on the nameplate, or My approximate wattage | Rated power on the nameplate |
-| Hours per day | How long it is actually on each day | 8 |
-| Quantity | How many of the same device | 1 |
-| Days in this period | Starts at 30 | 30 |
-| Checkbox | I checked the power, unit, quantity, hours, and days | ✓ |
+| Power | The watts on the label; tap W or kW | 60 W |
+| Watts from | The label, or My guess | The label |
+| Hours a day | How long it is actually on each day (– / +) | 8 |
+| How many | How many of the same device (– / +) | 1 |
+| Days | Starts at 30 | 30 |
+| Checkbox | I checked these values | ✓ |
 
 The app calculates watts × hours × quantity × days ÷ 1,000 = kWh, then multiplies by your bill's price per kWh. The fan above is 14.4 kWh ≈ ₱230 a month at ₱16.00/kWh.
 
@@ -92,8 +92,8 @@ The app calculates watts × hours × quantity × days ÷ 1,000 = kWh, then multi
 
 - Look on the sticker or label, the manual or the box for "W".
 - If it shows kW, choose kW (1.2 kW = 1,200 W).
-- If it shows only volts and amps, multiply them yourself (220 V × 0.5 A = 110 W). Enter the result in W and choose My approximate wattage. The app does not convert V or VA.
-- If there is no label, use a typical value and choose My approximate wattage. After you pick a type, the app shows these ranges under Rated power (from `src/features/appliance-registration/typical-use.ts`). It never fills them in for you.
+- If it shows only volts and amps, multiply them yourself (220 V × 0.5 A = 110 W). Enter the result in W and choose My guess. The app does not convert V or VA.
+- If there is no label, use a typical value and choose My guess. After you pick a type, the app shows these ranges under Power (from `src/features/appliance-registration/typical-use.ts`). It never fills them in for you.
 
 | Type | Typical watts | Hours tip shown in the app |
 |---|---|---|
@@ -123,7 +123,7 @@ These are estimates, not meter readings. Fridges and air conditioners switch on 
 
 ## Remaining work
 
-1. **Use Gemini in the screens.** The `bills`, `appliances` and `tips` routes already call Gemini; the Snap AI form, Add device and Tips still need to call them and put the results into the review fields. The `advisories` route still needs a Gemini implementation. This covers features 2, 4, 7 and 8.
+1. **Use Gemini in the screens.** The `bills`, `appliances` and `tips` routes already call Gemini; the Snap AI form, Add appliance and Tips still need to call them and put the results into the review fields. The `advisories` route still needs a Gemini implementation. This covers features 2, 4, 7 and 8.
 2. **Budget (feature 11):** add a kWh target, a "days left / at risk" forecast, and use device estimates as the proposal describes.
 3. **Offline pages (feature 9):** decide whether signed-in pages should open offline again. The current service worker never caches them, for security after logout.
 4. **Share to WattSnap (feature 8):** accept advisory screenshots shared from Facebook or Messenger (needs a web app share target).

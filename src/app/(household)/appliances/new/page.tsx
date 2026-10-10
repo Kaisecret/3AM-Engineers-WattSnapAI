@@ -1,5 +1,5 @@
-import ApplianceRegistrationScreen from "@/features/appliance-registration/components/ApplianceRegistrationScreen";
+import AppliancesScreen from "@/features/dashboard/components/AppliancesScreen";
 import "@/features/dashboard/appliances.css";
-import "@/features/appliance-registration/nameplate-preview.css";
 
-export default function Page() { return <ApplianceRegistrationScreen />; }
+// Links that say "Add an appliance" open the list with the Add popup already showing.
+export default function Page() { return <AppliancesScreen startAdding />; }

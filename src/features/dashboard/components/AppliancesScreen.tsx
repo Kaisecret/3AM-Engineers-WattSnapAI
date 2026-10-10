@@ -1,70 +1,76 @@
 "use client";
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronRight, Minus, Pencil, Plus, SlidersHorizontal, Trash2, X, Zap } from "lucide-react";
-import AppliancePicker, { applianceIcons as kindIcons } from "@/features/appliance-registration/components/appliance-picker";
+import { ChevronRight, Pencil, Plus, SlidersHorizontal, Trash2 } from "lucide-react";
+import { applianceIcons as kindIcons } from "@/features/appliance-registration/components/appliance-picker";
+import ApplianceDialog, { AddApplianceSheet, type AddChoice, type AppliancePhoto } from "@/features/appliance-registration/components/ApplianceDialog";
 import ConfirmRecordRemoval from "@/components/ui/ConfirmRecordRemoval";
 import PageShell from "./PageShell";
 import { usePreviewHousehold } from "../use-preview-household";
-import { appliancePresets, dailyApplianceKwh, effectiveRate, guessApplianceKind, latestBill, monthName, pesos, validateAppliance, type ApplianceKind, type PreviewAppliance } from "../preview-data";
+import { dailyApplianceKwh, effectiveRate, guessApplianceKind, latestBill, monthName, pesos, type PreviewAppliance } from "../preview-data";
 import { billCoverage } from "../bill-coverage";
-
-type Draft = { kind: ApplianceKind; name: string; model: string; watts: string; hours: string; quantity: number; days: string; wattageBasis: "nameplate" | "approximate" };
-const emptyDraft: Draft = { kind: "other", name: "", model: "", watts: "", hours: "", quantity: 1, days: "30", wattageBasis: "nameplate" };
 
 const kindOf = (item: PreviewAppliance) => item.kind ?? guessApplianceKind(item.name);
 const trim = (value: number) => Number(value.toFixed(2)).toString();
+const photoTypes = ["image/jpeg", "image/png", "image/webp"];
 
-export default function AppliancesScreen() {
+/** `startAdding` (the /appliances/new link) opens the Add popup straight away. */
+export default function AppliancesScreen({ startAdding = false }: { startAdding?: boolean }) {
   const { household, update, ready, storageError } = usePreviewHousehold();
-  const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const [form, setForm] = useState<{ item?: PreviewAppliance } | null>(null);
+  const [photo, setPhoto] = useState<AppliancePhoto | undefined>();
   const [removing, setRemoving] = useState<PreviewAppliance | null>(null);
-  const [editing, setEditing] = useState<string | null>(null);
+  const [highlight, setHighlight] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [reviewed, setReviewed] = useState(false);
-  const dialog = useRef<HTMLDialogElement>(null);
-  const opener = useRef<HTMLElement | null>(null);
+  const sheet = useRef<HTMLDialogElement>(null);
+  const upload = useRef<HTMLInputElement>(null);
+  const capture = useRef<HTMLInputElement>(null);
+  const started = useRef(false);
   const rate = effectiveRate(household.bills);
   const items = [...household.appliances].sort((a, b) => dailyApplianceKwh(b) - dailyApplianceKwh(a));
   const totalDaily = items.reduce((sum, item) => sum + dailyApplianceKwh(item), 0);
   const latest = latestBill(household.bills);
   const coverage = latest ? billCoverage(totalDaily * 30, latest.kwh) : null;
-  const draftDaily = dailyApplianceKwh({ watts: Number(draft.watts) || 0, hours: Number(draft.hours) || 0, quantity: draft.quantity });
-  const validEstimate = draft.watts.trim() && draft.hours.trim() && draft.days.trim() && !validateAppliance({ name: draft.name, watts: Number(draft.watts), hours: Number(draft.hours), quantity: draft.quantity, days: Number(draft.days) });
 
-  function open(item: PreviewAppliance) {
-    opener.current = document.activeElement as HTMLElement | null;
-    setError(""); setMessage("");
-    setEditing(item.id); setReviewed(false);
-    setDraft({ kind: kindOf(item), name: item.name, model: item.model ?? "", watts: String(item.watts), hours: String(item.hours), quantity: item.quantity, days: String(item.days ?? 30), wattageBasis: item.wattageBasis ?? "approximate" });
-    dialog.current?.showModal();
+  useEffect(() => {
+    if (!startAdding || !ready || started.current) return;
+    started.current = true; sheet.current?.showModal();
+  }, [startAdding, ready]);
+  useEffect(() => () => { if (photo) URL.revokeObjectURL(photo.url); }, [photo]);
+  useEffect(() => {
+    if (!highlight) return;
+    document.getElementById(`ap-item-${highlight}`)?.scrollIntoView({ block: "center", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    const timer = window.setTimeout(() => setHighlight(""), 2400);
+    return () => window.clearTimeout(timer);
+  }, [highlight]);
+
+  function startAdd() { setError(""); setMessage(""); sheet.current?.showModal(); }
+  function choose(choice: AddChoice) {
+    if (choice === "manual") { setPhoto(undefined); setForm({}); }
+    else (choice === "camera" ? capture : upload).current?.click();
   }
-  function close() { dialog.current?.close(); }
-  function change(patch: Partial<Draft>) { setDraft(current => ({ ...current, ...patch })); setReviewed(false); setError(""); }
-
-  function pickPreset(kind: ApplianceKind) {
-    const preset = appliancePresets.find(item => item.kind === kind)!;
-    const previousPreset = appliancePresets.find(item => item.kind === draft.kind);
-    // Keep a name the person typed; replace one that came from the previous preset.
-    const name = !draft.name.trim() || draft.name === previousPreset?.name ? preset.name : draft.name;
-    change({ kind, name });
+  async function choosePhoto(file?: File) {
+    if (upload.current) upload.current.value = ""; if (capture.current) capture.current.value = "";
+    if (!file) return;
+    if (!photoTypes.includes(file.type)) { setError("Use a JPG, PNG or WebP photo."); return; }
+    if (file.size === 0 || file.size > 10 * 1024 * 1024) { setError("Use a photo up to 10 MB."); return; }
+    const url = URL.createObjectURL(file);
+    try {
+      const image = new window.Image(); image.src = url; await image.decode();
+      setError(""); setPhoto({ url, name: file.name }); setForm(current => current ?? {});
+    } catch { URL.revokeObjectURL(url); setError("That photo could not be opened. Try another one or type it in."); }
   }
+  function edit(item: PreviewAppliance) { setError(""); setMessage(""); setPhoto(undefined); setForm({ item }); }
 
-  function stepHours(delta: number) {
-    const next = Math.min(24, Math.max(0, (Number(draft.hours) || 0) + delta));
-    change({ hours: trim(next) });
-  }
-
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const appliance = { name: draft.name.trim(), model: draft.model.trim() || undefined, watts: Number(draft.watts), hours: draft.hours.trim() ? Number(draft.hours) : NaN, quantity: draft.quantity, kind: draft.kind, days: draft.days.trim() ? Number(draft.days) : NaN, wattageBasis: draft.wattageBasis };
-    const issue = validateAppliance(appliance);
-    if (issue) { setError(issue); return; }
-    if (!reviewed) { setError("Confirm that you reviewed the calculation inputs before saving."); return; }
-    const appliances = household.appliances.map(item => item.id === editing ? { ...item, ...appliance } : item);
-    if (update({ appliances })) { setMessage(`${appliance.name} updated.`); close(); }
+  function save(appliance: Omit<PreviewAppliance, "id">) {
+    const editing = form?.item;
+    const record = editing ? { ...editing, ...appliance } : { ...appliance, source: "manual" as const, id: crypto.randomUUID() };
+    const appliances = editing ? household.appliances.map(item => item.id === editing.id ? record : item) : [...household.appliances, record];
+    if (!update({ appliances })) return false;
+    setMessage(`${record.name} ${editing ? "updated" : "added"}.`); setHighlight(record.id);
+    return true;
   }
 
   function remove(item: PreviewAppliance) {
@@ -77,7 +83,7 @@ export default function AppliancesScreen() {
         <p className="ap-eyebrow">Monthly estimate</p>
         <h2 id="ap-summary-title"><span>{(totalDaily * 30).toFixed(1)}</span> kWh / month</h2>
         <p className="ap-summary-cost">{rate > 0 ? `≈ ${pesos(totalDaily * 30 * rate)} per month` : "Add a bill to see the cost."}</p>
-        <Link className="ap-add" href="/appliances/new"><Plus aria-hidden="true" /> Add appliance</Link>
+        <button type="button" className="ap-add" aria-haspopup="dialog" disabled={!ready} onClick={startAdd}><Plus aria-hidden="true" /> Add appliance</button>
       </div>
       <dl className="ap-summary-stats">
         <div><dt>Appliances</dt><dd>{items.reduce((sum, item) => sum + item.quantity, 0)}</dd></div>
@@ -95,54 +101,32 @@ export default function AppliancesScreen() {
     <section className="ui-panel ap-list-panel" aria-labelledby="ap-list-title">
       <div className="ui-panel-heading"><div><h2 id="ap-list-title">Top energy users</h2><p>Sorted by estimated monthly use</p></div><span className="ui-count">{items.length} {items.length === 1 ? "entry" : "entries"}</span></div>
       {items.length ? <ul className="ap-list">
-        {items.map(item => { const kind = kindOf(item); const Icon = kindIcons[kind]; const daily = dailyApplianceKwh(item); const share = totalDaily ? daily / totalDaily * 100 : 0; return <li key={item.id}>
+        {items.map(item => { const kind = kindOf(item); const Icon = kindIcons[kind]; const daily = dailyApplianceKwh(item); const share = totalDaily ? daily / totalDaily * 100 : 0; return <li key={item.id} id={`ap-item-${item.id}`} className={item.id === highlight ? "is-new" : undefined}>
           <span className={`ap-icon is-${kind}`}><Icon aria-hidden="true" /></span>
           <div className="ap-item-main">
             <div className="ap-item-top"><h3>{item.name}</h3><strong>{(daily * 30).toFixed(1)} <small>kWh/mo</small></strong></div>
             <p>{trim(item.watts)} W · {trim(item.hours)} hrs/day{item.quantity > 1 && ` · ×${item.quantity}`}{rate > 0 && <span>≈ {pesos(daily * 30 * rate)}/30 days</span>}</p>
             <p className="ap-item-detail">{item.model && `${item.model} · `}{item.source === "sample" || item.id.startsWith("sample-") ? "Sample" : "Manual"} · {item.wattageBasis === "nameplate" ? "Nameplate watts" : "Approximate watts"}</p>
-            {item.days !== undefined && <p className="ap-item-detail">{item.days} days selected · {(daily * item.days).toFixed(2)} kWh for this period</p>}
+            {item.days !== undefined && item.days !== 30 && <p className="ap-item-detail">{item.days} days selected · {(daily * item.days).toFixed(2)} kWh for this period</p>}
             <div className="ap-share" role="img" aria-label={`${share.toFixed(0)} percent of estimated appliance use`}><span style={{ width: `${share > 0 ? Math.max(share, 2) : 0}%` }} /><em>{share.toFixed(0)}%</em></div>
           </div>
           <div className="ap-item-actions">
-            <button type="button" className="ui-icon-button ap-edit" disabled={!ready} aria-label={`Edit ${item.name}`} onClick={() => open(item)}><Pencil size={16} /></button>
+            <button type="button" className="ui-icon-button ap-edit" disabled={!ready} aria-label={`Edit ${item.name}`} onClick={() => edit(item)}><Pencil size={16} /></button>
             <button type="button" className="ui-icon-button" disabled={!ready} aria-label={`Remove ${item.name}`} onClick={() => setRemoving(item)}><Trash2 size={16} /></button>
           </div>
         </li>; })}
-      </ul> : <div className="ap-empty"><Image src="/assets/branding/actions-7.png" alt="" width={200} height={200} sizes="120px" /><h3>No appliances yet</h3><p>Add one to see what uses the most energy.</p><Link className="ui-primary" href="/appliances/new"><Plus size={18} aria-hidden="true" /> Add appliance</Link></div>}
+      </ul> : <div className="ap-empty"><Image src="/assets/branding/actions-7.png" alt="" width={200} height={200} sizes="120px" /><h3>No appliances yet</h3><p>Add one to see what uses the most energy.</p><button type="button" className="ui-primary" aria-haspopup="dialog" disabled={!ready} onClick={startAdd}><Plus size={18} aria-hidden="true" /> Add appliance</button></div>}
       {items.length > 0 && <p className="ui-helper">Estimates use watts × hours × quantity over 30 days and may differ from your meter.</p>}
     </section>
     <ConfirmRecordRemoval name={removing?.name ?? null} error={storageError} onKeep={() => setRemoving(null)} onRemove={() => removing ? remove(removing) : false} />
     {message && <p className="ui-success" role="status">{message}</p>}{storageError && <p className="ui-error" role="alert">{storageError}</p>}
 
-    <dialog ref={dialog} className="ap-dialog" aria-labelledby="ap-dialog-title" onClose={() => opener.current?.focus()} onClick={event => { if (event.target === event.currentTarget) close(); }}>
-      <form className="ap-dialog-body" onSubmit={submit} noValidate>
-        <div className="ap-dialog-head">
-          <span className={`ap-icon is-${draft.kind}`}>{(() => { const Icon = kindIcons[draft.kind]; return <Icon aria-hidden="true" />; })()}</span>
-          <div><h2 id="ap-dialog-title">Edit appliance</h2><p>Review the power and how you use it.</p></div>
-          <button type="button" className="ap-close" aria-label="Close" onClick={close}><X aria-hidden="true" /></button>
-        </div>
-        <AppliancePicker value={draft.kind} onChange={pickPreset} />
-        <div className="ap-fields">
-          <label className="ap-wide">Name<input value={draft.name} maxLength={80} placeholder="e.g. Bedroom fan" required onChange={event => change({ name: event.target.value })} /></label>
-          <label className="ap-wide">Model (optional)<input value={draft.model} maxLength={80} onChange={event => change({ model: event.target.value })} /></label>
-          <label>Rated power<span className="ap-unit"><input type="number" aria-label="Rated power" inputMode="decimal" min="0.1" step="any" placeholder="Unknown" required value={draft.watts} onChange={event => change({ watts: event.target.value })} /><em>W</em></span></label>
-          <div className="ap-field"><span id="ap-hours-label">Hours per day</span><div className="ap-stepper"><button type="button" aria-label="Fewer hours" onClick={() => stepHours(-0.5)}><Minus aria-hidden="true" /></button><input aria-labelledby="ap-hours-label" type="number" inputMode="decimal" min="0" max="24" step="any" required value={draft.hours} onChange={event => change({ hours: event.target.value })} /><button type="button" aria-label="More hours" onClick={() => stepHours(0.5)}><Plus aria-hidden="true" /></button></div></div>
-          <label className="ap-wide">Days in this period<input type="number" inputMode="numeric" min="1" max="366" step="1" required value={draft.days} onChange={event => change({ days: event.target.value })} /></label>
-          <div className="ap-field ap-wide"><span id="ap-qty-label">How many?</span><div className="ap-stepper is-qty"><button type="button" aria-label="Fewer" disabled={draft.quantity <= 1} onClick={() => change({ quantity: Math.max(1, draft.quantity - 1) })}><Minus aria-hidden="true" /></button><output aria-labelledby="ap-qty-label">{draft.quantity}</output><button type="button" aria-label="More" disabled={draft.quantity >= 50} onClick={() => change({ quantity: Math.min(50, draft.quantity + 1) })}><Plus aria-hidden="true" /></button></div></div>
-          <label className="ap-wide">Wattage basis<select aria-label="Wattage basis" value={draft.wattageBasis} onChange={event => change({ wattageBasis: event.target.value as Draft["wattageBasis"] })}><option value="nameplate">Rated power on the nameplate</option><option value="approximate">My approximate wattage</option></select></label>
-        </div>
-        <div className="ap-estimate" aria-live="polite">
-          <Zap aria-hidden="true" />
-          <div><strong>{validEstimate ? `${draftDaily.toFixed(2)} kWh` : "—"}</strong><span>per day</span></div>
-          <div><strong>{validEstimate ? `${(draftDaily * Number(draft.days)).toFixed(1)} kWh` : "—"}</strong><span>in {draft.days || "—"} days</span></div>
-          <div><strong>{validEstimate && rate > 0 ? pesos(draftDaily * Number(draft.days) * rate) : "—"}</strong><span>est. for period</span></div>
-        </div>
-        {error && <p className="ui-error" role="alert">{error}</p>}
-        {storageError && <p className="ui-error" role="alert">{storageError}</p>}
-        <label className="ap-edit-confirm"><input type="checkbox" checked={reviewed} onChange={event => { setReviewed(event.target.checked); setError(""); }} />I reviewed the power, quantity, hours, and days.</label>
-        <div className="ap-dialog-actions"><button type="button" className="ui-secondary" onClick={close}>Cancel</button><button type="submit" className="ui-primary" disabled={!ready}>Save changes</button></div>
-      </form>
-    </dialog>
+    {error && <p className="ui-error" role="alert">{error}</p>}
+
+    <AddApplianceSheet ref={sheet} disabled={!ready} onChoose={choose} />
+    <input ref={upload} type="file" className="ws-sr-only" tabIndex={-1} aria-hidden="true" accept={photoTypes.join(",")} onChange={event => void choosePhoto(event.target.files?.[0])} />
+    <input ref={capture} type="file" capture="environment" className="ws-sr-only" tabIndex={-1} aria-hidden="true" accept={photoTypes.join(",")} onChange={event => void choosePhoto(event.target.files?.[0])} />
+    <ApplianceDialog open={!!form} item={form?.item} photo={form?.item ? undefined : photo} appliances={household.appliances} rate={rate} ready={ready} storageError={storageError}
+      onSave={save} onClose={() => { setForm(null); setPhoto(undefined); }} onChangePhoto={() => upload.current?.click()} onRemovePhoto={() => setPhoto(undefined)} />
   </PageShell>;
 }

@@ -161,3 +161,83 @@ html[data-theme="dark"] .ap-simulator > a.ap-simulator-link { color: #89dfef; ba
 html[data-theme="dark"] .ap-coverage { color: #c2d4df; background: #192e3d; border-color: #3b5968; }
 html[data-theme="dark"] .ap-coverage.is-over { color: #f1d9a0; background: #2e2a1c; border-color: #6b5a2c; }
 html[data-theme="dark"] .ap-coverage-bar { background: #24475a; }
+
+/* Add appliance: first popup (photo or type it in) */
+.np-sheet { width: min(440px, calc(100% - 32px)); max-width: none; max-height: calc(100dvh - 24px); margin: auto; padding: 0; overflow: auto; border: 0; border-radius: 24px; color: #10263c; background: #fff; box-shadow: 0 24px 70px #0b2a4a40; font-family: var(--font-sans); }
+.np-sheet::backdrop { background: #0b2a4a66; backdrop-filter: blur(3px); }
+.np-sheet-body { padding: 20px 20px 22px; }
+.np-sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.np-sheet-head h2 { font-size: 18px; font-weight: 800; letter-spacing: -.3px; }
+.np-sheet-close { display: grid; place-items: center; flex: 0 0 auto; width: 44px; height: 44px; border-radius: 50%; color: #5e7d92; background: #f1f7fa; }
+.np-sheet-options { display: grid; gap: 10px; }
+.np-sheet-option { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 68px; padding: 12px 14px; border: 1px solid #deeff6; border-radius: 16px; color: #10263c; background: #f8fcfe; font: inherit; text-align: left; }
+.np-sheet-icon { display: grid; place-items: center; flex: 0 0 auto; width: 46px; height: 46px; border-radius: 14px; color: #fff; background: linear-gradient(135deg, #06c0ee, #0a8fe6); }
+.np-sheet-icon svg { width: 22px; height: 22px; }
+.np-sheet-option.is-upload .np-sheet-icon { color: #0a9fd2; background: #e3f7fe; }.np-sheet-option.is-manual .np-sheet-icon { color: #6a65db; background: #efedff; }
+.np-sheet-copy { display: grid; gap: 2px; flex: 1; min-width: 0; }.np-sheet-copy strong { font-size: 16px; font-weight: 800; }
+.np-sheet-chevron { flex: 0 0 auto; width: 20px; height: 20px; color: #9fb4c3; }
+.np-sheet-body > small { display: block; margin-top: 14px; text-align: center; }
+@keyframes np-sheet-up { from { transform: translateY(100%); } }
+@media (hover: hover) { .np-sheet-option:hover { border-color: #9bdcf2; background: #effaff; } }
+@media (max-width: 599px) { .np-sheet { width: 100%; max-width: 100%; margin: auto 0 0; border-radius: 24px 24px 0 0; }.np-sheet[open] { animation: np-sheet-up .22s ease-out; }.np-sheet-body { padding: 10px 18px calc(20px + env(safe-area-inset-bottom)); }.np-sheet-body::before { content: ""; display: block; width: 40px; height: 4px; margin: 0 auto 12px; border-radius: 2px; background: #d5e4ec; } }
+@media (prefers-reduced-motion: reduce) { .np-sheet[open] { animation: none; } }
+
+/* Add / Edit appliance popup form */
+.ad-dialog .ap-dialog-head h2 { font-size: 21px; }
+.ws-home .ad-dialog .ap-presets { display: flex; gap: 8px; overflow-x: auto; margin: 16px -18px 0; padding: 2px 18px 6px; scroll-snap-type: x proximity; scrollbar-width: none; }
+.ad-dialog .ap-presets::-webkit-scrollbar { display: none; }
+.ad-dialog .ap-presets legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.ws-home .ad-dialog .ap-presets label { flex: 0 0 auto; width: 84px; min-height: 74px; align-content: center; scroll-snap-align: start; font-size: 11.5px; }
+.ad-dialog .ap-fields { margin-top: 14px; }
+.ad-dialog .ap-fields small { color: #8aa0b2; font-weight: 600; }
+.ad-dialog .ap-stepper.is-qty { max-width: none; }
+.ad-power { display: flex; height: 48px; overflow: hidden; border: 1.5px solid #cfe5f0; border-radius: 12px; background: #fff; }
+.ad-power:focus-within { border-color: #12b5e6; box-shadow: 0 0 0 4px #12b5e626; }
+.ap-fields .ad-power input { flex: 1; height: 100%; border: 0; border-radius: 0; box-shadow: none; }
+.ad-unit { display: flex; align-items: center; gap: 2px; padding: 5px; background: #f1f9fd; }
+.ad-unit button { min-width: 34px; height: 100%; padding: 0 6px; border-radius: 8px; color: #6f879c; font-size: 12.5px; font-weight: 800; }
+.ad-unit button.is-on { color: #fff; background: #0a9fe0; }
+.ad-segment { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 14px; background: #e8f3f9; }
+.ad-segment button { min-height: 42px; border-radius: 10px; color: #4f6c84; font-size: 14px; font-weight: 800; transition: background .2s, color .2s; }
+.ad-segment button.is-on { color: #0a6fa8; background: #fff; box-shadow: 0 2px 8px #2a6a8424; }
+.ad-hint { margin-top: 12px; color: #2f7f9f; font-size: 13px; line-height: 1.5; }
+.ap-fields .ad-hint { margin-top: -6px; }
+.ad-photo { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto auto; align-items: center; gap: 8px 10px; margin-top: 16px; padding: 8px; border: 1px solid #d6ecf6; border-radius: 16px; background: #fff; }
+.ad-photo-thumb { width: 56px; height: 56px; overflow: hidden; border-radius: 12px; background: #eef6fa; }
+.ad-photo-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.ad-photo-copy { min-width: 0; }
+.ad-photo-copy strong { display: block; font-size: 14px; font-weight: 800; }
+.ad-photo-copy span { display: block; color: #6f879c; font-size: 12.5px; }
+.ad-photo-change { min-height: 38px; padding: 0 12px; border-radius: 10px; color: #0479c2; background: #e3f6fd; font-size: 13px; font-weight: 800; }
+.ad-photo-remove { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; color: #6f879c; background: #f1f7fa; }
+.ad-photo-remove svg { width: 17px; height: 17px; }
+.ad-photo-large { grid-column: 1 / -1; width: 100%; height: auto; max-height: 50dvh; object-fit: contain; border-radius: 12px; background: #eef6fa; }
+.ap-list li.is-new { border-radius: 14px; animation: ap-new 2.4s ease-out; }
+@keyframes ap-new { 0%, 40% { background: #e3f6fd; box-shadow: 0 0 0 8px #e3f6fd; } 100% { background: transparent; box-shadow: 0 0 0 8px transparent; } }
+@media (min-width: 600px) {
+  .ws-home .ad-dialog .ap-presets { flex-wrap: wrap; overflow: visible; margin: 16px 0 0; padding: 0; }
+  .ws-home .ad-dialog .ap-presets label { width: calc((100% - 40px) / 6); }
+}
+@media (min-width: 900px) { .ad-dialog { width: min(640px, calc(100% - 48px)); }.ws-home .ad-dialog .ap-presets { margin-top: 18px; } }
+.ws-home .ad-dialog .ap-presets label span { overflow-wrap: normal; word-break: normal; hyphens: none; }
+@media (hover: hover) {
+  .ad-photo-change:hover, .ad-photo-remove:hover { filter: brightness(.96); }
+  .ad-segment button:not(.is-on):hover { color: #0a6fa8; }
+}
+html[data-theme="dark"] .ap-dialog { color: #edf6fa; background: #142734; }
+html[data-theme="dark"] :is(.ap-dialog-head p, .ad-photo-copy span, .ap-dialog .ap-estimate span, .ad-dialog .ap-fields small) { color: #a9c0cc; }
+html[data-theme="dark"] :is(.ap-dialog .ap-fields label, .ap-dialog .ap-field > span) { color: #c2d4df; }
+html[data-theme="dark"] :is(.ap-dialog .ap-fields input, .ap-dialog .ap-stepper, .ad-power, .ad-photo) { color: #edf6fa; background: #192e3d; border-color: #3b5968; }
+html[data-theme="dark"] .ap-fields .ad-power input { background: transparent; }
+html[data-theme="dark"] .ap-dialog .ap-presets label:not(.is-selected) { color: #c2d4df; background: #192e3d; border-color: #3b5968; }
+html[data-theme="dark"] :is(.ap-dialog .ap-stepper button, .ad-unit, .ap-close, .ad-photo-remove) { color: #89dfef; background: #203e4c; }
+html[data-theme="dark"] .ap-dialog .ap-stepper output { color: #edf6fa; }
+html[data-theme="dark"] .ad-segment { background: #0f2230; }
+html[data-theme="dark"] .ad-segment button { color: #a9c0cc; }
+html[data-theme="dark"] .ad-segment button.is-on { color: #89dfef; background: #203e4c; box-shadow: none; }
+html[data-theme="dark"] .ap-dialog .ap-estimate { border-color: #2f5566; background: linear-gradient(135deg, #17394a, #1b3546); }
+html[data-theme="dark"] .ap-dialog .ap-edit-confirm { color: #c2d4df; background: #1d3a4a; }
+html[data-theme="dark"] .ad-photo-change { color: #89dfef; background: #203e4c; }
+html[data-theme="dark"] .ad-hint { color: #89dfef; }
+html[data-theme="dark"] .ap-list li.is-new { animation-name: ap-new-dark; }
+@keyframes ap-new-dark { 0%, 40% { background: #1d3a4a; box-shadow: 0 0 0 8px #1d3a4a; } 100% { background: transparent; box-shadow: 0 0 0 8px transparent; } }
