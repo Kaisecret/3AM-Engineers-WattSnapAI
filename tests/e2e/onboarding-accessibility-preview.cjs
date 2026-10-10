@@ -52,7 +52,7 @@ async function textContrast(page, selector) {
       await open(page, route);
       await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
       if (route === '/bills/new') { await page.getByRole('button', { name: 'Type it', exact: true }).click(); await page.getByRole('heading', { name: 'Enter your bill details', exact: true }).waitFor(); }
-      if (route === '/appliances/new') { await page.getByRole('button', { name: 'Enter manually', exact: true }).click(); await page.getByRole('heading', { name: 'Review your appliance', exact: true }).waitFor(); }
+      if (route === '/appliances/new') { await page.getByRole('button', { name: 'Add device', exact: true }).click(); await page.getByRole('button', { name: 'Enter manually', exact: true }).click(); await page.getByRole('heading', { name: 'Review your appliance', exact: true }).waitFor(); }
       if (route === '/intro') await page.waitForFunction(() => !!document.querySelector('.intro-controls button:not(:disabled)'));
       await noOverflow(page, `dark ${route}`);
       if (route === '/setup') { await page.getByText('0/5 Completed', { exact: true }).waitFor(); await textContrast(page, '.setup-heading h2, .setup-status, .setup-list h3'); }

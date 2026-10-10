@@ -38,7 +38,7 @@ async function count(page, expected) {
     await count(page, 0);
 
     await open(page, '/appliances/new');
-    await page.getByRole('button', { name: 'Enter manually', exact: true }).click();
+    await page.getByRole('button', { name: 'Add device', exact: true }).click(); await page.getByRole('button', { name: 'Enter manually', exact: true }).click();
     await page.getByRole('radio', { name: 'Fan', exact: true }).check();
     await page.getByLabel('Rated power', { exact: true }).fill('60');
     await page.getByLabel('Hours per day', { exact: true }).fill('8');

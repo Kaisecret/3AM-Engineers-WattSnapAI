@@ -9,7 +9,7 @@
 .hs-page .hs-steps button { min-height: 48px; }.hs-page .hs-steps button > b { font-size: 12px; }
 .np-page :is(.ap-fields label, .np-basis legend, .np-duplicate legend, .np-basis label, .np-duplicate label, .np-confirm) { font-size: 16px; }
 .np-page :is(.np-basis label, .np-duplicate label, .ap-presets label) { min-height: 48px; }
-.np-page :is(.np-input-grid p, .np-input-grid small, .np-note, .np-usage-heading p, .np-confirm small, .np-unit-hint) { font-size: 14px; line-height: 1.6; color: #496272; }
+.np-page :is(.np-start p, .np-sheet small, .np-note, .np-usage-heading p, .np-confirm small, .np-unit-hint) { font-size: 14px; line-height: 1.6; color: #496272; }
 .np-page :is(.ap-fields input, .ap-fields select) { min-height: 48px; font-size: 16px; }
 .np-page .np-form p { overflow-wrap: anywhere; }
 .scan-review :is(.scan-fields label, .br-check, .scan-save) { font-size: 16px; }
@@ -28,7 +28,7 @@
 .auth-page .auth-check { min-height: 44px; }
 .auth-page .auth-input:focus-visible { outline: 3px solid #1687b2; outline-offset: 2px; }
 .intro-page :is(h1, p, .intro-appliance-grid span) { overflow-wrap: anywhere; }
-html[data-theme="dark"] :is(.hs-page, .np-page, .tt-page) :is(.ui-mobile-heading p, .np-input-grid p, .np-input-grid small, .np-note, .np-usage-heading p, .np-confirm small, .np-unit-hint, .tt-inputs-heading p, .tt-preview-note, .tt-note, .tt-freshness p, .tt-tip-action, .tt-tip-reason p, .tt-tip-basis, .tt-empty p) { color: #c2d4df; }
+html[data-theme="dark"] :is(.hs-page, .np-page, .tt-page) :is(.ui-mobile-heading p, .np-start p, .np-sheet small, .np-note, .np-usage-heading p, .np-confirm small, .np-unit-hint, .tt-inputs-heading p, .tt-preview-note, .tt-note, .tt-freshness p, .tt-tip-action, .tt-tip-reason p, .tt-tip-basis, .tt-empty p) { color: #c2d4df; }
 html[data-theme="dark"] :is(.np-form .ap-fields input, .np-form .ap-fields select, .np-confirm, .scan-review, .scan-fields input) { background: #192e3d; color: #edf6fa; border-color: #4c6e7d; }
 html[data-theme="dark"] :is(.np-basis label, .np-basis legend, .np-duplicate label, .np-duplicate legend, .np-form .ap-fields label, .np-confirm, .scan-fields label, .scan-review h2, .scan-review-head p, .br-check, .br-field-hint) { color: #edf6fa; }
 html[data-theme="dark"] .br-check { background: #203e4c; border-color: #4c6e7d; }

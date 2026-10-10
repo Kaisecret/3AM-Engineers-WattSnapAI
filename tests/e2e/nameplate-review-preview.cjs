@@ -96,7 +96,7 @@ async function applianceFlow(browser, viewport, name) {
   assert.equal(item.source, 'sample'); assert.equal(item.model, 'WS-F55'); assert.equal(item.wattageBasis, 'approximate'); assert.equal(item.hours, 0); assert.equal(item.days, 10);
   assert.equal(await page.locator('.ap-item-detail').filter({ hasText: '10 days selected · 0.00 kWh' }).count(), 1);
 
-  await startInput(page); await page.getByRole('button', { name: 'Enter manually', exact: true }).click();
+  await startInput(page); await page.getByRole('button', { name: 'Add device', exact: true }).click(); await page.getByRole('button', { name: 'Enter manually', exact: true }).click();
   await page.getByRole('radio', { name: 'Fan', exact: true }).check();
   assert.equal(await page.getByLabel('Rated power', { exact: true }).inputValue(), '', 'Type selection never invents watts');
   await page.getByLabel('Model (optional)', { exact: true }).fill('WS-F55');

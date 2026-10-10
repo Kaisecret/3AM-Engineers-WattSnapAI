@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Camera, Check, CircleCheck, Keyboard, ScanText, Upload, WifiOff } from "lucide-react";
+import { ArrowLeft, Camera, Check, ChevronRight, CircleCheck, Keyboard, Plus, Upload, WifiOff, X } from "lucide-react";
 import PageShell from "@/features/dashboard/components/PageShell";
 import { usePreviewHousehold } from "@/features/dashboard/use-preview-household";
 import { dailyApplianceKwh, effectiveRate, pesos, type PreviewAppliance } from "@/features/dashboard/preview-data";
@@ -21,6 +22,7 @@ export default function ApplianceRegistrationScreen() {
   const [offline, setOffline] = useState(false);
   const upload = useRef<HTMLInputElement>(null);
   const capture = useRef<HTMLInputElement>(null);
+  const sheet = useRef<HTMLDialogElement>(null);
   const blobUrl = useRef("");
   const request = useRef(0);
   const stageHeading = useRef<HTMLHeadingElement>(null);
@@ -61,16 +63,27 @@ export default function ApplianceRegistrationScreen() {
   }
 
   const stage = phase === "input" ? 0 : phase === "review" ? 1 : 2;
+  const choices = [
+    { id: "camera", label: "Take photo", hint: "Snap the nameplate", Icon: Camera, run: () => capture.current?.click() },
+    { id: "upload", label: "Upload photo", hint: "Pick from your gallery", Icon: Upload, run: () => upload.current?.click() },
+    { id: "manual", label: "Enter manually", hint: "Type the wattage", Icon: Keyboard, run: manual },
+  ];
   return <PageShell active="Appliances" className="np-page">
-    <div className="np-toolbar"><Link href="/appliances"><ArrowLeft size={17} aria-hidden="true" />Back to appliances</Link><span>Saved on this device</span></div>
+    <div className="np-toolbar"><Link href="/appliances"><ArrowLeft size={17} aria-hidden="true" />Back to appliances</Link></div>
     <ol className="np-steps" aria-label="Appliance registration progress">{["Choose input", "Review details", "Saved"].map((label, index) => <li key={label} aria-current={index === stage ? "step" : undefined} className={index < stage ? "is-done" : index === stage ? "is-current" : ""}><span>{index < stage ? <Check aria-hidden="true" /> : index + 1}</span>{label}</li>)}</ol>
     {phase !== "input" && <h2 className="ws-sr-only" ref={stageHeading} tabIndex={-1}>{phase === "review" ? "Review appliance details" : "Appliance saved"}</h2>}
     {phase === "input" && <>
       {offline && <div className="np-note is-offline" role="status"><WifiOff aria-hidden="true" /><p><strong>You’re offline.</strong>Photo review, manual entry, and saved calculations work locally.</p></div>}
-      <div className="np-input-grid">
-        <section className="ui-panel np-upload-panel" aria-labelledby="np-upload-heading"><span className="np-input-icon"><ScanText aria-hidden="true" /></span><h2 id="np-upload-heading">Start with a nameplate photo</h2><p>Upload a clear image with the model and power rating visible. Copy its values into the review form.</p><div className="np-input-actions"><button type="button" className="ui-primary" disabled={!ready || loading} onClick={() => upload.current?.click()}><Upload size={18} aria-hidden="true" />Upload photo</button><button type="button" className="ui-secondary" disabled={!ready || loading} onClick={() => capture.current?.click()}><Camera size={18} aria-hidden="true" />Take photo</button></div><small>JPG, PNG or WebP · up to 10 MB. Taking a photo uses your device’s photo picker.</small><p className="np-preview-hint">Keep the photo beside the form and copy its printed values.</p></section>
-        <section className="ui-panel np-manual-panel" aria-labelledby="np-manual-heading"><span className="np-input-icon"><Keyboard aria-hidden="true" /></span><h2 id="np-manual-heading">Enter the details yourself</h2><p>Choose an appliance type and enter its rated power. Unknown wattage stays blank until you check it.</p><button type="button" className="ui-secondary" disabled={!ready || loading} onClick={manual}>Enter manually</button></section>
-      </div>
+      <section className="ui-panel np-start" aria-labelledby="np-start-heading">
+        <Image className="np-start-bee" src="/assets/branding/wattsnap-bee-point.png" alt="" width={160} height={160} sizes="(min-width: 600px) 104px, 80px" />
+        <div className="np-start-copy"><h2 id="np-start-heading">Track a new device</h2><p>Snap its label or type it in.</p></div>
+        <button type="button" className="ui-primary np-start-button" aria-haspopup="dialog" disabled={!ready || loading} onClick={() => sheet.current?.showModal()}><Plus size={20} aria-hidden="true" />Add device</button>
+      </section>
+      <dialog ref={sheet} className="np-sheet" aria-labelledby="np-sheet-heading" onClick={event => { if (event.target === event.currentTarget) sheet.current?.close(); }}><div className="np-sheet-body">
+        <div className="np-sheet-head"><h2 id="np-sheet-heading">How do you want to add it?</h2><button type="button" className="np-sheet-close" aria-label="Close" onClick={() => sheet.current?.close()}><X size={20} aria-hidden="true" /></button></div>
+        <div className="np-sheet-options">{choices.map(({ id, label, hint, Icon, run }) => <button key={id} type="button" className={`np-sheet-option is-${id}`} aria-label={label} aria-describedby={`np-sheet-${id}`} disabled={!ready || loading} onClick={() => { sheet.current?.close(); run(); }}><span className="np-sheet-icon"><Icon aria-hidden="true" /></span><span className="np-sheet-copy"><strong>{label}</strong><small id={`np-sheet-${id}`}>{hint}</small></span><ChevronRight className="np-sheet-chevron" aria-hidden="true" /></button>)}</div>
+        <small>Photos: JPG, PNG or WebP · up to 10 MB</small>
+      </div></dialog>
 
       {loading && <div className="np-loading" role="status"><span aria-hidden="true" />Opening your photo…<button type="button" onClick={startOver}>Cancel</button></div>}
       {!ready && <p className="ui-helper" role="status">Loading your saved appliances…</p>}{error && <p className="ui-error" role="alert">{error}</p>}{storageError && <p className="ui-error" role="alert">{storageError}</p>}

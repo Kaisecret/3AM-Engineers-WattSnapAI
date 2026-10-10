@@ -127,7 +127,7 @@ async function bills(browser) {
 async function appliances(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage(); await page.goto(`${baseURL}/appliances/new`);
-  await page.getByRole('button', { name: 'Upload photo', exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Add device', exact: true }).waitFor();
   await page.waitForFunction(() => !document.querySelector('input[type=file]').disabled);
   await page.locator('input[type=file]').first().setInputFiles({ name: 'label.png', mimeType: 'image/png', buffer: await fs.readFile('public/assets/branding/wattsnap-icon-192.png') });
   await page.getByLabel('Rated power', { exact: true }).waitFor();
@@ -281,7 +281,7 @@ async function offline(browser) {
 async function accessibility(browser) {
   const context = await browser.newContext({ viewport: { width: 320, height: 800 }, reducedMotion: 'reduce' });
   const page = await context.newPage(); await page.goto(`${baseURL}/appliances/new`);
-  await page.getByRole('button', { name: 'Enter manually', exact: true }).click();
+  await page.getByRole('button', { name: 'Add device', exact: true }).click(); await page.getByRole('button', { name: 'Enter manually', exact: true }).click();
   const refrigerator = page.getByRole('radio', { name: 'Refrigerator', exact: true }); await refrigerator.focus(); await page.keyboard.press('Space');
   assert.equal(await refrigerator.isChecked(), true);
   assert.equal(await refrigerator.evaluate(input => { const label = input.closest('label'), style = getComputedStyle(label), rect = label.getBoundingClientRect(); return rect.width >= 44 && rect.height >= 44 && parseFloat(style.fontSize) >= 14; }), true);
@@ -306,7 +306,7 @@ async function responsive(browser) {
       if (!fit) console.log(await page.evaluate(() => [...document.querySelectorAll('main *')].filter(el => el.getBoundingClientRect().right > innerWidth + 2).slice(0, 6).map(el => ({ tag: el.tagName, class: el.className, right: el.getBoundingClientRect().right }))));
       assert.equal(fit, true, `${route} fits ${width}px`);
       if (route === '/dashboard' && (width === 390 || width === 1440)) { await page.locator('.ws-chart-day').first().waitFor(); await page.evaluate(() => document.fonts.ready.then(() => true)); await page.screenshot({ path: `docs/frontend-review/dashboard-${width}.png`, fullPage: true }); }
-      if (route === '/appliances/new' && width === 390) { await page.getByRole('button', { name: 'Enter manually', exact: true }).click(); await page.screenshot({ path: 'docs/frontend-review/appliance-mobile.png', fullPage: true }); }
+      if (route === '/appliances/new' && width === 390) { await page.getByRole('button', { name: 'Add device', exact: true }).click(); await page.getByRole('button', { name: 'Enter manually', exact: true }).click(); await page.screenshot({ path: 'docs/frontend-review/appliance-mobile.png', fullPage: true }); }
     }
     assert.deepEqual(errors, []); await context.close(); console.log(`PASS: fourteen household pages fit ${width}px without runtime errors`);
   }
@@ -455,7 +455,7 @@ async function polish(browser) {
     await page.getByLabel('Billing month', { exact: true }).fill('2026-10'); await page.getByLabel('Energy used', { exact: true }).fill('100'); await page.getByLabel('Amount due', { exact: true }).fill('1200');
     await page.getByRole('checkbox', { name: 'I reviewed all the values above.', exact: false }).check(); await page.getByRole('button', { name: 'Save to history', exact: true }).click();
     await page.getByText('No change from September', { exact: true }).waitFor();
-    await page.goto(baseURL + '/appliances/new'); await page.getByRole('button', { name: 'Enter manually', exact: true }).click(); await page.getByRole('button', { name: 'Add photo', exact: true }).waitFor();
+    await page.goto(baseURL + '/appliances/new'); await page.getByRole('button', { name: 'Add device', exact: true }).click(); await page.getByRole('button', { name: 'Enter manually', exact: true }).click(); await page.getByRole('button', { name: 'Add photo', exact: true }).waitFor();
     await page.goto(baseURL + '/brownout-ready'); await page.getByRole('heading', { name: 'No preparation plan yet' }).waitFor(); assert.equal(await page.locator('a[href*="sample="]').count(), 0); assert.equal(await page.getByRole('link', { name: 'Add your provider announcement' }).count(), 1);
     await page.goto(baseURL + '/'); assert.deepEqual(await page.locator('.post-feature-card').evaluateAll(items => items.map(item => item.getAttribute('href'))), ['/bills/new', '/bills', '/tips', '/advisories']);
     assert.deepEqual(errors, []); await context.close();
