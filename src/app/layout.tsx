@@ -7,6 +7,7 @@ import "@/features/onboarding/accessibility.css";
 import "@/features/dashboard/frontend-refinements.css";
 import { ThemeSupport } from "@/features/onboarding/components/ThemeSupport";
 import OfflineSupport from "@/components/OfflineSupport";
+import { signedInGateScript } from "@/features/auth/signed-in-gate";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -41,7 +42,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={jakarta.variable} suppressHydrationWarning>
-      <body><script dangerouslySetInnerHTML={{ __html: "try{document.documentElement.dataset.theme=localStorage.getItem('wattsnap-theme-v1')==='dark'?'dark':'light'}catch{}" }} /><ThemeSupport /><OfflineSupport />{children}</body>
+      <body><script dangerouslySetInnerHTML={{ __html: "try{document.documentElement.dataset.theme=localStorage.getItem('wattsnap-theme-v1')==='dark'?'dark':'light'}catch{}" + signedInGateScript }} /><ThemeSupport /><OfflineSupport />{children}</body>
     </html>
   );
 }

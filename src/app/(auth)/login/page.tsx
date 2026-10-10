@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LoginForm } from "@/features/auth/components/LoginForm";
+import { SignedInRedirect } from "@/features/auth/components/SignedInRedirect";
 
 export const metadata: Metadata = {
   title: "Log in",
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function LoginPage() {
-  return <LoginForm />;
+  return <><SignedInRedirect useNext /><LoginForm /></>;
 }

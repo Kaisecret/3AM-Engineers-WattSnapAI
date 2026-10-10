@@ -9,6 +9,7 @@ import { TestimonialsSection } from "@/features/landing/components/TestimonialsS
 import { AccountCtaBanner } from "@/features/landing/components/AccountCtaBanner";
 import { Footer } from "@/features/landing/components/Footer";
 import { LandingChatWidget } from "@/features/assistant/components/LandingChatWidget";
+import { SignedInRedirect } from "@/features/auth/components/SignedInRedirect";
 import "@/features/landing/post-hero.css";
 import "@/features/landing/mobile-landing.css";
 import "@/features/landing/footer.css";
@@ -49,6 +50,9 @@ export default function LandingPage() {
 
       {/* Floating WattSnap AI chat */}
       <LandingChatWidget />
+
+      {/* Someone still signed in goes straight to the app */}
+      <SignedInRedirect />
     </div>
   );
 }

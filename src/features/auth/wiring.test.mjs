@@ -58,14 +58,30 @@ test('an email sent to the server action is refused without any sign-in or looku
   const result = await exports.loginWithIdentifier({ identifier: 'maria@gmail.com', password: 'abc12345x' });
   assert.deepEqual(JSON.parse(JSON.stringify(result)), failure); assert.deepEqual(calls, []);
 });
-function route(path, auth, profile = { onboardedAt: 'date' }) {
+function route(path, auth, profile = { onboardedAt: 'date' }, signedIn = true) {
   return load(path, {
     'next/server': { NextResponse: { redirect: url => new Response(null, { status: 307, headers: { location: String(url) } }) } },
     '../../../lib/supabase/server': { getServerSupabase: async () => ({ auth }) },
     '../../../features/auth/schemas': { safeNextPath: value => value?.startsWith('/') && !value.startsWith('//') && !value.includes('\\') ? value : '/dashboard' },
-    '../../../features/auth/service': { getAccount: async () => ({ ok: true, value: { profile } }) },
+    '../../../features/auth/service': { getAccount: async () => ({ ok: true, value: signedIn ? { profile } : null }) },
   });
 }
+test('Back to a used Google sign-in link keeps an open session instead of showing an error', async () => {
+  const used = { exchangeCodeForSession: async () => ({ error: { code: 'flow_state_not_found' } }) };
+  const kept = await route('src/app/auth/callback/route.ts', used).GET(new Request('https://wattsnap.test/auth/callback?code=used&next=/bills'));
+  assert.equal(new URL(kept.headers.get('location')).pathname, '/bills');
+  const signedOut = await route('src/app/auth/callback/route.ts', used, undefined, false).GET(new Request('https://wattsnap.test/auth/callback?code=used'));
+  assert.equal(new URL(signedOut.headers.get('location')).search, '?error=callback');
+  const reset = await route('src/app/auth/callback/route.ts', used).GET(new Request('https://wattsnap.test/auth/callback?code=used&next=/reset-password'));
+  assert.equal(new URL(reset.headers.get('location')).pathname, '/login', 'a used code never opens the password reset');
+});
+test('Back to a used email link keeps an open session, but never for a password reset', async () => {
+  const used = { verifyOtp: async () => ({ error: { code: 'otp_expired' } }) };
+  const kept = await route('src/app/auth/confirm/route.ts', used).GET(new Request('https://wattsnap.test/auth/confirm?token_hash=old&type=signup'));
+  assert.equal(new URL(kept.headers.get('location')).pathname, '/dashboard');
+  const reset = await route('src/app/auth/confirm/route.ts', used).GET(new Request('https://wattsnap.test/auth/confirm?token_hash=old&type=recovery'));
+  assert.equal(new URL(reset.headers.get('location')).search, '?error=verification');
+});
 test('OAuth callback exchanges code and rejects an external next redirect', async () => {
   let exchanged;
   const exports = route('src/app/auth/callback/route.ts', { exchangeCodeForSession: async code => { exchanged = code; return { error: null }; } });

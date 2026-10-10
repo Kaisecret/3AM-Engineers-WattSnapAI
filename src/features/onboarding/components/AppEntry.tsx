@@ -4,9 +4,8 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getBrowserSupabase } from "@/lib/supabase/browser";
-import { getAccount } from "@/features/auth/service";
 import { forgetAccount } from "@/features/auth/session";
+import { browserHasSession } from "@/features/auth/signed-in";
 import "../onboarding.css";
 
 export default function AppEntry() {
@@ -17,11 +16,11 @@ export default function AppEntry() {
     async function open() {
       try {
         try { forgetAccount(); } catch { /* Display cache is optional here. */ }
-        const account = await getAccount(getBrowserSupabase());
+        // Opening the installed app goes straight in while this phone holds a session.
+        // The server checks the account (and an unfinished profile) on the next page.
+        const signedIn = await browserHasSession();
         if (!active) return;
-        if (!account.ok) { setError(true); return; }
-        const destination = account.value ? account.value.profile.onboardedAt ? "/dashboard" : "/complete-profile" : "/login";
-        router.replace(destination);
+        router.replace(signedIn ? "/dashboard" : "/login");
       } catch { if (active) setError(true); }
     }
     void open();

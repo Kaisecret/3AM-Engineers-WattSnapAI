@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SignupFlow } from "@/features/auth/components/SignupFlow";
+import { SignedInRedirect } from "@/features/auth/components/SignedInRedirect";
 
 export const metadata: Metadata = {
   title: "Create account",
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function SignupPage() {
-  return <SignupFlow />;
+  return <><SignedInRedirect /><SignupFlow /></>;
 }

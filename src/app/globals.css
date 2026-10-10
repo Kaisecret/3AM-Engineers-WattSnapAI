@@ -797,3 +797,12 @@ a:focus-visible, button:focus-visible {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* A person still signed in skips the landing, login and sign-up pages (src/features/auth/signed-in-gate.ts). */
+html.ws-auth-check { background: #f1fafc; }
+html.ws-auth-check body { visibility: hidden; }
+.ws-auth-gate { position: fixed; z-index: 2147483000; inset: 0; display: grid; place-items: center; visibility: visible; background: #f1fafc; }
+.ws-auth-gate span { width: 36px; height: 36px; border: 3px solid #d6f1fb; border-top-color: #0aa9dd; border-radius: 50%; animation: ws-auth-spin .8s linear infinite; }
+html[data-theme="dark"].ws-auth-check, html[data-theme="dark"] .ws-auth-gate { background: #10202b; }
+html[data-theme="dark"] .ws-auth-gate span { border-color: #24475a; border-top-color: #89dfef; }
+@keyframes ws-auth-spin { to { transform: rotate(360deg); } }
