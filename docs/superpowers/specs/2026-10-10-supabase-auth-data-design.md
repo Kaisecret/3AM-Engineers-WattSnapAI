@@ -1,20 +1,22 @@
 # Supabase Backend Foundation Design Specification
 
-Date: 2026-10-10. Branch: `feat/supabase-auth`. Status: revised design, awaiting review. Not yet implemented.
+Date: 2026-10-10. Branch: `feat/supabase-auth`. Status: approved and stress-tested. Not yet implemented.
 
-This revision replaces the first version of this document, which was written against commit `ed2b287`. It was rewritten after `main` advanced to `9c34526` and after the unmerged branch `frontend/final-enhancements-2026-10-10` was reviewed.
+This is the third revision. The first was written against commit `ed2b287`. The second followed `main` advancing to `9c34526` and a review of the unmerged branch `frontend/final-enhancements-2026-10-10`. This one applies the stress-test results recorded at the end.
 
 ## Overview
 
 WattSnap has a complete interface and no backend. Sign-in is a local demonstration, every household page is reachable without an account, and all household data lives in the browser's `localStorage`, scoped to a locally chosen identity.
 
-This work adds the backend: a hosted Supabase project with a Postgres schema derived from the data the screens already save, row-level security that isolates each household, real authentication services, and data-access code for every feature.
+This work adds the backend: a hosted Supabase project with a real Postgres database, a schema derived from the data the screens already save, row-level security that isolates each household, and authentication services.
+
+The database is a production database. It will hold real accounts and real household records, so its design, its limits and its operating procedures are chosen for real use.
 
 It follows [docs/features/00-authentication-foundation.md](../../features/00-authentication-foundation.md), [docs/03-architecture.md](../../03-architecture.md), [docs/05-shared-contracts.md](../../05-shared-contracts.md) and [docs/09-quality-security.md](../../09-quality-security.md).
 
 ## Why the work is split into two phases
 
-The frontend is changing quickly. Another developer has fifteen unmerged commits on `frontend/final-enhancements-2026-10-10` that replace the login and sign-up pages, change the household data hooks and the service worker, and remove sample data. Editing those same screens now would collide with that work.
+The frontend is changing quickly. Another developer has fifteen unmerged commits on `frontend/final-enhancements-2026-10-10` that replace the login and sign-up pages, change the household data hooks and the service worker, and remove sample data. Their remaining work includes a pass over the frontend's data contracts. Editing the same screens now, or writing code against shapes that are about to change, would be wasted.
 
 That branch also carries a guard, `scripts/check-frontend-boundaries.cjs`, which names the files the frontend must not touch. Those files are the backend's:
 
@@ -24,48 +26,54 @@ That branch also carries a guard, `scripts/check-frontend-boundaries.cjs`, which
 - `src/app/api/`
 - `.env*`, `.github/`, `next.config.*`, `vercel.json`
 
-**Phase A (this specification)** stays inside those files, plus new files that nobody else has. It delivers the deployed database, the security rules, the authentication services and the data repositories, all tested against the hosted project. It changes no screen, hook, stylesheet or page. The running application behaves exactly as before.
+**Phase A (this specification)** delivers everything that can be built and proven without a screen: the deployed database, the security rules, the authentication logic, and a test that exercises them against the hosted project. It stays inside the backend's files and adds new files nobody else has. The running application behaves exactly as before.
 
-**Phase B (a later specification)** connects the screens to Phase A once the frontend branch has merged. It is outlined at the end of this document so that Phase A is built to fit it.
+**Phase B (a later specification)** connects the screens once the frontend branch has merged. It is outlined near the end so that Phase A is built to fit it.
 
 ## Decisions
 
 | Decision | Choice | Consequence |
 | --- | --- | --- |
-| Database host | One hosted Supabase project, free tier, Singapore region | No local database. See "Known limitations". |
-| Build base | `main`, backend-reserved files only | No conflict with the frontend branch. Login screens are not connected in Phase A. |
+| Operating stance | Production database on the Supabase free plan | Row limits, file rules, bot protection and a backup procedure are part of the design. The free plan's limits are listed under "Known limitations". |
+| Database host | One hosted Supabase project, Singapore region | No local database. |
+| Build base | `main`, backend-reserved files only | No conflict with the frontend branch. |
 | Schema source | Data shapes on the frontend branch, which are a superset of `main` | The schema will not need an immediate follow-up migration when that branch merges. |
-| Sign-in methods | Email + password, and Google | Google needs an OAuth client created in Google Cloud Console. |
+| Sign-in methods | Email + password, and Google | Google needs an OAuth client created in Google Cloud Console. Connected in Phase B. |
 | Login identifier | Email or username | Username lookup needs the Supabase secret key on the server, plus an attempt limiter. |
-| Email delivery | Gmail SMTP with an app password | About 500 emails per day. Suitable for demo and class use, not for launch. |
-| Sample data | None stored | The frontend branch removes sample data. Records marked as samples are never uploaded. |
-| Delivery branch | `feat/supabase-auth` | `main` deploys to production automatically. |
+| Sample data | None stored | The frontend branch removes sample data. |
+| Delivery | Push `feat/supabase-auth` as its own branch; hold the merge to `main` | Merge after the frontend branch lands, or when its author agrees. |
+| Email delivery | Re-decided in Phase B | Gmail SMTP was chosen as a demonstration option. A production mailer needs a verified domain. |
+| Preview and production data | Re-decided in Phase B | Until screens connect, nothing reads the database, so the question does not arise in Phase A. |
 
 ## Phase A scope
 
 In scope:
 
-- One migration: twelve tables, constraints, triggers, functions, row-level security policies, grants and two private Storage buckets.
-- Supabase clients for the browser, the server and the secret-key administrative path, with environment validation.
-- Authentication services: sign-up, email code verification, Google, login by email or username, password recovery, profile completion, logout.
-- A data repository for each feature, converting between database rows and the shapes the screens already use.
+- One migration: twelve tables, constraints, triggers, row limits, row-level security policies, grants and two private Storage buckets.
+- Authentication logic in `src/features/auth/`: validation, the service functions, and the username lookup and attempt limiter.
+- Environment validation in `src/lib/config/env.ts`.
+- Generated database types.
 - Unit tests, and an isolation test that runs against the hosted project.
+- An operations document covering migrations, backup and restore.
 
 Out of scope for Phase A:
 
 - Any change to a screen, hook, page, stylesheet, the service worker, or interface text.
-- The route guard. A guard that redirects visitors to `/login` would break the current local-access pages, so it arrives with the screens in Phase B.
+- The feature data repositories. They translate between database rows and screen shapes, and those shapes are still moving. They are built in Phase B against the final shapes. The translation rules they will follow are recorded below.
+- Everything that only runs inside the Next.js server or a browser page: the cookie-based Supabase clients, the secret-key client wrapper, the authorization helper, the route guard, the Google return route and the username login server action. None of them can be exercised until a screen calls them, so they arrive in Phase B with the screens.
 - Gemini integration, offline synchronisation, push notifications, GitHub Actions workflows, account deletion.
 
 ## Environment variables
 
-| Name | Where it is read | Notes |
+| Name | Where it is read | Needed in Phase A |
 | --- | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Browser and server | Project URL. |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser and server | Publishable key (older dashboards call it `anon`). Safe to expose; row-level security protects the data. |
-| `SUPABASE_SECRET_KEY` | Server only | Secret key (older name `service_role`). Bypasses row-level security. Used for username login and by the isolation test. Never prefixed with `NEXT_PUBLIC_`, never committed, marked Sensitive in Vercel. |
+| `NEXT_PUBLIC_SUPABASE_URL` | Browser and server | In `.env.local` only, for the isolation test. |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser and server | In `.env.local` only. Older dashboards call it `anon`. Safe to expose; row-level security protects the data. |
+| `SUPABASE_SECRET_KEY` | Server only | In `.env.local` only. Older name `service_role`. Bypasses row-level security. Never prefixed with `NEXT_PUBLIC_`, never committed. |
 
-`.env.example` lists the three names with empty values. `src/lib/config/env.ts` validates them when a Supabase client is first created and throws an error naming any that are missing. It does not run at import time, so the application still builds and runs in local mode before the variables are set.
+Nothing is added to Vercel in Phase A. No deployed code reads these values yet, and the secret key should not sit in a hosting environment before something needs it.
+
+`.env.example` lists the three names with empty values. `src/lib/config/env.ts` exposes functions that read and validate them and throw an error naming any that are missing. They run when called, not at import time, so the application builds and runs unchanged without the variables.
 
 ## Database schema
 
@@ -94,9 +102,8 @@ One row per account.
 | Column | Type | Rules |
 | --- | --- | --- |
 | `id` | `uuid` | Primary key, references `auth.users(id)`, deleted with the account. |
-| `full_name` | `text` | Required, at most 50 characters. |
+| `full_name` | `text` | At most 50 characters. May be empty until profile setup. |
 | `username` | `text` | Unique, optional until profile setup. 3 to 30 characters from `a-z`, `0-9`, `_`, `.`. |
-| `birth_date` | `date` | Optional until profile setup. Not before 1900-01-01. The app also rejects future dates. |
 | `avatar_path` | `text` | Path of the profile photo in the `avatars` bucket. |
 | `notify_brownouts` | `boolean` | Default `true`. |
 | `notify_bill_reminders` | `boolean` | Default `true`. |
@@ -104,6 +111,8 @@ One row per account.
 | `onboarded_at` | `timestamptz` | Set when profile setup is completed. |
 
 The account email is read from the Supabase session and is not copied here. The three notification columns hold the preference only; nothing sends notifications yet.
+
+There is no birth date column. The earlier sign-up form asked for one, but no screen on the newest frontend collects it and nothing uses it, and a production database should not hold personal data without a purpose. If the sign-up form returns in Phase B and the team decides the field is needed, it is added then.
 
 ### `households`
 
@@ -139,7 +148,7 @@ Primary key (`household_id`, `id`).
 | `source_name` | `text` | Optional file name of the reference photo, at most 200 characters. The photo itself is not stored. |
 | `notes` | `text` | Optional, at most 500 characters, the limit the bill review form already applies. |
 
-Unique on (`household_id`, `billing_month`): saving a bill for a month that already has one replaces it.
+Unique on (`household_id`, `billing_month`). The interface replaces an existing bill when one is saved for the same month; Phase B adds a database function that performs that replacement as a single step.
 
 ### `appliances`
 
@@ -178,7 +187,7 @@ A reviewed provider advisory. Primary key (`household_id`, `id`).
 | `original_captured_at` | `timestamptz` | Required. |
 | `reviewed_at` | `timestamptz` | Required. |
 
-`details` and `match` are stored as documents because the interface already defines them as versioned, nested structures with its own validators (`normalizeReviewedAdvisory`). Splitting them into a dozen more tables would duplicate rules that are still changing. The database checks their type and size and derives the two columns worth filtering on; the existing validators check the contents whenever a record is read.
+`details` and `match` are stored as documents because the interface already defines them as versioned, nested structures with its own validators (`normalizeReviewedAdvisory`). Splitting them into a dozen more tables would duplicate rules that are still changing. The database checks their type and size and derives the two columns worth filtering on; the interface's validators check the contents whenever a record is read. A household can only ever write to its own rows, so a malformed document harms nobody else.
 
 ### `advisory_preparation`
 
@@ -255,32 +264,48 @@ Supports the username login limiter. No client can read or write it.
 | `ip_hash` | `text` | HMAC-SHA256 of the caller's IP address, keyed with the secret key. The raw address is not stored. |
 | `attempted_at` | `timestamptz` | Default `now()`. |
 
-Only failed attempts are recorded. Rows older than 24 hours are deleted whenever the login path runs.
+Only failed attempts are recorded. Rows older than 24 hours are deleted whenever the limiter runs.
 
 ### What is deliberately not stored
 
 | Data | Reason |
 | --- | --- |
-| Sample bills, appliances, tips, scenarios and gallery advisories | Demonstration data. The frontend branch removes it. Repositories refuse to upload a record marked as a sample. |
+| Sample bills, appliances, tips, scenarios and gallery advisories | Demonstration data. The frontend branch removes it. |
 | Bill photos and appliance nameplate photos | The interface treats them as temporary references and saves only the reviewed values. |
 | Unfinished bill drafts | Kept in the browser tab's session storage by design. |
 | Introduction progress and light or dark theme | Device preferences that exist before an account does. |
 | Assistant chat messages | The interface does not keep them. |
+| Birth date | No current screen collects it and nothing uses it. |
 
 ### Functions and triggers
 
-- `handle_new_user()` runs after a row is inserted into `auth.users`. It inserts the matching `profiles` row (taking `full_name` from the sign-up form or the Google profile, truncated to 50 characters) and the `households` row. Both inserts ignore conflicts, so a retry cannot create duplicates. It runs with definer rights and an empty `search_path`.
+- `handle_new_user()` runs after a row is inserted into `auth.users`. It inserts the matching `profiles` row (taking `full_name` from the sign-up form or the Google profile, truncated to 50 characters, or leaving it empty) and the `households` row. Both inserts ignore conflicts, so a retry cannot create duplicates. It runs with definer rights and an empty `search_path`. Because a failure here would block every sign-up, it does nothing else, and the isolation test creates accounts through it.
 - `set_updated_at()` maintains `updated_at` on every table.
-- `enforce_household_row_limit()` rejects an insert once a household already holds the maximum for that table: 600 bills, 300 appliances, 500 advisories, 2,000 preparation rows, 300 plans, 200 scenarios. Because the browser talks to the database directly, these limits stop one account from filling the shared database.
+- `enforce_household_row_limit()` rejects an insert once a household already holds the maximum for that table.
+
+### Row limits
+
+The browser talks to the database directly, so the database itself has to stop one account from filling it.
+
+| Table | Maximum rows per household |
+| --- | --- |
+| `bills` | 240 |
+| `appliances` | 150 |
+| `advisories` | 200 |
+| `advisory_preparation` | 500 |
+| `brownout_plans` | 100 |
+| `scenarios` | 50 |
+
+`tips_snapshots` and `setup_progress` hold one row per household by their primary key.
 
 ### Storage
 
-| Bucket | Visibility | Limits | Object path |
+| Bucket | Visibility | Limits | Accepted object path |
 | --- | --- | --- | --- |
-| `avatars` | Private | 1 MB; JPEG, PNG, WebP | `<user id>/avatar.jpg` |
-| `advisory-originals` | Private | 3 MB; JPEG, PNG, WebP | `<user id>/<advisory id>/r<revision>.<ext>` |
+| `avatars` | Private | 1 MB; JPEG, PNG, WebP | Exactly `<user id>/avatar.jpg`. One file per account. |
+| `advisory-originals` | Private | 2 MB, the interface's own limit; JPEG, PNG, WebP | `<user id>/<advisory id>/r<revision>.<ext>`. At most 60 files per account. |
 
-Files are shown through signed URLs that expire after one hour. An advisory image is deleted once neither the advisory row nor a plan snapshot still refers to that revision.
+The policies check the full path, not just the folder, so an account cannot store arbitrary files. Files are shown through signed URLs that expire after one hour.
 
 ## Row-level security
 
@@ -294,7 +319,7 @@ Row-level security is enabled on every table. Policies name the specific owner; 
 | `bills`, `appliances`, `advisories`, `advisory_preparation`, `brownout_plans`, `scenarios` | Read, insert, update, delete | Only rows whose `household_id` belongs to a household they own. |
 | `tips_snapshots`, `setup_progress` | Read, insert, update, delete | Same rule. |
 | `auth_login_attempts` | Nothing | No policies exist. |
-| `storage.objects` in both buckets | Read, insert, update, delete | Only objects inside the folder named with their user id. |
+| `storage.objects` in both buckets | Read, insert, update, delete | Only objects at the accepted paths inside the folder named with their user id. |
 
 Further restrictions:
 
@@ -302,69 +327,51 @@ Further restrictions:
 - Update permission on `profiles` and `households` is granted column by column and excludes `id` and `owner_id`.
 - All privileges on these tables are revoked from the anonymous role.
 
-## Authentication services
+## Authentication logic
 
-Phase A builds these as functions. No screen calls them yet.
+Phase A builds this as functions. No screen calls them yet.
 
-### Service functions
+### Validation, `src/features/auth/schemas.ts`
 
-`src/features/auth/service.ts` exposes one function per use case. Each takes a Supabase client and plain values, and resolves to either a success value or a failure with a category and a message that is safe to show.
+Pure functions with no dependencies: email format; the three password rules (at least 8 characters, a letter and a number, not a common password); username rules; identifier parsing, where a value containing `@` is an email and anything else is a username; and `next` path validation, which accepts only a path that starts with a single `/`.
+
+### Service functions, `src/features/auth/service.ts`
+
+One function per use case. Each takes a Supabase client and plain values, and resolves to either a success value or a failure with a category and a message that is safe to show. Functions that Supabase protects with a bot check accept an optional verification token, so that Phase B can switch the protection on without changing them.
 
 | Function | Behaviour |
 | --- | --- |
-| `signUpWithEmail` | Checks name, email and the three password rules (8 characters, a letter and a number, not a common password), then creates the account. Supabase emails a 6-digit code. |
+| `signUpWithEmail` | Checks name, email and password, then creates the account. Supabase emails a 6-digit code. |
 | `verifySignupCode` | Verifies the code, which starts the session. |
 | `resendSignupCode` | Requests a new code. Supabase refuses a second email to the same address within 60 seconds; that refusal is reported as "Please wait a minute before requesting another code." |
-| `signIn` | Takes the single "Email or Username" value. A value containing `@` is an email and goes to `signInWithEmail`; anything else goes to the username server action below. |
-| `signInWithEmail` | Signs in with email and password, directly from the browser. |
-| `signInWithGoogle` | Starts the Google redirect, returning to `/auth/callback`. |
+| `signInWithEmail` | Signs in with email and password. |
+| `signInWithGoogle` | Starts the Google redirect. |
 | `requestPasswordReset` | Sends a 6-digit recovery code. Reports success whether or not the email is registered. |
 | `verifyRecoveryCode` | Verifies the code, which starts a recovery session. |
 | `updatePassword` | Applies the three rules, updates the password, then signs out every session for the account. |
-| `completeProfile` | Saves full name, birth date and username and sets `onboarded_at`. A taken username is reported as "That username is taken." |
+| `completeProfile` | Saves full name and username and sets `onboarded_at`. A taken username is reported as "That username is taken." |
 | `signOut` | Ends the session. |
 | `getAccount` | Returns the user id, email and profile, or nothing when signed out. |
 
 When someone signs up with an email that already has an account, Supabase sends nothing and reports no error, so that registered emails cannot be discovered. `signUpWithEmail` keeps that protection and returns the same success either way.
 
-### Login by username
+Failures are reported in the categories the shared contracts define: validation, authentication, authorization, network or offline, rate limit, and conflict. Raw provider and database error text is logged and never returned in the message.
 
-`src/features/auth/actions.ts` holds one server action, `signInWithUsername`. Email logins never pass through it; they go from the browser straight to Supabase, so Supabase's own per-visitor rate limiting applies to them. For a username the action does three things:
+### Username lookup and limiter, `src/features/auth/repository.ts`
 
-1. The limiter is checked: at most 5 failed attempts per username and 20 per IP address in any 15 minutes. Beyond that the answer is "Too many attempts. Try again in 15 minutes, or log in with your email."
-2. The email is looked up with the secret-key client.
-3. The sign-in runs on the server, so the session cookies are set there. The email is never returned to the browser.
+Functions that take a secret-key client:
 
-Every failure gives the same message: "Incorrect email, username, or password." When a username does not exist the action still performs a sign-in attempt against a placeholder address, so that response time does not reveal whether the username is real. Attempts are counted for the submitted text whether or not it exists, and a locked username can still log in by email, so the limiter cannot be used to lock someone out.
+- Find the email for a username.
+- Count recent failed attempts, and decide whether another is allowed: at most 5 per username and 20 per IP address in any 15 minutes.
+- Record a failed attempt, and delete records older than 24 hours.
 
-The lookup and the limiter live in `src/features/auth/repository.ts` as functions that take the administrative client, so they can be tested without a running web server.
+Attempts are counted for the submitted text whether or not that username exists. A locked username can still log in by email, so the limiter cannot be used to lock someone out of their account.
 
-### Google return route
+Phase B wraps these in a server action that performs the sign-in on the server and never returns the email to the browser. Every failure there gives the same message, "Incorrect email, username, or password", and an unknown username still triggers a sign-in attempt against a placeholder address so that response time reveals nothing.
 
-`src/app/auth/callback/route.ts` exchanges the code Google returns for a session, then redirects to the `next` path. `next` is accepted only when it starts with a single `/`; anything else becomes `/dashboard`. A failed exchange redirects to `/login`. Nothing links to this route until Phase B.
+## Translation rules for Phase B
 
-### Failure categories
-
-Services report failures in the categories the shared contracts define: validation, authentication, authorization, network or offline, rate limit, and conflict. Raw provider and database error text is logged and never returned in the message.
-
-## Data repositories
-
-Each feature's `repository.ts` holds the functions that read and write that feature's rows. Every function takes a Supabase client and works in the shapes the screens already use, so Phase B can connect them without changing any calculation or validation code.
-
-| File | Functions |
-| --- | --- |
-| `household-profile/repository.ts` | Load and save household details; load and save the profile; upload, remove and sign the profile photo. |
-| `bill-scanner/repository.ts` | Save a confirmed bill, replacing any bill for the same month. |
-| `bill-history/repository.ts` | List bills; remove a bill. |
-| `appliance-registration/repository.ts` | List, save and remove appliances. |
-| `smart-energy-budget/repository.ts` | Read and set the monthly budget. |
-| `advisory-intelligence/repository.ts` | List, save and remove reviewed advisories, including their original images; read and set preparation progress. |
-| `brownout-ready/repository.ts` | List, save and remove plans. |
-| `tipid-tips/repository.ts` | Load and save the tips snapshot. |
-| `watt-if-simulator/repository.ts` | List, save and remove scenarios. |
-| `onboarding/repository.ts` | Load and save setup progress. New file. |
-
-Conversion rules, applied in the repositories and nowhere else:
+The repositories built in Phase B convert between the shapes the screens use and the database. The schema above was designed around these rules:
 
 | Screen shape | Database |
 | --- | --- |
@@ -374,9 +381,9 @@ Conversion rules, applied in the repositories and nowhere else:
 | `provider` as an id or `custom:<name>` | `provider_id` or `provider_custom_name`. |
 | `locality` object | `province`, `municipality`, `barangay`. |
 | Advisory `original.image` as a data URL | An object in `advisory-originals`, referenced by `original_image_path`. |
-| A record whose `source` or `origin` is `sample`, or whose id starts with `sample-` | Not uploaded. The function reports it as skipped. |
+| A record whose `source` or `origin` is `sample`, or whose id starts with `sample-` | Not uploaded. |
 
-Every record read from the database passes through the interface's existing validator for that type. A row that fails is left out of the result and logged, which is how the interface already treats unreadable local records.
+Every record read from the database passes through the interface's existing validator for that type.
 
 ## File map
 
@@ -386,103 +393,113 @@ New files:
 | --- | --- |
 | `supabase/migrations/20261010000000_initial_schema.sql` | Everything under "Database schema" and "Row-level security". |
 | `supabase/tests/isolation.test.mjs` | Isolation test against the hosted project. |
-| `src/lib/supabase/admin.ts` | Secret-key client. Marked server-only so that importing it from browser code fails the build. |
-| `src/app/auth/callback/route.ts` | Google return route. |
-| `src/features/auth/actions.ts` | Server action for login by username. |
-| `src/features/onboarding/repository.ts` | Setup progress access. |
 | `src/generated/database.types.ts` | Types generated from the schema. Never edited by hand. |
+| `docs/11-database-operations.md` | How to apply a migration, back up and restore the database, keep a free-plan project active, and run the isolation test. |
 | Unit test files beside their subjects | Named `*.test.mjs`, the convention the 76 existing tests use. |
 
 Existing empty placeholders that receive their implementation:
 
-`src/lib/config/env.ts`, `src/lib/supabase/browser.ts`, `src/lib/supabase/server.ts`, `src/lib/supabase/authorization.ts`, `src/features/auth/service.ts`, `repository.ts`, `schemas.ts`, `types.ts`, `index.ts`, and the `repository.ts` of `household-profile`, `bill-scanner`, `bill-history`, `appliance-registration`, `smart-energy-budget`, `advisory-intelligence`, `brownout-ready`, `tipid-tips` and `watt-if-simulator`.
+`src/lib/config/env.ts`, and in `src/features/auth/`: `schemas.ts`, `types.ts`, `service.ts`, `repository.ts`, `index.ts`.
 
 Other files that change: `.env.example`, `package.json`, `package-lock.json`.
 
-New dependencies: `@supabase/supabase-js`, `@supabase/ssr`, `server-only`.
+New dependency: `@supabase/supabase-js`.
 
-No other file changes. In particular, nothing under `src/features/*/components/`, no hook, no page under `src/app/(auth)/` or `src/app/(household)/`, no stylesheet, and not `public/sw.js`.
+No other file changes.
 
 ## Testing
 
 **Unit tests**, run with `node --test`:
 
-- Each conversion rule above, in both directions: centavo rounding, month boundaries, an unset budget, both provider forms, missing optional dates, a locality with an empty barangay.
-- Samples are skipped and never produce a write.
-- Identifier parsing: email versus username, surrounding spaces, mixed case.
-- Username rules, the three password rules, and birth-date limits.
+- Email, password, username and identifier rules, including surrounding spaces and mixed case.
 - `next` validation: accepts `/bills`; rejects `//evil.example`, `https://evil.example`, and an empty value.
-- Failure mapping: each Supabase error code maps to the intended category and message, and no raw error text reaches the message.
+- Environment validation: each missing variable is named in the error; a secret key is never accepted under a public name.
+- Failure mapping, using a stand-in client: each Supabase error code maps to the intended category and message, and no raw error text reaches the message.
+- `signUpWithEmail` returns the same result for a new and an already registered email.
 - Limiter arithmetic with a fixed clock: the fifth failure is allowed, the sixth is refused, and attempts older than 15 minutes do not count.
 
-**Isolation test**, `supabase/tests/isolation.test.mjs`, run with `node --test` against the hosted project using the variables in `.env.local`. It creates two throwaway accounts through the administrative API, signs in as each with the publishable key, and asserts through the real API that:
+**Isolation test**, `supabase/tests/isolation.test.mjs`, run with `node --test` against the hosted project using the variables in `.env.local`. It first deletes any test accounts left by an earlier interrupted run, creates two new ones through the administrative API, signs in as each with the publishable key, and asserts through the real API that:
 
 - a new account has exactly one profile and one household, and a second household for the same owner is rejected;
-- each account can write and read back its own rows in every table, through the repositories;
+- each account can write and read back a valid row in every table;
 - account A cannot read, insert into, update or delete account B's rows in any table, including by supplying B's ids;
-- account A cannot read, overwrite or delete account B's files in either bucket;
+- account A cannot read, overwrite or delete account B's files in either bucket, and cannot store a file at a path outside the accepted pattern;
 - a client with no session can read nothing;
 - `auth_login_attempts` is unreachable from both accounts;
-- an out-of-range value is rejected for each constrained column family: money, kWh, hours, quantity, budget, checklist items;
-- the row limit rejects the insert after the last allowed row;
+- an out-of-range value is rejected for each constrained column family: money, kWh, hours, quantity, budget, dates, checklist items, document size;
+- the row limit rejects the insert after the last allowed row, and the file limit rejects the file after the last allowed file;
+- the service functions `signInWithEmail`, `getAccount`, `completeProfile` and `signOut` work against the real project, and a taken username is reported as taken;
 - the username lookup finds the right account, and the limiter refuses the sixth failed attempt.
 
-It deletes both accounts at the end, including when an assertion fails, and removal of the accounts removes their rows. It skips with a clear message when the environment variables are absent.
+It deletes both accounts at the end, including when an assertion fails, and removal of the accounts removes their rows. Test accounts use addresses in a reserved test domain. It skips with a clear message when the environment variables are absent.
 
 **Static checks:** `npm run build`, TypeScript with no errors, and the 76 existing feature tests still passing.
 
-**Not verifiable in Phase A:** the email code, Google and password-recovery flows from end to end. They need a person, an inbox and a screen. They are verified in Phase B. Phase A verifies their inputs, their error handling and the database they depend on.
+**Not verifiable in Phase A:** the email code, Google and password-recovery flows from end to end. They need a person, an inbox and a screen. Phase A verifies their inputs, their error handling and the database they depend on.
 
 ## Acceptance criteria
 
 - [ ] The migration applies cleanly to a new Supabase project.
 - [ ] The isolation test passes against that project.
 - [ ] All unit tests pass, and the 76 existing tests still pass.
-- [ ] `npm run build` succeeds, both with the environment variables set and without them.
-- [ ] The secret key appears in no browser bundle. Verified by searching the build output for its value.
+- [ ] `npm run build` succeeds without the environment variables set.
 - [ ] `git diff main --stat` shows changes only in the files listed under "File map".
+- [ ] The backup command in the operations document has been run once and its output restored into a scratch schema or inspected.
 - [ ] The deployed application behaves exactly as it does on `main`.
 
 ## Rollout
 
-1. The migration is applied to the Supabase project. It only creates objects, and the running application does not use the database, so nothing can break.
-2. The dashboard settings in Appendix A are completed.
-3. The three environment variables are set locally and in Vercel.
+1. The Supabase project is created, and the minimum auth settings in Appendix A are applied.
+2. The migration is applied. It only creates objects, and the running application does not use the database, so nothing can break.
+3. The three environment variables are set in `.env.local`.
 4. The isolation test is run.
-5. The branch is merged to `main`. Since no screen uses the new code, production behaves as before.
+5. `feat/supabase-auth` is pushed to GitHub as its own branch. Vercel builds a preview for it; production is untouched.
+6. The branch is merged to `main` only after the frontend branch has merged, or when its author agrees. Their guard script compares the backend-reserved files against commit `9c34526`, and merging first would make it fail.
 
-The frontend developer should be told that the backend-reserved files are changing on `feat/supabase-auth`, because their guard script compares those files against commit `9c34526`.
+Once the migration has been applied to the real project it is never edited. Every later schema change is a new migration file.
 
 ## Phase B outline
 
-Phase B gets its own specification once the frontend branch has merged. Phase A is built to support the following, which are not yet decided:
+Phase B gets its own specification once the frontend branch has merged. The following are not yet decided:
 
 - **Sign-in screens.** The frontend branch keeps `LoginForm`, `SignupFlow`, `ForgotPasswordFlow` and `ResetPasswordForm` in the repository, unused. Phase B would put them back on the account pages, connected to the services above, and remove the imitation Google account chooser.
-- **Route guard.** A middleware that refreshes the session and redirects signed-out visitors away from household pages and the AI API routes.
+- **Server pieces.** The cookie-based Supabase clients, the secret-key client wrapper, the authorization helper, the Google return route, the username login server action, and a middleware that refreshes the session and redirects signed-out visitors away from household pages and the AI API routes.
+- **Feature repositories**, following the translation rules above, and the database function that replaces a bill for the same month.
 - **Where data lives.** The recommendation is that Supabase becomes the source of truth and the existing account-scoped `localStorage` records become a read cache, with the account's user id as the scope. Saved information stays readable offline; saving requires a connection. Full offline editing with conflict handling is feature F09.
 - **Service worker.** Its cached page shells contain no household data, so they can stay. Its install step must stop caching a redirect to `/login` under a protected page's address.
 - **Logout.** [docs/features/00](../../features/00-authentication-foundation.md) requires that sign-out clears private local records. The current local-access design keeps them. Phase B has to reconcile the two.
+- **Bot protection.** Cloudflare Turnstile on sign-up, login and password reset: the widget on the forms, and the setting switched on in Supabase.
+- **Production email.** A transactional email provider with a verified domain, in place of Gmail SMTP.
+- **Separate databases.** A second Supabase project so that preview deployments never read or write production data, as [docs/07-ci-cd-pipeline.md](../../07-ci-cd-pipeline.md) requires.
+- **Account deletion.** People must be able to delete their account and data before the application is opened to the public.
 - **Interface text** that describes data as stored only on the device.
 
 ## Known limitations
 
-- **Nothing visible changes in Phase A.** The database, security rules and services exist and are tested, but people still use the local-access screens until Phase B.
-- **Preview and production share one database.** [docs/07-ci-cd-pipeline.md](../../07-ci-cd-pipeline.md) says a preview must never connect to production data. This is accepted until launch because there are no real users yet. A second Supabase project for production must exist before real users sign up.
-- **The isolation test writes to that shared database.** It creates and deletes two accounts with addresses in a reserved test domain. It must not be pointed at a project that holds real users without a review.
-- **Gmail SMTP is a demo-grade mailer.** It is capped near 500 emails per day and relies on an app password that grants sending rights for that Gmail account. A dedicated Gmail account should be used. Before launch this moves to a transactional email provider with a verified domain.
-- **The secret key is in the application.** It is confined to `src/lib/supabase/admin.ts` and used by one server action and the isolation test. [docs/09-quality-security.md](../../09-quality-security.md) asks that such use be explicitly reviewed; this specification is that review, and any further use requires a new one.
+- **Nothing visible changes in Phase A.** The database, security rules and authentication logic exist and are tested, but people still use the local-access screens until Phase B.
+- **Free plan limits.** 500 MB of database, 1 GB of files, no automatic backups, and the project is paused after seven days without activity. During Phase A no application traffic reaches the project, so it must be kept active by running the isolation test weekly, or restored from the dashboard after a pause. Supabase Pro removes these limits and is a cost decision for the team.
+- **Backups are manual.** The operations document gives the command and the restore steps. Someone has to run it on a schedule once real data exists.
+- **Residual abuse risk.** Row and file limits bound what one account can store, and email verification and bot protection slow the creation of accounts. A determined attacker with many verified accounts could still fill a free-plan project. Usage should be watched once the application is public.
+- **The isolation test writes to the production project.** It creates and deletes two accounts in a reserved test domain and nothing else. This is acceptable while the project holds no real users. Once it does, the test should move to a separate project.
+- **Username login throttling.** In Phase B, username sign-ins run on the server and therefore reach Supabase from the hosting provider's address. Heavy abuse could cause Supabase to throttle username login for everyone for a short time. Login by email is unaffected.
+- **The secret key.** In Phase A it exists only in `.env.local` on a developer machine. [docs/09-quality-security.md](../../09-quality-security.md) asks that privileged use be explicitly reviewed; its two uses, the username lookup and the isolation test, are reviewed here, and any further use requires a new review.
 - **Advisory images are kept until the household deletes the advisory.** [docs/10-decisions.md](../../10-decisions.md) leaves the retention period open. This is the default adopted here, and the team may shorten it.
-- **Google sign-in starts in testing mode.** Only test users listed in Google Cloud Console can sign in until the consent screen is published.
 - **No automated pipeline.** Checks are run by hand until the workflows are written.
-- **No account deletion.** A deletion request has to be carried out in the Supabase dashboard.
+- **No account deletion yet.** Until Phase B, a deletion request has to be carried out in the Supabase dashboard.
 
-## Appendix A: Supabase and Google setup
+## Appendix A: Setup
 
 These steps are done by a person in a browser. None of the values below belong in Git or in a chat message.
 
-### A1. Apply the migration
+### Needed for Phase A
 
-Either run the Supabase CLI from the project folder:
+**A1. Create the project.** At supabase.com create a project named `wattsnap` in the Southeast Asia (Singapore) region. Store the database password somewhere safe.
+
+**A2. Minimum auth settings.** In the dashboard under Authentication, Sign In / Providers, Email: Confirm email on, minimum password length 8.
+
+**A3. Local environment.** Copy the Project URL, the publishable key and the secret key from the dashboard's API Keys page into `.env.local` in the project folder, using the three names under "Environment variables".
+
+**A4. Apply the migration.** Either run the Supabase CLI from the project folder:
 
 ```
 npx supabase login
@@ -490,31 +507,59 @@ npx supabase link --project-ref <your-project-ref>
 npx supabase db push
 ```
 
-or open the Supabase dashboard, go to SQL Editor, paste the contents of the migration file, and run it.
+or open the dashboard's SQL Editor, paste the contents of the migration file, and run it.
 
-### A2. Auth settings
+### Needed for Phase B
 
-In the Supabase dashboard under Authentication:
+**B1. URL configuration.** Site URL: the production address. Redirect URLs: `http://localhost:3000/**`, the production address followed by `/**`, and the preview pattern for the Vercel project.
 
-- **URL Configuration.** Site URL: the production address. Redirect URLs: `http://localhost:3000/**`, the production address followed by `/**`, and `https://*-<vercel-team-slug>.vercel.app/**` so that branch previews are accepted.
-- **Sign In / Providers, Email.** Confirm email: on. Email OTP length: 6. Minimum password length: 8.
-- **Email Templates, "Confirm signup" and "Reset password".** Replace the link in each body with the code, for example: `<p>Your WattSnap code is <strong>{{ .Token }}</strong>. It expires in one hour.</p>`
+**B2. Code emails.** Email OTP length 6. In the "Confirm signup" and "Reset password" templates, replace the link with the code: `<p>Your WattSnap code is <strong>{{ .Token }}</strong>. It expires in one hour.</p>`
 
-### A3. Gmail SMTP
+**B3. Outgoing email.** Custom SMTP with the provider chosen in Phase B.
 
-1. Create or choose a Gmail account used only for WattSnap.
-2. In that Google Account, open Security, turn on 2-Step Verification, then create an App password named "WattSnap". Google shows a 16-character password once.
-3. In Supabase, open Authentication, Emails, SMTP Settings and enable custom SMTP: sender email is the Gmail address, sender name "WattSnap", host `smtp.gmail.com`, port `465`, username is the Gmail address, password is the app password.
-4. Under Authentication, Rate Limits, confirm the emails-per-hour limit suits a demo.
+**B4. Google sign-in.** In Google Cloud Console create an OAuth client of type Web application with the redirect URI `https://<your-project-ref>.supabase.co/auth/v1/callback`, then paste its Client ID and secret into Authentication, Sign In / Providers, Google.
 
-If the app password is ever exposed, revoke it in the Google Account and create a new one.
+**B5. Bot protection.** Create a Cloudflare Turnstile site and enter its secret under Authentication, Attack Protection.
 
-### A4. Google sign-in
+**B6. Hosting variables.** Add the three variables to Vercel for Production, Preview and Development, with `SUPABASE_SECRET_KEY` marked Sensitive, and redeploy.
 
-1. In Google Cloud Console create a project, then configure the OAuth consent screen: user type External, app name "WattSnap", a support email, and add the test users who need access.
-2. Under Credentials create an OAuth client ID of type Web application. Authorized JavaScript origins: `http://localhost:3000` and the production address. Authorized redirect URI: `https://<your-project-ref>.supabase.co/auth/v1/callback`.
-3. In Supabase, open Authentication, Sign In / Providers, Google. Enable it and paste the Client ID and Client secret.
+## Stress Test Results: Supabase backend foundation
 
-### A5. Environment variables
+Thirteen branches were examined: eleven mapped at the start and two added by the self-review. Four were confirmed as written and nine changed the design.
 
-Add the three variables from "Environment variables" to `.env.local` on each developer machine and to Vercel under Settings, Environment Variables, for Production, Preview and Development. Mark `SUPABASE_SECRET_KEY` as Sensitive. Redeploy afterwards, because new values apply only to new deployments.
+### Resolved Decisions
+
+- **Documents stored as `jsonb`.** Kept. The interface already validates these structures on read, each household can write only its own rows, and the two fields worth filtering on are derived columns.
+- **Schema derived from an unmerged branch.** Kept. The extra columns are optional, so they are harmless if that branch changes.
+- **Sign-up trigger as a single point of failure.** Kept minimal, with `full_name` allowed to be empty, and exercised by the isolation test.
+- **Username login.** The earlier choice stands. Its residual risk, shared-address throttling, is recorded under "Known limitations".
+- **Operating stance.** The database is a production database on the free plan, not a demonstration. This was the project owner's correction during the stress test.
+- **Merge timing.** The branch is pushed on its own and merged to `main` only after the frontend branch lands or its author agrees.
+
+### Changes Made
+
+- Feature repositories moved from Phase A to Phase B, because the screen shapes they translate are still changing. Their translation rules stay in this document.
+- Code that only runs inside the Next.js server or a browser page moved to Phase B: the cookie-based clients, the secret-key wrapper, the authorization helper, the Google return route and the username server action. The dependencies `@supabase/ssr` and `server-only` move with them.
+- Row limits lowered, and stated in their own table.
+- Storage policies tightened to exact accepted paths, with one avatar per account, a 2 MB limit and at most 60 advisory images per account.
+- Bot protection added to the design: service functions accept a verification token now; the form widget and the setting follow in Phase B.
+- A backup and restore procedure added as `docs/11-database-operations.md`, with an acceptance criterion that it has been run once.
+- Setup reduced for Phase A to the project, two auth settings, `.env.local` and the migration. Email, Google, bot protection and hosting variables are Phase B steps. Nothing is added to Vercel in Phase A.
+- `birth_date` removed from `profiles`: no current screen collects it and nothing uses it.
+- The isolation test now removes leftovers from an interrupted run before it starts.
+- The atomic replace-a-bill-for-the-same-month function is noted for Phase B.
+- Gmail SMTP and the shared preview and production database, both chosen as demonstration options, are marked for a new decision in Phase B.
+
+### Deferred / Parking Lot
+
+- Production email provider and domain.
+- A second Supabase project for production.
+- Account deletion by the user.
+- Whether the sign-up form returns, and whether it asks for a birth date.
+- Whether to move to Supabase Pro.
+- Automated checks in GitHub Actions.
+
+### Confidence Assessment
+
+- Overall: High for Phase A. It is small, changes no visible behaviour, and its central claim, that one household cannot reach another's data, is proven by a test against the real project.
+- Areas of concern: Phase B depends on a frontend that is still moving and on several decisions that have only been deferred. The free plan has no automatic backups, so real data is only as safe as the manual backup routine.
