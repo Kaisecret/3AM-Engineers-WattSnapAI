@@ -259,7 +259,12 @@
 
 /* Home: monthly states and the WattSnap AI entry card */
 .ws-savings.is-higher { color: #ea580c; }
-.ws-consumption-empty .ui-primary { min-height: 36px; margin-top: 10px; padding: 8px 12px; font-size: 12px; }
+.ws-consumption-empty .ui-primary { min-height: 44px; margin-top: 12px; padding: 8px 14px; font-size: 12px; }
+.ws-chart-placeholder { display: flex; flex-direction: column; justify-content: center; gap: 8px; padding-left: 12px; border-left: 1px solid #edf2f4; min-width: 0; }
+.ws-chart-placeholder .ws-bar-track { gap: 7px; justify-content: space-between; }
+.ws-chart-placeholder i { flex: 1; border: 1.5px dashed #b9e2f0; border-bottom: 0; border-radius: 3px 3px 0 0; background: repeating-linear-gradient(135deg, #f3fbfe 0 5px, #e3f5fb 5px 10px); }
+.ws-chart-placeholder p { color: #7a93a8; font-size: 10.5px; font-weight: 600; line-height: 1.35; text-align: center; }
+.ws-chart-placeholder svg { display: inline; margin-right: 4px; vertical-align: -2px; color: #0a8fd0; }
 .ws-chart-day.is-example .ws-bar { opacity: 1; border: 1.5px dashed #9fd6ea; border-bottom: 0; background: repeating-linear-gradient(135deg, #eef9fd 0 5px, #dcf2fa 5px 10px); }
 .ws-chart-day.is-example .ws-day-label { color: #a2b4c2; }
 .ws-chart-day.is-example.is-selected .ws-bar { border-color: #36b6e0; background: repeating-linear-gradient(135deg, #d6f1fb 0 5px, #bfe8f7 5px 10px); }
@@ -308,5 +313,9 @@
   .ws-assistant-prompts a { font-size: 13px; padding: 8px 14px; }
   .ws-assistant-mascot { top: auto; right: 8%; bottom: -34px; width: clamp(170px, 15vw, 240px); }
   .ws-home-screen .ws-chart-note { font-size: 13px; }
-  .ws-home-screen .ws-consumption-empty .ui-primary { min-height: 42px; font-size: 14px; }
+  .ws-home-screen .ws-consumption-empty .ui-primary { min-height: 44px; font-size: 14px; }
+  .ws-home-screen .ws-chart-placeholder { padding-left: 32px; }
+  .ws-home-screen .ws-chart-placeholder .ws-bar-track { gap: 26px; }
+  .ws-home-screen .ws-chart-placeholder i { max-width: 66px; border-radius: 5px 5px 0 0; }
+  .ws-home-screen .ws-chart-placeholder p { font-size: 13px; }
 }

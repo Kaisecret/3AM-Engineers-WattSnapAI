@@ -16,6 +16,8 @@ import { usePreviewHousehold } from "../use-preview-household";
 import { billMonth, chartMonths, compareWithPrevious, dueDateLabel, latestBill, monthName, pesos, shortMonth } from "../preview-data";
 
 const assistantPrompts = ["Why did my bill change?", "How can I save on aircon?", "Any brownout today?"];
+// Decorative outline shown before the first bill; it is not data and is hidden from assistive technology.
+const placeholderBars = [38, 58, 46, 72, 54, 86];
 
 export default function HomeScreen() {
   const { household } = usePreviewHousehold();
@@ -81,10 +83,10 @@ export default function HomeScreen() {
             </div>
             <div className="ws-consumption-content">
               {latest ? <div className="ws-consumption-stat"><p className="ws-consumption-value">{latest.kwh} <span>kWh</span></p><p className="ws-muted">{monthName(latest.month)} bill</p>{change ? <><p className={`ws-savings${change.kwhPercent > 0 ? " is-higher" : ""}`}>{change.kwhPercent !== 0 && (change.kwhPercent > 0 ? <ArrowUp aria-hidden="true" /> : <ArrowDown aria-hidden="true" />)} {change.kwhPercent === 0 ? "No change" : `${Math.abs(change.kwhPercent).toFixed(0)}% ${change.kwhPercent > 0 ? "higher" : "lower"}`}</p><p className="ws-comparison ws-muted">vs. {monthName(change.previous.month)} bill</p></> : <p className="ws-comparison ws-muted">Add another bill to compare</p>}</div> : <div className="ws-consumption-stat ws-consumption-empty"><p className="ws-consumption-value">0 <span>bills</span></p><p className="ws-muted">Scan your first bill to compare months.</p><Link href="/bills/new" className="ui-primary"><ScanText size={17} aria-hidden="true" /> Scan bill</Link></div>}
-              <div className="ws-chart" role="group" aria-label="Energy use for each month">
+              {months.length ? <div className="ws-chart" role="group" aria-label="Energy use for each month">
                 {months.map(bill => <button key={bill.id} className={`ws-chart-day${selected?.month === bill.month ? " is-selected" : ""}${bill.example ? " is-example" : ""}`} aria-label={`${bill.example ? "Example month, " : ""}${billMonth(bill.month)}: ${bill.kwh} kilowatt hours`} aria-pressed={selected?.month === bill.month} onClick={() => setSelectedMonth(bill.month)}><span className="ws-bar-track"><span className="ws-bar" style={{ height: `${bill.kwh / chartMax * 100}%` }}>{selected?.month === bill.month && <span className="ws-bar-value">{bill.kwh}</span>}</span></span><span className="ws-day-label">{shortMonth(bill.month)}</span></button>)}
                 {selected && <span className="ws-sr-only" aria-live="polite">{billMonth(selected.month)}: {selected.kwh} kilowatt hours</span>}
-              </div>
+              </div> : <div className="ws-chart-placeholder"><span className="ws-bar-track" aria-hidden="true">{placeholderBars.map((height, index) => <i key={index} style={{ height: `${height}%` }} />)}</span><p><ChartNoAxesColumnIncreasing size={14} aria-hidden="true" /> Your monthly chart appears here</p></div>}
             </div>
             {hasExamples && <p className="ws-chart-note"><i aria-hidden="true" /> Striped bars are example months. <Link href="/bills/new">Scan more bills</Link> to see your real history.</p>}
           </section>
