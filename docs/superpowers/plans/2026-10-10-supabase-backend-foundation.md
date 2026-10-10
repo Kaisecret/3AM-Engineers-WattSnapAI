@@ -15,13 +15,14 @@
 - Work on branch `feat/supabase-auth`. Never commit to `main`. Do not merge to `main` in this plan.
 - Touch only these files: `supabase/migrations/*.sql`, `supabase/tests/*.test.mjs`, `src/lib/config/env.ts`, `src/lib/config/env.test.mjs`, `src/features/auth/{types,schemas,service,repository,index}.ts`, `src/features/auth/{schemas,service,repository}.test.mjs`, `src/generated/database.types.ts`, `docs/11-database-operations.md`, `.env.example`, `package.json`, `package-lock.json`. Nothing under any `components/` folder, no hook, no page, no stylesheet, not `public/sw.js`.
 - New runtime dependency: `@supabase/supabase-js` only. New development dependency: `@electric-sql/pglite` only.
-- Environment variable names, exactly: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`. The secret key is never given a `NEXT_PUBLIC_` name, never committed, never printed, never added to Vercel in this plan.
+- Environment variable names, exactly: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`. The secret key is never given a `NEXT_PUBLIC_` name, never committed, never printed, never added to Vercel in this plan. A fourth name, `WATTSNAP_TEST_PROJECT_REF`, is not a secret and is read only by the isolation test.
 - Money is integer centavos. Energy is kWh.
 - Messages shown to people never contain raw provider or database error text.
 - Login failures always use this exact message: `Incorrect email, username, or password.`
 - TypeScript must run under Node's type stripping: no `enum`, no `namespace`, no constructor parameter properties. Import types with `import type`.
 - Tests are `*.test.mjs` files run by `node --test`. A test that loads a `.ts` file which itself imports a sibling without an extension must register the resolver hook shown in Task 3.
-- A migration file that has been applied to the hosted project is never edited. A correction is a new file with a later timestamp.
+- Two hosted projects: `wattsnap-dev` for testing and `wattsnap` for production. `.env.local` holds `wattsnap-dev` values only. No test runs against `wattsnap`.
+- A migration file that has been applied to production is never edited. A correction is a new file with a later timestamp.
 - Commit messages use Conventional Commits. Do not add `Co-Authored-By` lines or any tool attribution.
 - The 76 feature tests that exist today must keep passing.
 
@@ -42,7 +43,7 @@
 | `src/generated/database.types.ts` | Generated from the hosted schema. Never edited by hand. |
 | `docs/11-database-operations.md` | Applying migrations, running the tests, keeping the project active, backup and restore. |
 
-Tasks 1 to 8 need no Supabase project. Tasks 9 to 11 need the project and three values in `.env.local`.
+Tasks 1 to 8 need no Supabase project. Tasks 9 to 11 need both projects, and the three values of `wattsnap-dev` in `.env.local`.
 
 ---
 
@@ -107,6 +108,11 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 
 # Secret key. Starts with sb_secret_. Server only. It bypasses row-level security.
 SUPABASE_SECRET_KEY=
+
+# Only for `npm run test:isolation`. The reference of the TEST project: the first part
+# of its URL. The test refuses to run unless this matches the URL above.
+# Never set this to the production project's reference.
+WATTSNAP_TEST_PROJECT_REF=
 ```
 
 - [ ] **Step 4: Write the failing test**
@@ -1308,9 +1314,12 @@ Create `supabase/migrations/20261010000000_initial_schema.sql`:
 -- Accounts, households, household records, row limits.
 -- Security rules and storage follow in the second half of this file.
 --
--- Never edit this file after it has run on the hosted project.
+-- Never edit this file after it has run on the production project.
 -- A correction is a new migration file with a later timestamp.
 -- =====================================================================
+
+-- Everything below is one transaction: if any statement fails, nothing is applied.
+begin;
 
 -- ---------------------------------------------------------------------
 -- Helpers
@@ -1632,6 +1641,8 @@ create trigger enforce_row_limit after insert on public.brownout_plans
   for each row execute function public.enforce_household_row_limit('100');
 create trigger enforce_row_limit after insert on public.scenarios
   for each row execute function public.enforce_household_row_limit('50');
+
+commit;
 ```
 
 - [ ] **Step 5: Run the tests to verify they pass**
@@ -1653,7 +1664,7 @@ git commit -m "feat: add initial schema with constraints, sign-up trigger and ro
 ### Task 6: Migration, part two — row-level security, grants and storage rules
 
 **Files:**
-- Modify: `supabase/migrations/20261010000000_initial_schema.sql` (append; it has not been applied anywhere yet)
+- Modify: `supabase/migrations/20261010000000_initial_schema.sql` (insert above the final `commit;`; it has not been applied anywhere yet)
 - Modify: `supabase/tests/migration.test.mjs` (append)
 
 **Interfaces:**
@@ -1800,9 +1811,11 @@ test("advisory originals follow the path pattern and stop at 60 files", async ()
 Run: `node --test supabase/tests/migration.test.mjs`
 Expected: the 8 tests from Task 5 pass; the 8 new tests FAIL. The first reports that tables lack row-level security.
 
-- [ ] **Step 3: Append the security rules to the migration**
+- [ ] **Step 3: Add the security rules to the migration**
 
-Append to `supabase/migrations/20261010000000_initial_schema.sql`:
+The file ends with the line `commit;`. Insert the following immediately above that line, so the security rules are inside the same transaction and `commit;` stays last.
+
+Insert into `supabase/migrations/20261010000000_initial_schema.sql`, above the final `commit;`:
 
 ```sql
 
@@ -1909,10 +1922,10 @@ create policy "avatars: remove own" on storage.objects
   using (bucket_id = 'avatars' and name = (select auth.uid())::text || '/avatar.jpg');
 
 -- advisory-originals: <user id>/<advisory id>/r<revision>.<ext>, at most 60 files per account.
--- A policy on a table cannot query that same table, so the count lives in a function.
+-- The count lives in a function so that it can take a lock and be exact.
+-- It runs as the person uploading, so it counts exactly the files that person may read: their own.
 create function public.advisory_original_count() returns integer
 language plpgsql
-security definer
 set search_path = ''
 as $$
 declare
@@ -1979,6 +1992,7 @@ git commit -m "feat: add row-level security, grants and storage rules"
 
 **Acceptance Criteria:**
 - Without the three variables, `npm run test:isolation` skips every test with a message that names what is missing, and exits 0.
+- With them but without `WATTSNAP_TEST_PROJECT_REF` matching the project in the URL, it skips every test with a message saying it refuses to run against that project, and exits 0.
 - With them, it creates two accounts in the test domain, proves every bullet under "Isolation test" in the specification through the real API, and deletes both accounts even when an assertion fails.
 - It never prints a key.
 
@@ -2018,6 +2032,12 @@ let config = null;
 let skip = false;
 try { config = { ...readPublicSupabaseEnv(), secretKey: readSupabaseSecretKey() }; }
 catch (error) { skip = `Supabase is not configured. ${error.message}`; }
+// This test creates accounts and fills tables to their limits. It must never touch production,
+// so it runs only when .env.local names this exact project as the test project.
+const projectRef = config ? new URL(config.url).hostname.split(".")[0] : "";
+if (config && process.env.WATTSNAP_TEST_PROJECT_REF !== projectRef) {
+  skip = `Refusing to run against project ${projectRef}. If it is the test project, and never production, add WATTSNAP_TEST_PROJECT_REF=${projectRef} to .env.local.`;
+}
 const options = { skip, timeout: 240_000 };
 
 // A reserved domain: no mail is ever delivered to it. Accounts are created already confirmed.
@@ -2322,13 +2342,18 @@ Create `docs/11-database-operations.md`:
 ````markdown
 # Database operations
 
-WattSnap's database is a hosted Supabase project. It is a production database: treat every step here as acting on real accounts and real household records.
+WattSnap uses two hosted Supabase projects.
+
+| Project | Purpose | Rules |
+| --- | --- | --- |
+| `wattsnap` | Production. Real accounts and real household records. | No test ever runs here. Its secret key is not kept on developer machines. |
+| `wattsnap-dev` | Testing. | Every migration is applied here first. The isolation test runs here. It may be emptied at any time. |
 
 Design reference: [Supabase backend foundation](superpowers/specs/2026-10-10-supabase-auth-data-design.md).
 
 ## Secrets
 
-Three values connect the code to the project. They live in `.env.local` in the project folder, which Git ignores. The names are listed in `.env.example`.
+Three values connect the code to a project. On a developer machine they are the values of `wattsnap-dev`, and they live in `.env.local` in the project folder, which Git ignores. A fourth value, `WATTSNAP_TEST_PROJECT_REF`, names the test project. The names are listed in `.env.example`.
 
 - The **publishable key** is safe in a browser.
 - The **secret key** bypasses every security rule. It must never be committed, pasted into a chat or an issue, given a `NEXT_PUBLIC_` name, or added to a hosting environment before server code needs it.
@@ -2340,9 +2365,13 @@ If this folder is inside a synchronised location such as OneDrive, `.env.local` 
 
 Schema changes are SQL files in `supabase/migrations/`, named with a timestamp. They are applied in name order.
 
-A file that has been applied to the hosted project is never edited. A correction is a new file with a later timestamp.
+A file that has been applied to production is never edited. A correction is a new file with a later timestamp.
 
-### Check a migration before it reaches the real database
+Each file starts with `begin;` and ends with `commit;`, so it is applied completely or not at all.
+
+The order is always the same: check locally, apply to `wattsnap-dev`, run the isolation test, apply to `wattsnap`, compare the schema summary.
+
+### Check a migration before it reaches a hosted database
 
 ```
 npm test
@@ -2367,7 +2396,7 @@ Then, for each new migration:
 npx supabase db push
 ```
 
-**With the dashboard.** Open SQL Editor, paste the whole migration file, and run it. The editor runs the statements as one unit: if any statement fails, none of them take effect.
+**With the dashboard.** Open the project, check its name at the top of the page, open SQL Editor, paste the whole migration file, and run it. If any statement fails, none of them take effect.
 
 If the dashboard was used for a file and the CLI is adopted later, tell the CLI that the file is already applied before the first `db push`, or it will try to run it again:
 
@@ -2375,11 +2404,55 @@ If the dashboard was used for a file and the CLI is adopted later, tell the CLI 
 npx supabase migration repair --status applied 20261010000000
 ```
 
-### After applying
+### After applying to `wattsnap-dev`
 
 ```
 npm run test:isolation
 ```
+
+### Schema summary
+
+Run this in the SQL Editor of both projects after applying a migration to production. The two results must be identical.
+
+```sql
+select 'tables' as item, count(*)::text as value from pg_tables where schemaname = 'public'
+union all
+select 'tables without row-level security', count(*)::text
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace
+ where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity
+union all
+select 'policies on public tables', count(*)::text from pg_policies where schemaname = 'public'
+union all
+select 'policies on stored files', count(*)::text from pg_policies
+ where schemaname = 'storage' and tablename = 'objects'
+   and (policyname like 'avatars:%' or policyname like 'advisory originals:%')
+union all
+select 'triggers', count(*)::text
+  from pg_trigger t join pg_class c on c.oid = t.tgrelid join pg_namespace n on n.oid = c.relnamespace
+ where not t.tgisinternal
+   and (n.nspname = 'public' or (n.nspname = 'auth' and t.tgname = 'on_auth_user_created'))
+union all
+select 'privileges held by anon', count(*)::text from information_schema.role_table_grants
+ where table_schema = 'public' and grantee = 'anon'
+union all
+select 'buckets', coalesce(string_agg(id, ', ' order by id), '') from storage.buckets
+ where id in ('avatars', 'advisory-originals')
+union all
+select 'providers', count(*)::text from public.providers;
+```
+
+After the initial migration the values are: 12, 0, 37, 8, 18, 0, `advisory-originals, avatars`, 7.
+
+### Starting the test project again
+
+When a migration has to be corrected before production has received it, `wattsnap-dev` must be empty before the corrected file is applied. There is deliberately no SQL statement here that empties a database: such a statement, run in the wrong project, would destroy production.
+
+Instead, delete the test project and create it again:
+
+1. Open `wattsnap-dev`. Check the name at the top of the page.
+2. Project Settings, General, Delete project. Supabase asks for the project name to be typed before it deletes anything.
+3. Create a new project named `wattsnap-dev` in the same region, and apply the same auth settings.
+4. Replace the four values in `.env.local` with the new project's URL, keys and reference.
 
 ## The two tests
 
@@ -2390,11 +2463,13 @@ npm run test:isolation
 
 The isolation test creates two accounts with addresses beginning `wattsnap-isolation-` in the reserved domain `example.com`, and deletes them when it finishes, including after a failure. At its start it also removes any such accounts left by an interrupted run. If Supabase refuses the addresses, set `WATTSNAP_TEST_EMAIL_DOMAIN` in `.env.local` to a domain you control.
 
-Once the project holds real users, run this test against a separate project.
+It refuses to run unless `WATTSNAP_TEST_PROJECT_REF` in `.env.local` equals the project reference in the URL, which is the first part of the address: `abcdefgh` in `https://abcdefgh.supabase.co`. Set it to the reference of `wattsnap-dev` and nothing else. If production values are ever placed in `.env.local`, the mismatch stops the test from touching production.
 
 ## Keeping a free-plan project active
 
-Supabase pauses a free-plan project after seven days without requests. Until the application itself uses the database, run `npm run test:isolation` at least once a week. A paused project is restored from its dashboard page, and keeps its data for 90 days.
+Supabase pauses a free-plan project after seven days without requests, and keeps its data for 90 days. A paused project is restored from its dashboard page.
+
+`wattsnap-dev` may pause; restore it when it is next needed. `wattsnap` holds nothing until the application uses it, so a pause before then loses nothing, but it must be restored and checked before the application is connected. Once the application is live, its own traffic keeps the project active.
 
 ## Free-plan limits
 
@@ -2424,7 +2499,7 @@ pg_dump "<session-pooler-connection-string>" --format=custom --no-owner --no-pri
 
 This captures accounts (`auth`), household records (`public`) and the list of stored files (`storage`). It does not capture the files themselves. Download those from Storage in the dashboard, or accept that profile photos and advisory images would need to be uploaded again.
 
-Take a backup every week once real data exists, and before applying any migration.
+Back up `wattsnap`, the production project. Take a backup every week once real data exists, and before applying any migration to it.
 
 ### Check a backup
 
@@ -2469,71 +2544,104 @@ git add docs/11-database-operations.md
 git commit -m "docs: add database operations guide"
 ```
 
+- [ ] **Step 5: Offer to push the branch**
+
+Part 1 is complete and exists only on this machine. Ask the owner whether to push it now with `git push -u origin feat/supabase-auth`. Push only on a yes. Do not open a pull request.
+
 ---
 
-## Part 2: Work that needs the Supabase project
+## Part 2: Work that needs the Supabase projects
 
-These tasks need a person to have completed Appendix A, steps A1 to A3, of the specification: the project exists, "Confirm email" is on with a minimum password length of 8, and `.env.local` holds the three values. Before starting, confirm:
+There are two Supabase projects. `wattsnap-dev` is where the migration is applied first and where the isolation test runs. `wattsnap` is production: it receives the migration only after `wattsnap-dev` passes, and no test ever runs against it.
+
+These tasks need a person to have completed Appendix A of the specification: both projects exist; on both, "Confirm email" is on, the minimum password length is 8 and passwords must contain letters and digits; and `.env.local` holds the three values of **`wattsnap-dev`** together with `WATTSNAP_TEST_PROJECT_REF` set to the `wattsnap-dev` reference. Production keys are not placed on this machine in Phase A. Before starting, confirm:
 
 Run: `npm run test:isolation`
-Expected, if not ready: every test skipped with a message naming the missing variable. Stop and ask for the setup to be completed. Never ask for a key to be pasted into the conversation.
+Expected, if not ready: every test skipped with a message naming the missing variable, or refusing the project. Stop and ask for the setup to be completed. Never ask for a key to be pasted into the conversation.
 
-### Task 9: Apply the migration and prove isolation on the hosted project
+### Task 9: Prove the migration on `wattsnap-dev`, then apply it to production
 
 **Files:**
 - No file changes when everything passes.
-- Create, only if a defect is found: `supabase/migrations/<later-timestamp>_<what-it-fixes>.sql`
+- Create, only if a defect is found after production has the schema: `supabase/migrations/<later-timestamp>_<what-it-fixes>.sql`
 
 **Interfaces:**
 - Consumes: the migration (Tasks 5 and 6), the isolation test (Task 7), the procedures (Task 8).
-- Produces: a hosted database with the schema applied and proven.
+- Produces: two hosted databases with the same schema; `wattsnap-dev` proven by the isolation test, `wattsnap` shown to match it.
 
 **Acceptance Criteria:**
-- The migration is applied to the hosted project.
-- `npm run test:isolation` reports 9 passed, 0 failed, 0 skipped.
-- After the run, no account whose email starts with `wattsnap-isolation-` exists in the project.
+- The migration is applied to `wattsnap-dev`, and `npm run test:isolation` reports 9 passed, 0 failed, 0 skipped against it.
+- After the run, no account whose email starts with `wattsnap-isolation-` exists in `wattsnap-dev`.
+- The migration is applied to `wattsnap`, and the schema summary query returns the same eight values on both projects.
+- No test account was ever created in `wattsnap`.
 
 - [ ] **Step 1: Run the local checks once more**
 
 Run: `npm test`
 Expected: `pass 124`, `fail 0`.
 
-- [ ] **Step 2: Apply the migration**
+- [ ] **Step 2: Apply the migration to `wattsnap-dev`**
 
-Follow "Apply a migration" in `docs/11-database-operations.md`. This step is done by the project owner: `npx supabase login` opens a browser, and `npx supabase link` asks for the database password. With the dashboard method, the owner pastes the full contents of `supabase/migrations/20261010000000_initial_schema.sql` into SQL Editor and runs it.
+Follow "Apply a migration" in `docs/11-database-operations.md`. This step is done by the project owner. With the dashboard method, the owner opens the **`wattsnap-dev`** project, pastes the full contents of `supabase/migrations/20261010000000_initial_schema.sql` into SQL Editor and runs it.
 
-Expected: `Success. No rows returned` in the dashboard, or `Finished supabase db push.` from the CLI.
+Expected: `Success. No rows returned`.
 
-If it fails, nothing was applied. Read the error, correct the migration file (allowed, because it has not been applied), run `npm test` again, and repeat this step. Add a case to `supabase/tests/migration.test.mjs` that would have caught the problem.
+If it fails, nothing was applied, because the file is one transaction. Read the error, correct the migration file (allowed, because production has not received it), run `npm test` again, and repeat this step. Add a case to `supabase/tests/migration.test.mjs` that would have caught the problem.
 
 - [ ] **Step 3: Run the isolation test**
 
 Run: `npm run test:isolation`
 Expected: `pass 9`, `fail 0`, `skipped 0`. It takes one to three minutes.
 
-- [ ] **Step 4: If a test fails, correct it without rewriting history**
+- [ ] **Step 4: If a test fails, correct it before production sees anything**
 
 Decide which of these it is:
 
 - **The hosted platform behaves differently from the embedded Postgres** (for example a different error code for the same refusal). Correct the test's expectation, and say so in the commit message.
-- **The 61st file is accepted.** `advisory_original_count()` runs with the rights of the role that applied the migration. If that role cannot see rows in `storage.objects` on the hosted platform, the count is always zero. This is a wrong security rule: correct it with a new migration as described next, and do not relax the test.
-- **A security rule or constraint is wrong.** The initial migration has now been applied and is frozen. Write the correction as a new file, `supabase/migrations/<YYYYMMDDHHMMSS>_<what-it-fixes>.sql`, add the case to `supabase/tests/migration.test.mjs`, run `npm test`, apply the new file by the same method as Step 2, and run `npm run test:isolation` again.
+- **A security rule or constraint is wrong.** Production has not received the migration, so the file may still be corrected. Fix `supabase/migrations/20261010000000_initial_schema.sql`, add the case to `supabase/tests/migration.test.mjs`, and run `npm test`. Then the owner starts `wattsnap-dev` again from empty by following "Starting the test project again" in `docs/11-database-operations.md`, applies the corrected file, and `npm run test:isolation` is run again.
 
-Do not continue to Task 10 until the result is `pass 9`, `fail 0`.
+Do not continue until the result is `pass 9`, `fail 0`, `skipped 0`.
 
 - [ ] **Step 5: Confirm the test cleaned up after itself**
 
-In the dashboard, open Authentication, Users, and search for `wattsnap-isolation-`.
+In the `wattsnap-dev` dashboard, open Authentication, Users, and search for `wattsnap-isolation-`.
 Expected: no users.
 
 - [ ] **Step 6: Commit any corrections**
 
-Only if Step 4 changed files:
+Only if Step 4 changed files. Name what was corrected in the message, for example:
 
 ```bash
 git add supabase/
-git commit -m "fix: <what was corrected> after hosted verification"
+git commit -m "fix: correct storage path rule after hosted verification"
 ```
+
+- [ ] **Step 7: Apply the migration to production**
+
+The owner opens the **`wattsnap`** project, checks the project name at the top of the page, pastes the same file into SQL Editor and runs it.
+
+Expected: `Success. No rows returned`.
+
+From this moment the file is frozen. Any later correction is a new migration file, applied to `wattsnap-dev` first.
+
+- [ ] **Step 8: Show that production matches the tested project**
+
+The owner runs the query from "Schema summary" in `docs/11-database-operations.md` in the SQL Editor of both projects.
+
+Expected on both, identically:
+
+| item | value |
+| --- | --- |
+| tables | 12 |
+| tables without row-level security | 0 |
+| policies on public tables | 37 |
+| policies on stored files | 8 |
+| triggers | 18 |
+| privileges held by anon | 0 |
+| buckets | advisory-originals, avatars |
+| providers | 7 |
+
+If production differs from `wattsnap-dev` in any row, stop and report the difference. Do not run the isolation test against production to investigate.
 
 ---
 
@@ -2557,7 +2665,7 @@ git commit -m "fix: <what was corrected> after hosted verification"
 
 - [ ] **Step 1: Generate the types**
 
-This needs `npx supabase login` to have been run by the project owner on this machine (Task 9, Step 2, CLI method). If the dashboard method was used, ask the owner to run `npx supabase login` once.
+This needs `npx supabase login` to have been run by the project owner in a terminal on this machine; ask them to run it once. The types are generated from `wattsnap-dev`, whose URL is the one in `.env.local`. Both projects have the same schema.
 
 Read the project reference from the URL without printing any key. In Git Bash:
 
@@ -2685,7 +2793,7 @@ Expected: the branch appears on GitHub. Do not open a pull request into `main` a
 - Produces: one verified backup file outside the repository.
 
 **Acceptance Criteria:**
-- A backup file exists outside the repository and outside any synchronised folder.
+- A backup file of the production project, `wattsnap`, exists outside the repository and outside any synchronised folder.
 - `pg_restore --list` on it shows `TABLE DATA public households`, `TABLE DATA public profiles` and `TABLE DATA auth users`.
 
 - [ ] **Step 1: Check the tool is installed**
@@ -2745,3 +2853,43 @@ Deliberately not in this plan, because the specification places them in Phase B:
 **Tracking**
 
 The `bd` tool is not installed on this machine, so the deterministic `bd lint` checks were not run and tasks are tracked by the checkboxes in this file.
+
+## Stress Test Results: Supabase backend foundation plan
+
+Eleven branches were examined: nine mapped at the start and two added by the self-review. Four were confirmed as written and seven changed the plan.
+
+### Evidence
+
+Every code block in this plan was extracted into a scratch folder outside the repository and run there:
+
+- The 32 unit tests for Tasks 1 to 4 pass.
+- The migration from Tasks 5 and 6 applies in the embedded Postgres, and its 16 rule tests pass.
+- Four rules were broken on purpose. The tests caught three: the 60-file limit, the privileges of the anonymous role, and a missing row-limit trigger. The fourth, an update policy that no longer checked ownership of the changed row, was still refused, because Postgres also applies the read policy to a changed row.
+- The schema summary query returns 12, 0, 37, 8, 18, 0, `advisory-originals, avatars`, 7.
+
+### Resolved Decisions
+
+- **The plan's code runs as written.** Confirmed by the evidence above.
+- **Embedded Postgres is not Supabase.** Kept as the first check only. The isolation test against a hosted project remains the proof.
+- **Replacing a saved row at a row limit.** Confirmed: the replacement is allowed and a new row is refused.
+- **Test leftovers.** Confirmed: accounts and files are removed before and after each run.
+
+### Changes Made
+
+- **Two hosted projects.** `wattsnap-dev` receives every migration first and hosts the isolation test. `wattsnap`, production, receives a migration only after `wattsnap-dev` passes, and is compared with it using the schema summary. Production keys are not placed on a developer machine in Phase A.
+- **The isolation test refuses to run against a project that is not named as the test project** in `WATTSNAP_TEST_PROJECT_REF`.
+- **The migration is one explicit transaction.** A file that fails part-way was shown to leave nothing behind.
+- **The file-count function runs as the person uploading.** The earlier version ran with the migration role's rights and assumed that role could see every stored file on the hosted platform.
+- **Correcting a migration on the test project** is done by deleting and recreating that project. No statement that empties a database is kept in the repository.
+- **Password rules on the server.** Both projects require letters and digits, so the rule does not depend on the application's own check.
+- **Pushing after Part 1** is offered to the owner, so finished work does not sit on one machine while the hosted setup is pending.
+
+### Deferred / Parking Lot
+
+- Which database the hosting provider's preview deployments use. This is decided in Phase B, when the application first reads the database.
+- A scheduled backup. Phase A takes one by hand.
+
+### Confidence Assessment
+
+- Overall: High. The SQL and the TypeScript in this plan have already run, and the rules they implement were shown to fail when broken.
+- Areas of concern: the hosted platform can still differ from the embedded Postgres in storage behaviour and error codes, which Task 9 exists to find. Tasks 9 to 11 depend on setup that only the project owner can do, and Task 11 needs software that is not yet installed.

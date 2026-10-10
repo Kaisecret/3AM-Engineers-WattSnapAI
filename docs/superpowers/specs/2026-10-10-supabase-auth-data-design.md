@@ -35,7 +35,7 @@ That branch also carries a guard, `scripts/check-frontend-boundaries.cjs`, which
 | Decision | Choice | Consequence |
 | --- | --- | --- |
 | Operating stance | Production database on the Supabase free plan | Row limits, file rules, bot protection and a backup procedure are part of the design. The free plan's limits are listed under "Known limitations". |
-| Database host | One hosted Supabase project, Singapore region | No local database. |
+| Database host | Two hosted Supabase projects in the Singapore region: `wattsnap` for production and `wattsnap-dev` for testing | No local database. Every migration reaches `wattsnap-dev` first, and no test ever runs against `wattsnap`. |
 | Build base | `main`, backend-reserved files only | No conflict with the frontend branch. |
 | Schema source | Data shapes on the frontend branch, which are a superset of `main` | The schema will not need an immediate follow-up migration when that branch merges. |
 | Sign-in methods | Email + password, and Google | Google needs an OAuth client created in Google Cloud Console. Connected in Phase B. |
@@ -43,7 +43,7 @@ That branch also carries a guard, `scripts/check-frontend-boundaries.cjs`, which
 | Sample data | None stored | The frontend branch removes sample data. |
 | Delivery | Push `feat/supabase-auth` as its own branch; hold the merge to `main` | Merge after the frontend branch lands, or when its author agrees. |
 | Email delivery | Re-decided in Phase B | Gmail SMTP was chosen as a demonstration option. A production mailer needs a verified domain. |
-| Preview and production data | Re-decided in Phase B | Until screens connect, nothing reads the database, so the question does not arise in Phase A. |
+| Preview deployments | Re-decided in Phase B | Which project the hosting provider's preview builds read. Until screens connect, nothing reads either database. |
 
 ## Phase A scope
 
@@ -67,11 +67,13 @@ Out of scope for Phase A:
 
 | Name | Where it is read | Needed in Phase A |
 | --- | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Browser and server | In `.env.local` only, for the isolation test. |
+| `NEXT_PUBLIC_SUPABASE_URL` | Browser and server | In `.env.local` only, with the values of `wattsnap-dev`, for the isolation test. |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser and server | In `.env.local` only. Older dashboards call it `anon`. Safe to expose; row-level security protects the data. |
 | `SUPABASE_SECRET_KEY` | Server only | In `.env.local` only. Older name `service_role`. Bypasses row-level security. Never prefixed with `NEXT_PUBLIC_`, never committed. |
 
-Nothing is added to Vercel in Phase A. No deployed code reads these values yet, and the secret key should not sit in a hosting environment before something needs it.
+Nothing is added to Vercel in Phase A. No deployed code reads these values yet, and the secret key should not sit in a hosting environment before something needs it. Production keys are not placed on a developer machine in Phase A either.
+
+A fourth name, `WATTSNAP_TEST_PROJECT_REF`, is not a secret. It holds the reference of the test project, and the isolation test refuses to run unless it matches the project in the URL. This keeps the test away from production even if production values are one day placed in `.env.local`.
 
 `.env.example` lists the three names with empty values. `src/lib/config/env.ts` exposes functions that read and validate them and throw an error naming any that are missing. They run when called, not at import time, so the application builds and runs unchanged without the variables.
 
@@ -452,14 +454,14 @@ It deletes both accounts at the end, including when an assertion fails, and remo
 
 ## Rollout
 
-1. The Supabase project is created, and the minimum auth settings in Appendix A are applied.
-2. The migration is applied. It only creates objects, and the running application does not use the database, so nothing can break.
-3. The three environment variables are set in `.env.local`.
-4. The isolation test is run.
+1. Both Supabase projects are created, and the minimum auth settings in Appendix A are applied to each.
+2. The values of `wattsnap-dev` are set in `.env.local`.
+3. The migration is applied to `wattsnap-dev`, and the isolation test is run against it.
+4. The same migration is applied to `wattsnap`. It only creates objects, and the running application does not use the database, so nothing can break. The two projects are compared with the schema summary.
 5. `feat/supabase-auth` is pushed to GitHub as its own branch. Vercel builds a preview for it; production is untouched.
 6. The branch is merged to `main` only after the frontend branch has merged, or when its author agrees. Their guard script compares the backend-reserved files against commit `9c34526`, and merging first would make it fail.
 
-Once the migration has been applied to the real project it is never edited. Every later schema change is a new migration file, including any correction found while bringing Phase A up.
+Each migration file is a single transaction, so it is applied completely or not at all. Once a migration has been applied to production it is never edited; every later schema change is a new migration file. A correction found on `wattsnap-dev` before production has received the file is made in the file itself, and the test project is started again from empty.
 
 ## Phase B outline
 
@@ -473,7 +475,7 @@ Phase B gets its own specification once the frontend branch has merged. The foll
 - **Logout.** [docs/features/00](../../features/00-authentication-foundation.md) requires that sign-out clears private local records. The current local-access design keeps them. Phase B has to reconcile the two.
 - **Bot protection.** Cloudflare Turnstile on sign-up, login and password reset: the widget on the forms, and the setting switched on in Supabase.
 - **Production email.** A transactional email provider with a verified domain, in place of Gmail SMTP.
-- **Separate databases.** A second Supabase project so that preview deployments never read or write production data, as [docs/07-ci-cd-pipeline.md](../../07-ci-cd-pipeline.md) requires.
+- **Preview deployments.** Pointing the hosting provider's preview builds at `wattsnap-dev`, so that they never read or write production data, as [docs/07-ci-cd-pipeline.md](../../07-ci-cd-pipeline.md) requires.
 - **Account deletion.** People must be able to delete their account and data before the application is opened to the public.
 - **Interface text** that describes data as stored only on the device.
 
@@ -483,7 +485,7 @@ Phase B gets its own specification once the frontend branch has merged. The foll
 - **Free plan limits.** 500 MB of database, 1 GB of files, no automatic backups, and the project is paused after seven days without activity. During Phase A no application traffic reaches the project, so it must be kept active by running the isolation test weekly, or restored from the dashboard after a pause. Supabase Pro removes these limits and is a cost decision for the team.
 - **Backups are manual.** The operations document gives the command and the restore steps. Someone has to run it on a schedule once real data exists.
 - **Residual abuse risk.** Row and file limits bound what one account can store, and email verification and bot protection slow the creation of accounts. A determined attacker with many verified accounts could still fill a free-plan project. Usage should be watched once the application is public.
-- **The isolation test writes to the production project.** It creates and deletes two accounts in a reserved test domain and nothing else. This is acceptable while the project holds no real users. Once it does, the test should move to a separate project.
+- **Production is verified by comparison, not by test.** The isolation test runs only against `wattsnap-dev`. Production receives the same migration file and is then compared with the test project using a summary of tables, policies, triggers, privileges and buckets.
 - **Username login throttling.** In Phase B, username sign-ins run on the server and therefore reach Supabase from the hosting provider's address. Heavy abuse could cause Supabase to throttle username login for everyone for a short time. Login by email is unaffected.
 - **The secret key.** In Phase A it exists only in `.env.local` on a developer machine. [docs/09-quality-security.md](../../09-quality-security.md) asks that privileged use be explicitly reviewed; its two uses, the username lookup and the isolation test, are reviewed here, and any further use requires a new review.
 - **Advisory images are kept until the household deletes the advisory.** [docs/10-decisions.md](../../10-decisions.md) leaves the retention period open. This is the default adopted here, and the team may shorten it.
@@ -496,21 +498,13 @@ These steps are done by a person in a browser. None of the values below belong i
 
 ### Needed for Phase A
 
-**A1. Create the project.** At supabase.com create a project named `wattsnap` in the Southeast Asia (Singapore) region. Store the database password somewhere safe.
+**A1. Create two projects.** At supabase.com create `wattsnap-dev` and `wattsnap`, both in the Southeast Asia (Singapore) region. Store each database password somewhere safe.
 
-**A2. Minimum auth settings.** In the dashboard under Authentication, Sign In / Providers, Email: Confirm email on, minimum password length 8.
+**A2. Minimum auth settings, on both projects.** In the dashboard under Authentication, Sign In / Providers, Email: Confirm email on, minimum password length 8, and password requirements set to letters and digits.
 
-**A3. Local environment.** Copy the Project URL, the publishable key and the secret key from the dashboard's API Keys page into `.env.local` in the project folder, using the three names under "Environment variables".
+**A3. Local environment.** Copy the Project URL, the publishable key and the secret key of **`wattsnap-dev`** from its API Keys page into `.env.local` in the project folder, using the three names under "Environment variables". Set `WATTSNAP_TEST_PROJECT_REF` to the first part of that URL. Do not put `wattsnap` values in this file.
 
-**A4. Apply the migration.** Either run the Supabase CLI from the project folder:
-
-```
-npx supabase login
-npx supabase link --project-ref <your-project-ref>
-npx supabase db push
-```
-
-or open the dashboard's SQL Editor, paste the contents of the migration file, and run it.
+**A4. Apply the migration.** Open `wattsnap-dev`, check the name at the top of the page, open SQL Editor, paste the contents of the migration file, and run it. After the isolation test passes, do the same in `wattsnap`.
 
 ### Needed for Phase B
 
