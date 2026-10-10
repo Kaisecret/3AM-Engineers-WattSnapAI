@@ -38,7 +38,7 @@ Baseline evidence: 76 feature tests pass; `npx.cmd tsc --noEmit` passes. Existin
 | 17 | Full local verification | Production build, TypeScript, 87 rule tests and 17 browser groups passed; existing lint blocker documented |
 | 18 | Priority review/polish | Removed remaining sample links, corrected unchanged comparisons and clarified actions/metadata |
 | 19 | Definition-of-done audit | All twenty criteria reviewed with evidence and explicit integration/test limits |
-| 20 | Final implementation report | Pending |
+| 20 | Final implementation report | Complete report, file inventory, commit record, test evidence and limitations |
 
 ## 2. Safety review
 
@@ -125,3 +125,7 @@ Root-cause inspection found the browser harness used an async cache predicate in
 ## 19. Definition-of-done audit
 
 [The complete audit](./frontend-done-audit.md) maps all twenty criteria to implementation and local evidence. The final production build, TypeScript and 90 rule/cache tests pass. All eighteen browser groups have passing results against the final build, including 70 responsive combinations and cold offline routes. One full-batch chart startup check timed out; chart, responsive, offline and final-polish groups passed in a separate run. This timing limitation is recorded honestly. The boundary guard passes; original assets, dependencies, backend/infrastructure/configuration and main remain unchanged. No merge or deployment was performed.
+
+## 20. Implementation report
+
+[The final report](./frontend-implementation-report.md) covers modified files, completed features, corrections, accessibility, offline behavior, verification results and remaining integrations. Twenty numbered commits are delivered on the review branch. All 90 rule/cache tests, TypeScript and the fresh production build pass; all required browser groups have passing results, with the documented timing/retry and existing ESLint limitations. No merge or deployment was performed.
