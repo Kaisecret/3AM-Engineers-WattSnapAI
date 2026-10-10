@@ -20,7 +20,7 @@ Baseline evidence: 76 feature tests pass; `npx.cmd tsc --noEmit` passes. Existin
 | Number | Scope | Status |
 | --- | --- | --- |
 | 1 | Objective and architecture audit | Reviewed; baseline verified |
-| 2 | Safety and protected boundaries | Pending |
+| 2 | Safety and protected boundaries | Separate branch; boundary guard passes |
 | 3 | Preserve design; targeted refinement | Pending |
 | 4 | Remove prototype/sample presentation | Pending |
 | 5 | Local household access and provider | Pending |
@@ -39,3 +39,7 @@ Baseline evidence: 76 feature tests pass; `npx.cmd tsc --noEmit` passes. Existin
 | 18 | Priority review/polish | Pending |
 | 19 | Definition-of-done audit | Pending |
 | 20 | Final implementation report | Pending |
+
+## 2. Safety review
+
+The starting working tree was clean. All work is isolated on the review branch; `main` is unchanged. `scripts/check-frontend-boundaries.cjs` checks tracked and new files against the starting commit and rejects changes to API routes, service/repository implementations, Gemini/Supabase/offline infrastructure, auth contracts, environment files and deployment configuration. No user-browser records or secrets are read by tests; browser verification uses synthetic isolated contexts. No destructive migration, automatic merge or deployment is included.
