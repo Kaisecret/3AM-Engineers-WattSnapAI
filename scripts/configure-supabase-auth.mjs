@@ -35,7 +35,15 @@ cli(["config", "pull"]);
 const current = readFileSync(configPath, "utf8");
 const redirectBlock = current.match(/^additional_redirect_urls\s*=\s*\[([^\]]*)\]/m)?.[1] || "";
 const redirects = [...redirectBlock.matchAll(/["']([^"']+)["']/g)].map(match => match[1]);
-const allowed = [...new Set([...redirects, `${site}/auth/callback`, `${site}/auth/confirm`, "http://localhost:3000/auth/callback", "http://localhost:3000/auth/confirm"] )];
+const allowed = [...new Set([
+  ...redirects,
+  `${site}/auth/callback`,
+  `${site}/auth/confirm`,
+  "https://wattsnapai-delta.vercel.app/auth/callback",
+  "https://wattsnapai-delta.vercel.app/auth/confirm",
+  "http://localhost:3000/auth/callback",
+  "http://localhost:3000/auth/confirm"
+])];
 if (process.argv.includes("--inspect")) {
   console.log(JSON.stringify({
     site_url: current.match(/^site_url\s*=\s*["']([^"']+)["']/m)?.[1],
