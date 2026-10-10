@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, Bell, ChartNoAxesColumnIncreasing, ChevronDown, ChevronRight, Info, LogOut, Megaphone, ReceiptText, ScanText, SendHorizontal, Settings, Sparkles, X, Zap } from "lucide-react";
+import { ArrowDown, ArrowUp, Bell, ChartNoAxesColumnIncreasing, ChevronDown, ChevronRight, Info, LogOut, ReceiptText, ScanText, SendHorizontal, Settings, Sparkles, X, Zap } from "lucide-react";
 import HomeAdvisoryCard from "@/features/advisory-intelligence/components/HomeAdvisoryCard";
 import HomePreparationCard from "@/features/advisory-intelligence/components/HomePreparationCard";
 import HomeTipCard from "@/features/tipid-tips/components/HomeTipCard";

@@ -3,12 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Camera, Check, CircleCheck, Keyboard, ScanText, Sparkles, Upload, WifiOff } from "lucide-react";
+import { ArrowLeft, Camera, Check, CircleCheck, Keyboard, ScanText, Upload, WifiOff } from "lucide-react";
 import PageShell from "@/features/dashboard/components/PageShell";
 import { usePreviewHousehold } from "@/features/dashboard/use-preview-household";
 import { dailyApplianceKwh, effectiveRate, pesos, type PreviewAppliance } from "@/features/dashboard/preview-data";
 import NameplateReview, { type NameplateSource } from "./nameplate-review";
-import { blankNameplate, nameplateEstimate, sampleNameplateDraft, type NameplateDraft, type sampleNameplates } from "../nameplate-preview";
+import { blankNameplate, nameplateEstimate, type NameplateDraft } from "../nameplate-preview";
 
 export default function ApplianceRegistrationScreen() {
   const { household, update, ready, storageError } = usePreviewHousehold();
@@ -24,27 +24,23 @@ export default function ApplianceRegistrationScreen() {
   const capture = useRef<HTMLInputElement>(null);
   const blobUrl = useRef("");
   const request = useRef(0);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stageHeading = useRef<HTMLHeadingElement>(null);
   const rate = effectiveRate(household.bills);
 
   useEffect(() => {
     const connectivity = () => setOffline(!navigator.onLine);
     connectivity(); window.addEventListener("online", connectivity); window.addEventListener("offline", connectivity);
-    return () => { window.removeEventListener("online", connectivity); window.removeEventListener("offline", connectivity); request.current++; if (timer.current) clearTimeout(timer.current); if (blobUrl.current) URL.revokeObjectURL(blobUrl.current); };
+    return () => { window.removeEventListener("online", connectivity); window.removeEventListener("offline", connectivity); request.current++; if (blobUrl.current) URL.revokeObjectURL(blobUrl.current); };
   }, []);
   useEffect(() => { if (phase !== "input") stageHeading.current?.focus(); }, [phase]);
 
   function releasePhoto() { if (blobUrl.current) URL.revokeObjectURL(blobUrl.current); blobUrl.current = ""; }
   function startOver() {
-    request.current++; if (timer.current) clearTimeout(timer.current); releasePhoto(); setSource({ kind: "manual" });
+    request.current++; releasePhoto(); setSource({ kind: "manual" });
     setLoading(false); setPhase("input"); setError(""); setSaved(null); setInitial(blankNameplate);
   }
   function manual() { releasePhoto(); setError(""); setSource({ kind: "manual" }); setPhase("review"); }
-  function sample(type: keyof typeof sampleNameplates) {
-    const current = ++request.current; setError(""); setLoading(true); releasePhoto();
-    timer.current = setTimeout(() => { if (current !== request.current) return; setInitial(sampleNameplateDraft(type)); setSource({ kind: "sample", sample: type }); setLoading(false); setPhase("review"); }, 650);
-  }
+
   async function chooseFile(file?: File) {
     if (upload.current) upload.current.value = ""; if (capture.current) capture.current.value = "";
     if (!file || !ready || loading) return;

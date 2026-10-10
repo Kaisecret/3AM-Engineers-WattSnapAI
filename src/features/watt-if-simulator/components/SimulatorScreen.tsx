@@ -2,13 +2,11 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Check, ChevronRight, Clock3, FolderOpen, Info, Plus, RotateCcw, Save, SlidersHorizontal, Sparkles, Trash2, TriangleAlert, WifiOff, X } from "lucide-react";
+import { ArrowLeft, Check, ChevronRight, Clock3, FolderOpen, Info, Plus, RotateCcw, Save, SlidersHorizontal, Trash2, TriangleAlert, WifiOff, X } from "lucide-react";
 import PageShell from "@/features/dashboard/components/PageShell";
 import { usePreviewHousehold } from "@/features/dashboard/use-preview-household";
 import { billMonth, latestBill, pesos } from "@/features/dashboard/preview-data";
-import { applianceIcons } from "@/features/appliance-registration/components/appliance-picker";
 import { applianceSignature, compareScenario, createScenario, isStaleScenario, scenarioEntries } from "../calculations";
-import { exampleScenario, scenarioExamples, type ScenarioExample } from "../preview-examples";
 import { usePreviewScenarios } from "../use-preview-scenarios";
 import type { PreviewScenario, ScenarioEntry } from "../types";
 import ScenarioEditor from "./scenario-editor";
@@ -41,7 +39,7 @@ export default function SimulatorScreen() {
     setDirty(!fromSaved); setError(""); setMessage(""); setAcceptedSnapshot(null);
   }
   function startHousehold() { open(createScenario(household.appliances, crypto.randomUUID())); }
-  function startExample(type: ScenarioExample) { open(exampleScenario(type, crypto.randomUUID())); }
+
   function patch(change: Partial<PreviewScenario>) { setWorking(current => current ? { ...current, ...change } : null); setDirty(true); setMessage(""); setError(""); }
   function entryChange(id: string, change: Partial<ScenarioEntry>) {
     if (working) patch({ entries: working.entries.map(entry => entry.id === id ? { ...entry, ...change } : entry) });

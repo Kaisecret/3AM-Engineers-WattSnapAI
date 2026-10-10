@@ -7,7 +7,7 @@ import UserAvatar from "./UserAvatar";
 import PhotoEditor from "./PhotoEditor";
 import LogoutDialog from "./LogoutDialog";
 import { usePreviewHousehold } from "../use-preview-household";
-import { defaultLocation, defaultNotifications, isPhotoDataUrl, pesos, validateProfile, type NotificationPrefs } from "../preview-data";
+import { isPhotoDataUrl, pesos, validateProfile, type NotificationPrefs } from "../preview-data";
 import { previewProviderName } from "@/features/household-profile/provider-preview";
 import { ThemeSettings } from "@/features/onboarding/components/ThemeSupport";
 
@@ -31,7 +31,6 @@ export default function SettingsScreen() {
   const saved: Draft = { name: household.name, email: household.email ?? "", location: household.location ?? "" };
   const values = draft ?? saved;
   const dirty = draft !== null && (draft.name !== saved.name || draft.email !== saved.email || draft.location !== saved.location);
-  const prefs = household.notifications ?? defaultNotifications;
   const sampleBills = household.bills.filter(bill => bill.source === "sample").length;
   const sampleAppliances = household.appliances.filter(item => item.id.startsWith("sample-")).length;
 
@@ -63,10 +62,7 @@ export default function SettingsScreen() {
     if (issue) { setError(issue); return; }
     if (update({ name: values.name.trim(), email: values.email.trim() || undefined, location: values.location.trim(), locality: values.location.trim() === saved.location ? household.locality : undefined })) { setDraft(null); notify("Profile saved"); }
   }
-  function toggle(key: keyof NotificationPrefs) {
-    const next = { ...prefs, [key]: !prefs[key] };
-    if (update({ notifications: next })) notify(`${alerts.find(alert => alert.key === key)?.title} ${next[key] ? "on" : "off"}`);
-  }
+
   function clearSamples() {
     if (update({ bills: household.bills.filter(bill => bill.source !== "sample"), appliances: household.appliances.filter(item => !item.id.startsWith("sample-")) })) notify("Sample data cleared");
   }

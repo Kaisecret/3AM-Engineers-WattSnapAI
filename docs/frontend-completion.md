@@ -34,7 +34,7 @@ Baseline evidence: 76 feature tests pass; `npx.cmd tsc --noEmit` passes. Existin
 | 13 | Senior accessibility | Readable labels, touch targets, focus, reduced motion and hardware feedback |
 | 14 | Responsive verification | Fourteen routes checked at 320, 390, 768, 1024 and 1440px |
 | 15 | Content accuracy | Honest marketing, local access, privacy, assistant and unavailable notifications |
-| 16 | Frontend contracts/code quality | Pending |
+| 16 | Frontend contracts/code quality | Type-only integration contracts; unreachable sample handlers and delays removed |
 | 17 | Full local verification | Pending |
 | 18 | Priority review/polish | Pending |
 | 19 | Definition-of-done audit | Pending |
@@ -101,3 +101,7 @@ The completion suite checks fourteen household pages at five viewport widths, pr
 ## 15. Content corrections
 
 Marketing describes photo-assisted manual review and local recommendations. Fictional testimonials are replaced with household use cases in the existing card section. Calls to action open local household setup/access; provider coverage and storage no longer imply verified mapping or SQLite. Settings explain shared-browser access and replace unavailable automatic notification switches with links to saved information. The assistant identifies its local rules, distinguishes cost changes from kWh changes, avoids inferred causes and protects essential appliance usage. Fake unread indicators and the fixed time-of-day greeting are removed. Existing original logo and artwork are unchanged.
+
+## 16. Frontend review and future contracts
+
+Added data-only BillExtractionResult, ApplianceLabelExtractionResult, AdvisoryAnalysisResult and TipRecommendation contracts. Future extracted values require review, support unknown fields and do not make requests. Removed unreachable public sample generation/handlers and scanning animation logic; fixtures and reusable rule helpers stay available to tests. Bill progress now labels its actual input/review/save stages. Local assistant replies are immediate rather than simulating model processing. Reviewed effects, camera cleanup, accessible inputs and scope-bound persistence against the React checklist. No dependencies or backend contracts changed.

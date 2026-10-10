@@ -23,7 +23,7 @@ export default function HouseholdSetupScreen() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [complete, setComplete] = useState(false);
   const [offline, setOffline] = useState(false);
-  const [locationState, setLocationState] = useState<"idle" | "example" | "manual">("idle");
+  const [locationState, setLocationState] = useState<"idle" | "manual">("idle");
   const [locating, setLocating] = useState(false);
   const [locationMessage, setLocationMessage] = useState("");
   const locationRequest = useRef<AbortController | null>(null);
@@ -103,12 +103,7 @@ export default function HouseholdSetupScreen() {
     }
   }
 
-  function exampleLocation() {
-    setLocationMessage("");
-    edit({ province: "Antique", municipality: "San Jose de Buenavista", barangay: "Payao" });
-    setLocationState("example");
-    permission.current?.close();
-  }
+
 
   function currentLocation() {
     permission.current?.close();
@@ -169,7 +164,7 @@ export default function HouseholdSetupScreen() {
               <label htmlFor="setup-name"><span id="setup-name-label">Household name</span><input id="setup-name" aria-labelledby="setup-name-label" autoComplete="organization" maxLength={50} placeholder="e.g. Santos household" value={values.name} onChange={event => edit({ name: event.target.value })} aria-invalid={!!errors.name} aria-describedby={errors.name ? "setup-name-error" : undefined} />{errors.name && <span className="hs-field-error" id="setup-name-error">{errors.name}</span>}</label>
               <div className="hs-location-option"><span className="hs-location-symbol"><LocateFixed aria-hidden="true" /></span><div><strong>Start with a location suggestion</strong><p>Optional. Always check that the suggestion is your home.</p></div><button ref={locationButton} type="button" disabled={locating} onClick={() => permission.current?.showModal()}>Use location <ArrowRight size={15} aria-hidden="true" /></button></div>
               {locationMessage && <p className="hs-inline-note" role="status">{locationMessage}</p>}
-              {locationState !== "idle" && <p className={`hs-inline-note ${locationState === "example" ? "is-example" : ""}`} role="status">{locationState === "example" ? "Example location filled in. No device location was requested. Edit it to match your household." : "Location permission skipped. Continue by entering your home location below."}</p>}
+              {locationState !== "idle" && <p className="hs-inline-note" role="status">Location permission skipped. Continue by entering your home location below.</p>}
               <div className="hs-divider"><span>or enter your home location</span></div>
               <div className="hs-fields-row">
                 <label htmlFor="setup-province"><span id="setup-province-label">Province</span><input id="setup-province" aria-labelledby="setup-province-label" list="setup-provinces" autoComplete="address-level1" maxLength={40} placeholder="e.g. Antique" value={values.province} onChange={event => edit({ province: event.target.value })} aria-invalid={!!errors.province} aria-describedby={errors.province ? "setup-province-error" : undefined} />{errors.province && <span className="hs-field-error" id="setup-province-error">{errors.province}</span>}</label>

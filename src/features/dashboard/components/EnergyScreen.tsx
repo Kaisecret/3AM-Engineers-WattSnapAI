@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, ChartColumnBig, ChevronRight, Info, ReceiptText, ScanText, Trash2, TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowDown, ArrowUp, ChartColumnBig, ChevronRight, ReceiptText, ScanText, Trash2, TrendingDown, TrendingUp } from "lucide-react";
 import PageShell from "./PageShell";
 import { usePreviewHousehold } from "../use-preview-household";
 import { averageKwh, billMonth, chartMonths, compareWithPrevious, dueDateLabel, monthName, monthlySeries, pesos, shortMonth, sortBillsByMonth, type PreviewBill } from "../preview-data";
