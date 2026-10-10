@@ -1,15 +1,6 @@
 "use client";
 import type { BillExtractionResult } from "@/contracts/extraction";
 
-/** A photo taken from the Snap AI button, waiting for the scan page to read it (memory only). */
-let pending: File | null = null;
-export const pendingBillPhotoEvent = "wattsnap-bill-photo";
-export function setPendingBillPhoto(file: File) { pending = file; }
-export function takePendingBillPhoto() { const file = pending; pending = null; return file; }
-
-/** Phones and tablets open their own camera app, which takes sharper photos than a page preview. */
-export const prefersNativeCamera = () => typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
-
 const longestSide = 2400;
 const maxUpload = 3_500_000;
 

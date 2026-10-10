@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowDown, ArrowUp, ChartColumnBig, ChevronDown, ChevronRight, ReceiptText, ScanText, Sparkles, Trash2, TrendingDown, TrendingUp } from "lucide-react";
-import SnapBillLink from "@/features/bill-scanner/components/SnapBillLink";
 import PageShell from "./PageShell";
 import { usePreviewHousehold } from "../use-preview-household";
 import { amountPaid, averageKwh, billMonth, chartMonths, compareWithPrevious, dueDateLabel, monthName, monthlySeries, pesos, shortMonth, sortBillsByMonth, type PreviewBill } from "../preview-data";
@@ -99,7 +98,7 @@ export default function EnergyScreen() {
             <h2 id="en-hero-title"><span>{latest.kwh}</span> kWh</h2>
             <p className="en-hero-meta">{pesos(latest.amount)}{latest.dueDate && <> · Due {dueDateLabel(latest.dueDate)}</>}</p>
             {latestChange ? <p className={`en-hero-change ${latestChange.kwhPercent <= 0 ? "is-lower" : "is-higher"}`}>{latestChange.kwhPercent !== 0 && (latestChange.kwhPercent < 0 ? <TrendingDown aria-hidden="true" /> : <TrendingUp aria-hidden="true" />)}{latestChange.kwhPercent === 0 ? `No change from ${monthName(latestChange.previous.month)}` : `${Math.abs(latestChange.kwhPercent).toFixed(0)}% ${latestChange.kwhPercent < 0 ? "less" : "more"} than ${monthName(latestChange.previous.month)}`}</p> : <p className="en-hero-change">Add another month to compare</p>}
-            <div className="en-hero-actions"><SnapBillLink className="en-hero-button"><ScanText size={18} aria-hidden="true" /> Scan new bill</SnapBillLink><Link href="/budget" className="en-hero-link">Budget {budgetPercent}% used <ChevronRight size={16} aria-hidden="true" /></Link></div>
+            <div className="en-hero-actions"><Link href="/bills/new" className="en-hero-button"><ScanText size={18} aria-hidden="true" /> Scan new bill</Link><Link href="/budget" className="en-hero-link">Budget {budgetPercent}% used <ChevronRight size={16} aria-hidden="true" /></Link></div>
           </div>
           <Image className="en-hero-art" src="/assets/branding/actions-7.png" alt="" width={260} height={260} sizes="(min-width: 900px) 190px, 130px" />
         </section>
@@ -139,13 +138,13 @@ export default function EnergyScreen() {
         {focus && <div className={`en-focus${focus.example ? " is-example" : ""}`} aria-live="polite">
           <MonthTile month={focus.month} />
           <div><strong>{billMonth(focus.month)}{focus.example && <span className="en-example-tag">Example</span>}</strong><span>{focus.example ? "Example values. Scan this month’s bill to add your real reading." : `${focus.kwh} kWh · ${pesos(focus.amount)}`}</span></div>
-          {focus.example ? <SnapBillLink className="en-focus-scan"><ScanText size={16} aria-hidden="true" /> Scan</SnapBillLink> : focusChange ? <div className="en-focus-change"><Change percent={focusChange.kwhPercent} /><small>vs {monthName(focusChange.previous.month)}</small></div> : <small className="en-focus-first">First recorded month</small>}
+          {focus.example ? <Link href="/bills/new" className="en-focus-scan"><ScanText size={16} aria-hidden="true" /> Scan</Link> : focusChange ? <div className="en-focus-change"><Change percent={focusChange.kwhPercent} /><small>vs {monthName(focusChange.previous.month)}</small></div> : <small className="en-focus-first">First recorded month</small>}
         </div>}
       </section>
-    </> : <section className="ui-panel"><div className="ui-empty"><ReceiptText /><h3>No electricity bills yet</h3><p>Each bill you add becomes a month in your history, so you can compare your use month by month.</p><div className="en-empty-actions"><SnapBillLink className="ui-primary"><ScanText size={18} aria-hidden="true" /> Add Electricity Bill</SnapBillLink></div></div></section>}
+    </> : <section className="ui-panel"><div className="ui-empty"><ReceiptText /><h3>No electricity bills yet</h3><p>Each bill you add becomes a month in your history, so you can compare your use month by month.</p><div className="en-empty-actions"><Link href="/bills/new" className="ui-primary"><ScanText size={18} aria-hidden="true" /> Add Electricity Bill</Link></div></div></section>}
 
     {history.length > 0 && <section className="ui-panel en-history" aria-labelledby="en-history-title">
-      <div className="ui-panel-heading"><div><h2 id="en-history-title">Bill history</h2><p>Every confirmed bill you save is added here.</p></div><SnapBillLink className="ui-primary en-add"><ScanText size={17} aria-hidden="true" /> Add bill</SnapBillLink></div>
+      <div className="ui-panel-heading"><div><h2 id="en-history-title">Bill history</h2><p>Every confirmed bill you save is added here.</p></div><Link href="/bills/new" className="ui-primary en-add"><ScanText size={17} aria-hidden="true" /> Add bill</Link></div>
       <ul className="en-list">
         {history.map(bill => { const change = compareWithPrevious(household.bills, bill.month); const expanded = open === bill.id; return <li key={bill.id} id={`bill-${bill.id}`} className={`${bill.id === highlight ? "is-new" : ""}${expanded ? " is-open" : ""}`}>
           <button type="button" className="en-row" aria-expanded={expanded} aria-controls={`bill-details-${bill.id}`} onClick={() => setOpen(expanded ? null : bill.id)}>

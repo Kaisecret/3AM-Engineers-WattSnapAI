@@ -38,11 +38,11 @@ Also in the app but not in the proposal: accounts (email, username or Google, wi
 
 ## Entering an ANTECO receipt
 
-**Snap AI** (the round button in the middle of the bottom bar) opens the phone camera straight away. Take the photo and WattSnap AI reads it with Gemini, then shows the values to check. On a computer, upload or drop the photo or PDF, or use the webcam. Saved bills open in the **Energy** tab: tap a bill to see the meter, subsidy, price per kWh and **Where your money goes** (the charge groups).
+**Snap AI** (the round button in the middle of the bottom bar) opens the scanner. Tap the round shutter to open the camera in the frame and again to take the photo, or tap **Upload** (on a computer you can also drop a photo or PDF). Either way WattSnap AI reads it with Gemini and shows the values to check. Saved bills open in the **Energy** tab: tap a bill to see the meter, subsidy, price per kWh and **Where your money goes** (the charge groups).
 
 How the reading is checked (`src/lib/gemini/bill-reading.ts`): present − previous meter reading must equal the kWh; the charge groups must add up to the current month bill; the bill minus the subsidy must equal the amount due. Anything that disagrees, or could not be read, is shown under **Please double-check** or marked **Not read**. Names, addresses, account and meter numbers are never requested.
 
-Typing it instead: Snap AI → Type it (or Type it instead on desktop).
+Typing it instead: Snap AI → Type it (or Enter bill manually on desktop).
 
 | On the receipt | App field | Example (August 2026) |
 |---|---|---|
