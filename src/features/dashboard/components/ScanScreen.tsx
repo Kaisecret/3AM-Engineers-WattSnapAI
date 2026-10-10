@@ -57,7 +57,7 @@ export default function ScanScreen() {
     setDraft({ month: "", kwh: "", amount: "", dueDate: "", periodStart: "", periodEnd: "" }); setSource(null); setImage(null); setPhase("camera");
     request.current++; stream.current?.getTracks().forEach(track => track.stop()); stream.current = null; setCamera("idle");
     if (objectUrl.current) URL.revokeObjectURL(objectUrl.current); objectUrl.current = "";
-    try { const raw = sessionStorage.getItem(draftKey); if (raw) { setDraft(normalizeBillDraft(JSON.parse(raw))); setPhase("review"); setDraftNotice("Your unfinished bill fields were restored. Reattach the photo if you need it for comparison."); } setDraftBlocked(false); }
+    try { const raw = sessionStorage.getItem(draftKey); if (raw) { setDraft(normalizeBillDraft(JSON.parse(raw))); setPhase("review"); setDraftNotice("We restored your unfinished bill."); } setDraftBlocked(false); }
     catch { setDraftBlocked(true); setDraftNotice("Your earlier draft could not be opened. It is unchanged. Choose Discard draft to start again, or keep your entered values on this page."); }
     setLoadedDraftKey(draftKey);
   }, [ready, draftKey]);
@@ -290,8 +290,8 @@ export default function ScanScreen() {
           </div>}
 
           {draftNotice && <p className="br-note" role="status">{draftNotice}</p>}
-          {(phase === "review" || draftNotice) && <button type="button" className="ui-secondary" onClick={() => discard.current?.showModal()}>Discard draft</button>}
-          {phase === "review" && <BillReview mode="manual" draft={draft} original={null} source={source} provider={previewProviderName(household.provider)} duplicate={duplicate} offline={offline} ready={ready} storageError={storageError} onChange={setDraft} onRestart={() => restart()} onSave={save} onReplaceSource={() => fileInput.current?.click()} onRemoveSource={() => { if (objectUrl.current) URL.revokeObjectURL(objectUrl.current); objectUrl.current = ""; setSource(null); setImage(null); }} />}
+          {draftNotice && phase !== "review" && <button type="button" className="ui-secondary" onClick={() => discard.current?.showModal()}>Discard draft</button>}
+          {phase === "review" && <BillReview mode="manual" draft={draft} original={null} source={source} duplicate={duplicate} offline={offline} ready={ready} storageError={storageError} onChange={setDraft} onRestart={() => restart()} onDiscard={() => discard.current?.showModal()} onSave={save} onReplaceSource={() => fileInput.current?.click()} onRemoveSource={() => { if (objectUrl.current) URL.revokeObjectURL(objectUrl.current); objectUrl.current = ""; setSource(null); setImage(null); }} />}
 
           {phase === "saved" && saved && <div className="scan-saved" role="status">
             <Image className="scan-saved-art" src="/assets/branding/actions-3.png" alt="" width={240} height={240} sizes="150px" />
