@@ -1,4 +1,6 @@
 import type { NextRequest } from "next/server";
 import { updateSession } from "./lib/supabase/middleware";
 export async function middleware(request: NextRequest) { return updateSession(request); }
-export const config = { matcher: ["/((?!api/|_next/static|_next/image|assets/|icons/|favicon.ico|sw.js|manifest.webmanifest|offline.html).*)"] };
+// Only pages that need an account. Public pages keep their normal caching and make no
+// session request. Next.js needs these written out; a test keeps them equal to protectedRoots.
+export const config = { matcher: ["/dashboard/:path*", "/setup/:path*", "/onboarding/:path*", "/bills/:path*", "/appliances/:path*", "/tips/:path*", "/settings/:path*", "/assistant/:path*", "/budget/:path*", "/brownout-ready/:path*", "/simulator/:path*", "/advisories/:path*", "/complete-profile/:path*"] };

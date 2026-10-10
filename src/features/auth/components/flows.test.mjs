@@ -18,7 +18,7 @@ function render(file, name, state, services = {}, props = {}) {
     '../preview-session': { beginPreviewSession: () => navigation.push('preview') },
     '../../../lib/supabase/browser': { getBrowserSupabase: () => ({}) },
     '../service': services, '../actions': services, '../session': { forgetAccount() {}, rememberAccount() {} },
-    '../schemas': { passwordRules: () => [{ label: 'strong', met: true }], safeNextPath: () => '/dashboard' },
+    '../schemas': { passwordRules: () => [{ label: 'strong', met: true }], safeNextPath: () => '/dashboard', parseIdentifier: value => value.includes('@') ? { kind: 'email', email: value } : { kind: 'username', username: value } },
   };
   vm.runInNewContext(code, { exports, require: key => { assert.ok(key in dependencies, key); return dependencies[key]; }, window: { location: { origin: 'https://wattsnap.test' } }, URL, console });
   const tree = exports[name](props);
@@ -59,4 +59,24 @@ test('failed password reset does not show a success screen', async () => {
   await rendered.find(node => node.type === 'form').props.onSubmit({ preventDefault() {} });
   assert.equal(rendered.changes.some(([index, value]) => index === 3 && value === true), false);
   assert.ok(rendered.changes.some(([, value]) => value === failure.message));
+});
+test('email login signs in from the browser, so Supabase limits attempts per visitor', async () => {
+  const calls = [];
+  const rendered = render('./LoginForm.tsx', 'LoginForm', ['maria@gmail.com', 'abc12345x', null, false], {
+    signInWithEmail: async (_client, input) => { calls.push(['browser', input.email, input.password]); return failure; },
+    loginWithIdentifier: async () => { calls.push(['server']); return failure; },
+  });
+  await rendered.find(node => node.type === 'form').props.onSubmit({ preventDefault() {} });
+  assert.deepEqual(calls, [['browser', 'maria@gmail.com', 'abc12345x']]);
+  assert.deepEqual(rendered.navigation, []);
+  assert.ok(rendered.changes.some(([, value]) => value === failure.message));
+});
+test('username login goes to the server, which looks up the email privately', async () => {
+  const calls = [];
+  const rendered = render('./LoginForm.tsx', 'LoginForm', ['maria', 'abc12345x', null, false], {
+    signInWithEmail: async () => { calls.push(['browser']); return failure; },
+    loginWithIdentifier: async input => { calls.push(['server', input.identifier]); return failure; },
+  });
+  await rendered.find(node => node.type === 'form').props.onSubmit({ preventDefault() {} });
+  assert.deepEqual(calls, [['server', 'maria']]);
 });

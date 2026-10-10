@@ -19,7 +19,8 @@ function login({ email = 'private@example.com', allowed = true, result = success
     '../../lib/supabase/server': { getServerSupabase: async () => ({}) },
     '../../lib/supabase/admin': { getAdminSupabase: () => ({}) },
     '../../lib/config/env': { readSupabaseSecretKey: () => 'test-secret' },
-    './schemas': { parseIdentifier: value => value === 'maria' ? { kind: 'username', username: value } : null },
+    'node:crypto': { randomUUID: () => 'test-uuid' },
+    './schemas': { parseIdentifier: value => value === 'maria' ? { kind: 'username', username: value } : value.includes('@') ? { kind: 'email', email: value } : null },
     './repository': { hashIp: () => 'hash', countRecentFailures: async () => ({ username: 0, ip: 0 }), attemptAllowed: () => allowed, findEmailByUsername: async () => email, recordFailure: async () => calls.push('failure') },
     './service': { GENERIC_LOGIN_FAILURE: failure.message, signInWithEmail: async (_, input) => { calls.push(input); return result; }, toFailure: () => failure },
   });
@@ -39,7 +40,23 @@ test('username limiter rejects login before looking up/signing in', async () => 
 test('unknown username produces generic credentials failure and records a failed attempt', async () => {
   const { exports, calls } = login({ email: null }); assert.equal(typeof exports.loginWithIdentifier, 'function');
   const result = await exports.loginWithIdentifier({ identifier: 'maria', password: 'abc12345x' });
-  assert.equal(result.message, failure.message); assert.deepEqual(calls, ['failure']);
+  assert.equal(result.message, failure.message);
+  // A sign-in still happens, against an address that cannot exist, so timing does not reveal the username.
+  assert.equal(calls.length, 2);
+  assert.match(calls[0].email, /^unknown-test-uuid@wattsnap\.invalid$/);
+  assert.equal(calls[0].password, 'abc12345x');
+  assert.equal(calls[1], 'failure');
+});
+test('an unknown username is refused even if the placeholder sign-in were to succeed', async () => {
+  const { exports } = login({ email: null, result: success });
+  const result = await exports.loginWithIdentifier({ identifier: 'maria', password: 'abc12345x' });
+  // The action's result is built in another realm, so compare its contents.
+  assert.deepEqual(JSON.parse(JSON.stringify(result)), failure);
+});
+test('an email sent to the server action is refused without any sign-in or lookup', async () => {
+  const { exports, calls } = login();
+  const result = await exports.loginWithIdentifier({ identifier: 'maria@gmail.com', password: 'abc12345x' });
+  assert.deepEqual(JSON.parse(JSON.stringify(result)), failure); assert.deepEqual(calls, []);
 });
 function route(path, auth, profile = { onboardedAt: 'date' }) {
   return load(path, {

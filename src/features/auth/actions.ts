@@ -1,4 +1,5 @@
 "use server";
+import { randomUUID } from "node:crypto";
 import { headers } from "next/headers";
 import { getServerSupabase } from "../../lib/supabase/server";
 import { getAdminSupabase } from "../../lib/supabase/admin";
@@ -7,14 +8,17 @@ import { parseIdentifier } from "./schemas";
 import { hashIp, countRecentFailures, attemptAllowed, findEmailByUsername, recordFailure } from "./repository";
 import { GENERIC_LOGIN_FAILURE, signInWithEmail, toFailure } from "./service";
 import type { AuthResult } from "./types";
-/** Username lookup and privileged credentials never cross the server boundary. */
+/**
+ * Username login. Username lookup and privileged credentials never cross the server boundary.
+ * Email logins do not come here: the login form signs them in from the browser, so that
+ * Supabase limits attempts per visitor instead of per hosting address.
+ */
 export async function loginWithIdentifier(input: { identifier: string; password: string }): Promise<AuthResult> {
   const identifier = parseIdentifier(input.identifier);
   const incorrect: AuthResult = { ok: false, kind: "authentication", message: GENERIC_LOGIN_FAILURE };
-  if (!identifier || !input.password) return incorrect;
+  if (!identifier || identifier.kind !== "username" || !input.password) return incorrect;
   try {
     const client = await getServerSupabase();
-    if (identifier.kind === "email") return await signInWithEmail(client, { email: identifier.email, password: input.password });
     const admin = getAdminSupabase();
     const requestHeaders = await headers();
     // Vercel provides the trusted proxy address; unknown hosts share a conservative bucket.
@@ -22,7 +26,10 @@ export async function loginWithIdentifier(input: { identifier: string; password:
     const attempt = { username: identifier.username, ipHash: hashIp(ip, readSupabaseSecretKey()) };
     if (!attemptAllowed(await countRecentFailures(admin, attempt))) return { ok: false, kind: "rate-limit", message: "Too many attempts. Please wait a moment and try again." };
     const email = await findEmailByUsername(admin, identifier.username);
-    const result = email ? await signInWithEmail(client, { email, password: input.password }) : incorrect;
+    // An unknown username still performs a sign-in, against an address that cannot exist,
+    // so the response time does not reveal whether the username is real.
+    const attempted = await signInWithEmail(client, { email: email ?? `unknown-${randomUUID()}@wattsnap.invalid`, password: input.password });
+    const result = email ? attempted : incorrect;
     if (!result.ok) await recordFailure(admin, attempt);
     return result;
   } catch (error) { return toFailure(error, "login"); }

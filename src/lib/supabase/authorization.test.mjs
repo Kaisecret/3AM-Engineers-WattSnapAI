@@ -14,3 +14,11 @@ test('only verified authenticated claims allow protected access', async () => {
   }
   assert.equal(await auth.hasVerifiedClaims({ auth: { getClaims: async () => { throw new Error('offline'); } } }), false);
 });
+test('the middleware runs on every protected page and on nothing public', async () => {
+  const { readFileSync } = await import('node:fs');
+  const source = readFileSync(new URL('../../middleware.ts', import.meta.url), 'utf8');
+  const matcher = [...source.match(/matcher: \[([^\]]+)\]/)[1].matchAll(/"([^"]+)"/g)].map(match => match[1]);
+  assert.deepEqual([...matcher].sort(), auth.protectedRoots.map(root => `/${root}/:path*`).sort());
+  // The public landing page keeps its normal caching and makes no session request.
+  for (const path of ['/', '/login', '/signup', '/welcome', '/intro']) assert.equal(matcher.some(pattern => path === pattern.replace('/:path*', '')), false, path);
+});

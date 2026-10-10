@@ -7,8 +7,8 @@ import { Lightbulb, Lock, Mail } from "lucide-react";
 import { AUTH_ART, AuthShell } from "./AuthShell";
 import { getBrowserSupabase } from "../../../lib/supabase/browser";
 import { checkGoogleProvider, loginWithIdentifier } from "../actions";
-import { signInWithGoogle, getAccount } from "../service";
-import { safeNextPath } from "../schemas";
+import { signInWithEmail, signInWithGoogle, getAccount } from "../service";
+import { parseIdentifier, safeNextPath } from "../schemas";
 import {
   AuthAlert,
   AuthDivider,
@@ -53,7 +53,12 @@ export function LoginForm() {
     }
     setLoading(true);
     try {
-      const result = await loginWithIdentifier({ identifier, password });
+      // An email signs in straight from the browser, so Supabase limits attempts per visitor.
+      // Only a username needs the server, which looks up its email privately.
+      const parsed = parseIdentifier(identifier);
+      const result = parsed?.kind === "email"
+        ? await signInWithEmail(getBrowserSupabase(), { email: parsed.email, password })
+        : await loginWithIdentifier({ identifier, password });
       if (!result.ok) { setError(result.message); return; }
       const account = await getAccount(getBrowserSupabase());
       if (!account.ok) { setError(account.message); return; }
