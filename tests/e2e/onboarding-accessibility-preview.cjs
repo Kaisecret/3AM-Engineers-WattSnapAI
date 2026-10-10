@@ -55,7 +55,7 @@ async function textContrast(page, selector) {
       if (route === '/appliances/new') { await page.getByRole('button', { name: 'Add device', exact: true }).click(); await page.getByRole('button', { name: 'Enter manually', exact: true }).click(); await page.getByRole('heading', { name: 'Review your appliance', exact: true }).waitFor(); }
       if (route === '/intro') await page.waitForFunction(() => !!document.querySelector('.intro-controls button:not(:disabled)'));
       await noOverflow(page, `dark ${route}`);
-      if (route === '/setup') { await page.getByText('0/5 Completed', { exact: true }).waitFor(); await textContrast(page, '.setup-heading h2, .setup-status, .setup-list h3'); }
+      if (route === '/setup') { await page.getByText('0/5 Completed', { exact: true }).waitFor(); await textContrast(page, '.setup-heading h2, .setup-status, .setup-step-label'); }
       await artwork(page);
       await page.screenshot({ path: path.join(screenshots, `dark-${route.slice(1).replaceAll('/', '-')}-390.png`), fullPage: true });
     }
@@ -70,7 +70,7 @@ async function textContrast(page, selector) {
       await noOverflow(page, `setup at ${width}`);
       const sizes = await page.locator('.setup-list li > a').evaluateAll(items => items.map(item => item.getBoundingClientRect().height));
       assert(sizes.every(height => height >= 48), 'setup touch targets');
-      await textContrast(page, '.setup-heading h2, .setup-status, .setup-list h3');
+      await textContrast(page, '.setup-heading h2, .setup-status, .setup-step-label');
     }
     await page.setViewportSize({ width: 390, height: 844 });
     await open(page, '/setup');
