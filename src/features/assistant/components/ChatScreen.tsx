@@ -47,7 +47,7 @@ export default function ChatScreen() {
   const asked = useRef(false);
   const context = useMemo(() => buildContext(household, advisories.records), [household, advisories.records]);
   const respond = useCallback((text: string) => householdReply(text, context), [context]);
-  const { messages, typing, send, reset } = useChat(respond);
+  const { messages, typing, send, reset } = useChat(respond, context);
   const first = household.name.split(/\s+/)[0];
   const latest = context.latest;
   const change = latest ? compareWithPrevious(household.bills, latest.month) : null;
