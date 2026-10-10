@@ -43,13 +43,10 @@ export default function HouseholdSetupScreen() {
   };
   const provider = values.provider === "other" && values.customProvider.trim() ? { id: `custom:${encodeURIComponent(values.customProvider.trim())}`, name: values.customProvider.trim() } : previewProviders.find(item => item.id === values.provider);
   const location = [values.barangay.trim(), values.municipality.trim(), values.province.trim()].filter(Boolean).join(", ");
-<<<<<<< HEAD
   const providerChoices = [...previewProviders, { id: "other", name: "Other provider", detail: "Enter the utility or cooperative printed on your bill", area: "Manual entry" }];
-=======
   const suggestions = previewProviders.filter(item => item.area.toLowerCase() === values.province.trim().toLowerCase());
   const availableMunicipalities = getMunicipalitiesForProvince(values.province);
   const availableBarangays = getBarangaysForMunicipality(values.province, values.municipality);
->>>>>>> feat/supabase-auth
 
   useEffect(() => {
     const sync = () => setOffline(!navigator.onLine);
@@ -250,7 +247,6 @@ export default function HouseholdSetupScreen() {
                 </span>
               </label>
               <datalist id="setup-barangays">{availableBarangays.map(name => <option key={name} value={name} />)}</datalist>
-              <button type="button" className="ui-secondary" onClick={saveProfile}>Save household profile</button>
             </div>}
 
             {step === 1 && <>
@@ -267,7 +263,25 @@ export default function HouseholdSetupScreen() {
             </>}
 
             {storageError && <p className="ui-error" role="alert">{storageError}</p>}
-            <div className="hs-actions">{step > 0 ? <button type="button" className="hs-back" onClick={() => go(step - 1)}><ArrowLeft size={17} aria-hidden="true" /> Back</button> : <Link href="/dashboard" className="hs-back">Set up later</Link>}<button type="submit" className="ui-primary">{step === 2 ? <><Check size={17} aria-hidden="true" /> Save household</> : <>Continue <ArrowRight size={17} aria-hidden="true" /></>}</button></div>
+            <div className="hs-actions">
+              {step > 0 ? (
+                <button type="button" className="hs-back" onClick={() => go(step - 1)}>
+                  <ArrowLeft size={17} aria-hidden="true" /> Back
+                </button>
+              ) : (
+                <Link href="/dashboard" className="hs-back">Set up later</Link>
+              )}
+              <div className="hs-actions-group">
+                {step === 0 && (
+                  <button type="button" className="ui-secondary hs-quick-save" onClick={saveProfile}>
+                    Save household profile
+                  </button>
+                )}
+                <button type="submit" className="ui-primary">
+                  {step === 2 ? <><Check size={17} aria-hidden="true" /> Save household</> : <>Continue <ArrowRight size={17} aria-hidden="true" /></>}
+                </button>
+              </div>
+            </div>
           </form>
         </>}
       </section>

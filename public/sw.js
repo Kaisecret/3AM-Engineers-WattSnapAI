@@ -54,7 +54,7 @@ self.addEventListener("fetch", event => {
     if (asset) { const saved = await cache.match(key); if (saved) return saved; }
     try {
       const response = await fetch(request);
-      if (response.ok && (!page || response.headers.get("content-type")?.includes("text/html"))) {
+      if (response.ok && !page) {
         event.waitUntil(cache.put(key, response.clone()));
       }
       return response;
