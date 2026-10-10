@@ -5,3 +5,9 @@
 .ws-home :is(input, select, textarea) { max-width: 100%; }
 .scan-fields select { width: 100%; min-height: 48px; border: 1px solid #d7e6ec; border-radius: 12px; padding: 10px 12px; font: inherit; color: #17394d; background: white; }
 html[data-theme="dark"] .scan-fields select { background: #192e3d; border-color: #4c6e7d; color: #edf6fa; }
+.ui-confirm-dialog { width: min(440px, calc(100% - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: 28px; border: 1px solid #d7e6ec; border-radius: 24px; color: #17394d; background: white; box-shadow: 0 24px 60px #17394d26; }
+.ui-confirm-dialog::backdrop { background: #17394d66; }.ui-confirm-dialog h2 { font-size: 24px; overflow-wrap: anywhere; }.ui-confirm-dialog p { margin: 16px 0; font-size: 16px; line-height: 1.6; }.ui-confirm-dialog > div { display: flex; flex-wrap: wrap; gap: 12px; }
+.ui-confirm-dialog :is(.ui-primary, .ui-secondary) { min-height: 48px; font: inherit; padding: 12px 16px; border-radius: 12px; }.ui-confirm-dialog .ui-primary { background: #08738e; color: white; }.ui-confirm-dialog .ui-secondary { border: 1px solid #08738e; background: white; color: #08738e; }
+html[data-theme="dark"] .ui-confirm-dialog { color: #edf6fa; background: #192e3d; border-color: #4c6e7d; }
+.en-chart { overflow-x: auto; }.en-col { min-width: 44px; }.en-bar { display: block; }.ws-chart { overflow-x: auto; }.ws-chart-day { min-width: 44px; }.ws-day-label small { display: block; }
+.en-col { border: 0; padding: 0; background: transparent; }.en-plot, .en-labels { min-width: 314px; }.en-labels span { min-width: 44px; }.en-col:focus-visible { outline: 3px solid #1687b2; outline-offset: 2px; }.en-compare .ui-note { margin-top: 16px; font-size: 14px; line-height: 1.6; }

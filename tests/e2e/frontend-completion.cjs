@@ -123,7 +123,26 @@ async function bills(browser) {
   await context.close(); console.log('PASS: bill photo/manual review, draft recovery, optional fields, confirmation and duplicate protection without AI calls');
 }
 
+async function history(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River home', budget: 0, appliances: [], bills: [{ id: 'actual-1', month: '2026-07', kwh: 100, amount: 1200, source: 'manual', periodStart: '2026-07-01', periodEnd: '2026-07-31' }, { id: 'actual-2', month: '2026-09', kwh: 150, amount: 1800, source: 'manual', periodStart: '2026-09-01', periodEnd: '2026-09-30' }] })); });
+  const page = await context.newPage(); await page.goto(`${baseURL}/bills`);
+  await page.getByRole('heading', { name: 'Latest vs previous saved bill' }).waitFor();
+  await page.getByText('Notable increase.', { exact: true }).waitFor();
+  assert.equal(await page.locator('.en-col').count(), 2, 'No invented missing month');
+  assert.match(await page.locator('.en-compare').innerText(), /different numbers of days/);
+  await page.getByRole('button', { name: 'Remove September 2026 bill', exact: true }).click();
+  await page.getByRole('button', { name: 'Keep record', exact: true }).click();
+  assert.equal(await page.locator('.en-list > li').count(), 2);
+  await page.getByRole('button', { name: 'Remove September 2026 bill', exact: true }).click();
+  await page.getByRole('button', { name: 'Remove record', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'bill removed' }).waitFor();
+  await page.reload(); await page.locator('.en-list > li').first().waitFor(); assert.equal(await page.locator('.en-list > li').count(), 1);
+  await page.goto(`${baseURL}/dashboard`); await page.locator('.ws-chart-day').first().waitFor(); assert.equal(await page.locator('.ws-chart-day').count(), 1);
+  await context.close(); console.log('PASS: actual bill history, gaps, notable changes, confirmed deletion and refresh');
+}
+
 (async () => {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
-  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills'])) await ({ design, records, household, bills })[check](browser); } finally { await browser.close(); }
+  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history'])) await ({ design, records, household, bills, history })[check](browser); } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

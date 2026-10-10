@@ -25,7 +25,7 @@ Baseline evidence: 76 feature tests pass; `npx.cmd tsc --noEmit` passes. Existin
 | 4 | Remove prototype/sample presentation | Empty states, actual-only charts, sample controls removed; legacy fixtures preserved |
 | 5 | Local household access and provider | Password-free local installation; explicit manual provider and preserved scopes |
 | 6 | Bill upload/manual review/draft | Real photo/manual entry, optional fields, confirmed saves and tab draft recovery |
-| 7 | Actual bill history/dashboard/change | Pending |
+| 7 | Actual bill history/dashboard/change | Actual periods, transparent change threshold and confirmed removal |
 | 8 | Appliance capture/management | Pending |
 | 9 | Appliance estimator | Pending |
 | 10 | Deterministic local tips | Pending |
@@ -65,3 +65,7 @@ Location lookup remains optional, explicitly explained and user-triggered. The f
 Uploads and supported camera captures are reference documents for manual review. Fields include provider, month, exact period, billing date, amount, due date, kWh and optional notes. The printed provider is saved with the bill rather than overwritten by the household default. Replacement/removal retains entered values; no image generates invented values. Validation covers MIME/size/decode, PDF signatures, calendar dates, period ordering, positive numeric inputs, explicit review and confirmed duplicate replacement. Camera permission is user-triggered; unsupported hardware falls back to upload/manual entry, and flashlight state changes only after a successful supported operation.
 
 Versioned session drafts retain typed fields across refresh, without retaining photos or review confirmation. Successful saves remove the unfinished draft. Explicit discard uses a confirmation dialog; changing the input preserves values. Browser checks cover photo/manual input, refresh, optional fields, no implicit save and duplicate protection. Rule tests reject unreadable/oversized drafts and invalid billing dates. No AI requests are made.
+
+## 7. Bill history and consumption changes
+
+History and chart comparisons use actual saved periods, including gaps and year labels. A 20% change threshold highlights notable changes without inferring their causes; different or unknown period lengths are qualified. Charts expose full-height touch targets without distorting bar values. Bill removal now requires confirmation and preserves other records. The remaining sample-history control is removed. Checks cover actual history, gaps, refresh, deletion confirmation and threshold calculations.
