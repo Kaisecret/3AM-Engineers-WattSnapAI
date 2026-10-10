@@ -6,6 +6,7 @@ import { FileImage, Info, ShieldCheck, TriangleAlert, WifiOff, X, Zap } from "lu
 import { appliancePresets, pesos, type PreviewAppliance } from "@/features/dashboard/preview-data";
 import AppliancePicker from "./appliance-picker";
 import { nameplateEstimate, reviewNameplate, sampleNameplates, type NameplateDraft } from "../nameplate-preview";
+import { typicalUse } from "../typical-use";
 
 export type NameplateSource = { kind: "manual" } | { kind: "sample"; sample: keyof typeof sampleNameplates } | { kind: "photo"; name: string; url: string };
 
@@ -36,6 +37,7 @@ export default function NameplateReview({ initial, source, appliances, rate, rea
   function edit(patch: Partial<NameplateDraft>) {
     const next = { ...draft, ...patch }; setDraft(next); onDraftChange?.(next); setConfirmed(false); setDuplicateAction(""); setError("");
   }
+  const typical = typicalUse(draft.kind);
   function pick(kind: NameplateDraft["kind"]) {
     const previous = appliancePresets.find(preset => preset.kind === draft.kind)?.name;
     const name = !draft.name.trim() || draft.name === previous ? appliancePresets.find(preset => preset.kind === kind)?.name ?? "" : draft.name;
@@ -70,15 +72,17 @@ export default function NameplateReview({ initial, source, appliances, rate, rea
       <div className="ap-fields">
         <label className="ap-wide">Appliance name<input value={draft.name} maxLength={80} placeholder="e.g. Bedroom fan" required onChange={event => edit({ name: event.target.value })} /></label>
         <label className="ap-wide">Model (optional)<input value={draft.model} maxLength={80} placeholder="Copy it from the nameplate, if known" onChange={event => edit({ model: event.target.value })} /></label>
-        <label>Rated power<input type="number" inputMode="decimal" min="0.001" step="any" placeholder="Unknown" required value={draft.power} onChange={event => edit({ power: event.target.value })} /></label>
+        <label>Rated power<input type="number" inputMode="decimal" min="0.001" step="any" placeholder="Unknown" required aria-describedby={typical ? "np-typical-watts" : undefined} value={draft.power} onChange={event => edit({ power: event.target.value })} /></label>
         <label>Power unit<select aria-label="Power unit" value={draft.unit} onChange={event => edit({ unit: event.target.value })}><option value="W">W · watts</option><option value="kW">kW · kilowatts</option><option value="V">V · voltage only</option><option value="VA">VA · apparent power</option></select></label>
       </div>
-      {draft.unit === "V" || draft.unit === "VA" ? <p className="np-unit-warning" role="status">This unit cannot be used as wattage. Check for W or kW, or use your own approximate wattage.</p> : draft.unit === "kW" && Number(draft.power) > 0 ? <p className="np-unit-hint">{draft.power} kW = {(Number(draft.power) * 1000).toLocaleString()} W</p> : null}
+      {draft.unit === "V" ? <p className="np-unit-warning" role="status">Volts alone aren’t watts. If the label also shows amps (A), multiply them, e.g. 220 V × 0.5 A = 110 W. Enter that in W and choose My approximate wattage.</p> : draft.unit === "VA" ? <p className="np-unit-warning" role="status">VA isn’t the same as watts. Look for a W rating, or enter the number in W and choose My approximate wattage.</p> : draft.unit === "kW" && Number(draft.power) > 0 ? <p className="np-unit-hint">{draft.power} kW = {(Number(draft.power) * 1000).toLocaleString()} W</p> : null}
+      {typical && <p id="np-typical-watts" className="np-unit-hint">Typical {typical.label}: {typical.watts[0].toLocaleString()}–{typical.watts[1].toLocaleString()} W. Use the label if you can.</p>}
       <fieldset className="np-basis"><legend>Where did the wattage come from?</legend><label><input type="radio" name="basis" checked={draft.wattageBasis === "nameplate"} onChange={() => edit({ wattageBasis: "nameplate" })} />Rated power on the nameplate</label><label><input type="radio" name="basis" checked={draft.wattageBasis === "approximate"} onChange={() => edit({ wattageBasis: "approximate" })} />My approximate wattage</label></fieldset>
       <div className="np-usage-heading"><h3>Your usage assumptions</h3><p>Type selection only changes the name. Enter the power and usage yourself.</p></div>
       <div className="ap-fields np-usage-fields">
-        <label>Hours per day<input type="number" inputMode="decimal" min="0" max="24" step="any" required placeholder="e.g. 8" value={draft.hours} onChange={event => edit({ hours: event.target.value })} /></label>
+        <label>Hours per day<input type="number" inputMode="decimal" min="0" max="24" step="any" required placeholder="e.g. 8" aria-describedby={typical?.hours ? "np-hours-tip" : undefined} value={draft.hours} onChange={event => edit({ hours: event.target.value })} /></label>
         <label>Quantity<input type="number" inputMode="numeric" min="1" max="50" step="1" required value={draft.quantity} onChange={event => edit({ quantity: event.target.value })} /></label>
+        {typical?.hours && <p id="np-hours-tip" className="np-unit-hint ap-wide">{typical.hours}</p>}
         <label className="ap-wide">Days in this period<input type="number" inputMode="numeric" min="1" max="366" step="1" required value={draft.days} onChange={event => edit({ days: event.target.value })} /></label>
       </div>
       <div className="np-estimate" aria-live="polite"><span className="np-estimate-icon"><Zap aria-hidden="true" /></span><div><span>Estimated use · {draft.days || "—"} days{draft.wattageBasis === "approximate" ? " · approximate watts" : ""}</span><strong>{estimate === null ? "Waiting for your inputs" : `${estimate.toFixed(2)} kWh`}</strong><p>{estimate === null ? "Enter valid power, quantity, hours, and days to see an estimate." : rate > 0 ? `≈ ${pesos(estimate * rate)} using the latest bill’s amount ÷ kWh; this includes fees and is not a tariff.` : "Add a bill to include approximate peso estimates."}</p></div></div>

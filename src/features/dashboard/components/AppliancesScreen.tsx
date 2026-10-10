@@ -7,7 +7,8 @@ import AppliancePicker, { applianceIcons as kindIcons } from "@/features/applian
 import ConfirmRecordRemoval from "@/components/ui/ConfirmRecordRemoval";
 import PageShell from "./PageShell";
 import { usePreviewHousehold } from "../use-preview-household";
-import { appliancePresets, dailyApplianceKwh, effectiveRate, guessApplianceKind, pesos, validateAppliance, type ApplianceKind, type PreviewAppliance } from "../preview-data";
+import { appliancePresets, dailyApplianceKwh, effectiveRate, guessApplianceKind, latestBill, monthName, pesos, validateAppliance, type ApplianceKind, type PreviewAppliance } from "../preview-data";
+import { billCoverage } from "../bill-coverage";
 
 type Draft = { kind: ApplianceKind; name: string; model: string; watts: string; hours: string; quantity: number; days: string; wattageBasis: "nameplate" | "approximate" };
 const emptyDraft: Draft = { kind: "other", name: "", model: "", watts: "", hours: "", quantity: 1, days: "30", wattageBasis: "nameplate" };
@@ -28,6 +29,8 @@ export default function AppliancesScreen() {
   const rate = effectiveRate(household.bills);
   const items = [...household.appliances].sort((a, b) => dailyApplianceKwh(b) - dailyApplianceKwh(a));
   const totalDaily = items.reduce((sum, item) => sum + dailyApplianceKwh(item), 0);
+  const latest = latestBill(household.bills);
+  const coverage = latest ? billCoverage(totalDaily * 30, latest.kwh) : null;
   const draftDaily = dailyApplianceKwh({ watts: Number(draft.watts) || 0, hours: Number(draft.hours) || 0, quantity: draft.quantity });
   const validEstimate = draft.watts.trim() && draft.hours.trim() && draft.days.trim() && !validateAppliance({ name: draft.name, watts: Number(draft.watts), hours: Number(draft.hours), quantity: draft.quantity, days: Number(draft.days) });
 
@@ -82,6 +85,8 @@ export default function AppliancesScreen() {
       </dl>
       <Image className="ap-summary-art" src="/assets/branding/actions-5.png" alt="" width={260} height={260} sizes="(min-width: 900px) 170px, 112px" />
     </section>
+
+    {coverage && latest && <p className={`ap-coverage is-${coverage.status}`}>{coverage.status === "over" ? <>Your devices add up to more than your {monthName(latest.month)} bill ({(totalDaily * 30).toFixed(0)} vs {latest.kwh} kWh). Check the hours you entered.</> : <>Your devices explain {coverage.percent}% of your {monthName(latest.month)} bill ({(totalDaily * 30).toFixed(0)} of {latest.kwh} kWh).{coverage.status === "under" && " Add the rest to see the full picture."}</>}<span className="ap-coverage-bar" aria-hidden="true"><i style={{ width: `${Math.min(coverage.percent, 100)}%` }} /></span></p>}
 
     {items.some(item => item.source === "sample" || item.id.startsWith("sample-")) && <p className="ap-sample-note">Your list includes sample appliances for this UI preview. Add your own readings or edit their values to explore the estimates.</p>}
 
