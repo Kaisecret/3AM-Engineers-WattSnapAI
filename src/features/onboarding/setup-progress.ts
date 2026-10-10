@@ -45,5 +45,5 @@ export function deriveSetupProgress(household: PreviewHousehold, tips: PreviewTi
   const steps = setupSteps.map((step, index) => ({ ...step, complete: complete[index] }));
   const count = steps.filter(step => step.complete).length;
   const signature = JSON.stringify([household.name, household.location, household.locality, household.provider, tipsInputSignature(household)]);
-  return { steps, count, percent: count * 20, next: steps.find(step => !step.complete), complete: count === 5, signature, dismissed: count === 5 && saved.acknowledged === signature };
+  return { steps, count, percent: count * 20, next: steps.find(step => !step.complete), complete: count === 5, signature, dismissed: count === 5 && saved.acknowledged === signature, celebrate: count === 5 && !saved.acknowledged };
 }

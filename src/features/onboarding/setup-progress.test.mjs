@@ -51,6 +51,17 @@ test("record corrections invalidate tips review and completed notification ackno
   assert.equal(deriveSetupProgress({ ...home, name: "Reyes" }, tips, acknowledged).dismissed, false);
 });
 
+test("completion is celebrated once, never again after later edits", () => {
+  const tips = generatePreviewTips(home);
+  const reviewed = { version: 1, reviewedTips: tips.inputSignature };
+  assert.equal(deriveSetupProgress(home, tips, { version: 1 }).celebrate, false, "incomplete setup is not celebrated");
+  const progress = deriveSetupProgress(home, tips, reviewed);
+  assert.equal(progress.celebrate, true);
+  const acknowledged = { ...reviewed, acknowledged: progress.signature };
+  assert.equal(deriveSetupProgress(home, tips, acknowledged).celebrate, false);
+  assert.equal(deriveSetupProgress({ ...home, name: "Reyes" }, tips, acknowledged).celebrate, false, "renaming after completion does not celebrate again");
+});
+
 test("malformed progress is rejected rather than becoming a completed checklist", () => {
   for (const value of [null, { version: 2 }, { version: 1, reviewedTips: true }, { version: 1, acknowledged: [] }]) assert.throws(() => normalizeSetup(value));
   assert.deepEqual(normalizeSetup({ version: 1, completed: [true, true, true, true, true] }), { version: 1 });

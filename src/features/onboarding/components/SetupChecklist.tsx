@@ -21,7 +21,7 @@ export default function SetupChecklist() {
         return <li key={step.id} className={done ? "is-complete" : ""} id={`setup-${step.id}`}><span className="setup-step-icon">{done ? <Check aria-hidden="true" /> : <Icon aria-hidden="true" />}</span><div><h3>{step.label}</h3><p>{step.detail}</p><span className="setup-status">{done ? "Completed" : "To do"}</span></div><Link href={step.href} aria-label={`${done ? "Review" : "Start"}: ${step.label}`}>{done ? "Review" : "Start"}<ArrowRight size={18} aria-hidden="true" /></Link></li>;
       })}</ol>
       {progress.error && <div className="setup-error" role="alert"><p>{progress.error}</p><button type="button" onClick={progress.reload}>Retry loading progress</button></div>}
-      {progress.ready && progress.complete ? <div className="setup-complete"><CircleCheck aria-hidden="true" /><p>You’re all set! Your WattSnap home setup is complete.</p>{!progress.dismissed && <button type="button" className="ui-primary" onClick={progress.acknowledge}>Got it</button>}</div> : <p className="setup-footnote">Steps complete when you save and confirm your own information. Sample records do not count. You can finish in any order.</p>}
+      {progress.ready && progress.complete ? <div className="setup-complete"><CircleCheck aria-hidden="true" /><p>You’re all set! Your WattSnap home setup is complete.</p></div> : <p className="setup-footnote">Steps complete when you save and confirm your own information. Sample records do not count. You can finish in any order.</p>}
     </section>
   </PageShell>;
 }

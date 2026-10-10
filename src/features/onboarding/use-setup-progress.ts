@@ -32,6 +32,7 @@ export function useSetupProgress() {
   }
   return {
     ...progress, ready: ready && home.ready && tips.ready,
+    celebrate: progress.celebrate && ready && home.ready && tips.ready && !loadError,
     error: error || home.storageError || tips.error,
     progressError: error,
     canReviewTips: canReviewSetupTips(home.household, tips.snapshot),
