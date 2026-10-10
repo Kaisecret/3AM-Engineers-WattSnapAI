@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Lightbulb, Lock, Mail } from "lucide-react";
 import { AUTH_ART, AuthShell } from "./AuthShell";
-import { GoogleChooserStep } from "./AuthSteps";
-import { beginPreviewSession } from "../preview-session";
+import { getBrowserSupabase } from "../../../lib/supabase/browser";
+import { checkGoogleProvider, loginWithIdentifier } from "../actions";
+import { signInWithEmail, signInWithGoogle, getAccount } from "../service";
+import { parseIdentifier, safeNextPath } from "../schemas";
 import {
   AuthAlert,
   AuthDivider,
@@ -14,10 +16,7 @@ import {
   GoogleButton,
   PasswordField,
   PrimaryButton,
-  fakeDelay,
 } from "./AuthUi";
-
-type LoginStep = "form" | "google";
 
 const loginBubble = (
   <>
@@ -32,14 +31,18 @@ const loginBubble = (
   </>
 );
 
-/** Login screen (UI only — no backend calls yet). */
+/** Cookie-backed password and Google login. */
 export function LoginForm() {
   const router = useRouter();
-  const [step, setStep] = useState<LoginStep>("form");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const issue = new URL(window.location.href).searchParams.get("error");
+    if (issue) setError(issue === "oauth" || issue === "callback" ? "Sign-in or email verification could not be completed. Please try again." : issue === "verification" ? "That email link is invalid or has expired. Request a new code." : "Your session has ended. Please log in again.");
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -49,29 +52,38 @@ export function LoginForm() {
       return;
     }
     setLoading(true);
-    await fakeDelay();
-    continuePreview(identifier);
+    try {
+      // An email signs in straight from the browser, so Supabase limits attempts per visitor.
+      // Only a username needs the server, which looks up its email privately.
+      const parsed = parseIdentifier(identifier);
+      const result = parsed?.kind === "email"
+        ? await signInWithEmail(getBrowserSupabase(), { email: parsed.email, password })
+        : await loginWithIdentifier({ identifier, password });
+      if (!result.ok) { setError(result.message); return; }
+      const account = await getAccount(getBrowserSupabase());
+      if (!account.ok) { setError(account.message); return; }
+      if (!account.value) { setError("Your session could not be opened. Please log in again."); return; }
+      const next = safeNextPath(new URL(window.location.href).searchParams.get("next"));
+      router.replace(account.value.profile.onboardedAt ? next : "/complete-profile"); router.refresh();
+    } catch { setError("Sign-in could not be completed. Please try again."); }
+    finally { setLoading(false); }
   };
 
-  function continuePreview(value: string, name?: string) {
-    try { beginPreviewSession(value, name ? { name } : undefined); router.push("/dashboard"); }
-    catch (issue) { setError(issue instanceof Error ? issue.message : "Your browser could not remember this sign-in. Please try again."); setLoading(false); }
-  }
-
-  if (step === "google") {
-    return (
-      <AuthShell stepKey="google" art={{ src: AUTH_ART.thumbsUp }} onBack={() => setStep("form")}>
-        {error && <AuthAlert>{error}</AuthAlert>}
-        <GoogleChooserStep onSelect={account => continuePreview(account.email, account.name)} onUseAnother={() => setStep("form")} />
-      </AuthShell>
-    );
-  }
+  const handleGoogle = async () => {
+    setLoading(true); setError(null);
+    try {
+      const available = await checkGoogleProvider();
+      if (!available.ok) { setError(available.message); return; }
+      const result = await signInWithGoogle(getBrowserSupabase(), { origin: window.location.origin, next: safeNextPath(new URL(window.location.href).searchParams.get("next")) });
+      if (!result.ok) setError(result.message);
+    } catch { setError("Google sign-in could not start. Please try again."); }
+    finally { setLoading(false); }
+  };
 
   return (
     <AuthShell stepKey="login" art={{ src: AUTH_ART.laptop, bubble: loginBubble }} backHref="/">
       <h1 className="auth-title">Welcome Back!</h1>
       <p className="auth-subtitle">Log in to continue managing your electricity smarter.</p>
-      <p className="auth-preview-note">UI preview · Sign-in is demonstrated locally. Account verification is not connected.</p>
 
       {error && <AuthAlert>{error}</AuthAlert>}
 
@@ -102,7 +114,7 @@ export function LoginForm() {
           Log in
         </PrimaryButton>
         <AuthDivider />
-        <GoogleButton onClick={() => setStep("google")} disabled={loading} />
+        <GoogleButton onClick={handleGoogle} disabled={loading} />
       </form>
 
       <p className="auth-switch">

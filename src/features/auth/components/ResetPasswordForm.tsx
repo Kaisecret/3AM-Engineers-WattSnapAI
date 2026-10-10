@@ -4,37 +4,21 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Check, Lock } from "lucide-react";
 import { AUTH_ART, AuthShell } from "./AuthShell";
-import { PasswordField, PrimaryButton, fakeDelay } from "./AuthUi";
+import { AuthAlert, PasswordField, PrimaryButton } from "./AuthUi";
 
-const COMMON_PASSWORDS = [
-  "password",
-  "password1",
-  "password123",
-  "12345678",
-  "123456789",
-  "1234567890",
-  "qwerty123",
-  "11111111",
-  "iloveyou",
-  "abc12345",
-  "wattsnap123",
-];
+import { getBrowserSupabase } from "../../../lib/supabase/browser";
+import { updatePassword } from "../service";
+import { passwordRules } from "../schemas";
+import { forgetAccount } from "../session";
 
-/** Create New Password screen (UI only). */
 export function ResetPasswordForm() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
-  const rules = [
-    { label: "Be at least 8 characters long", met: password.length >= 8 },
-    { label: "Include a letter and a number", met: /[a-z]/i.test(password) && /\d/.test(password) },
-    {
-      label: "Not be commonly used",
-      met: password.length > 0 && !COMMON_PASSWORDS.includes(password.toLowerCase()),
-    },
-  ];
+  const [error, setError] = useState<string | null>(null);
+  const rules = passwordRules(password);
   const mismatch = confirm.length > 0 && confirm !== password;
   const canSubmit = rules.every((r) => r.met) && confirm === password;
 
@@ -42,9 +26,13 @@ export function ResetPasswordForm() {
     e.preventDefault();
     if (!canSubmit) return;
     setLoading(true);
-    await fakeDelay();
-    setLoading(false);
-    setDone(true);
+    setError(null);
+    try {
+      const result = await updatePassword(getBrowserSupabase(), { password });
+      if (!result.ok) setError(result.message);
+      else { try { forgetAccount(); } catch { /* Session is already ended. */ } setDone(true); }
+    } catch { setError("Your password could not be updated. Please try again."); }
+    finally { setLoading(false); }
   };
 
   if (done) {
@@ -64,6 +52,7 @@ export function ResetPasswordForm() {
       <h1 className="auth-title">Create New Password</h1>
       <p className="auth-subtitle">Enter a new password for your account.</p>
 
+      {error && <AuthAlert>{error}</AuthAlert>}
       <form onSubmit={handleSubmit} className="auth-form" noValidate>
         <PasswordField
           id="reset-new-password"

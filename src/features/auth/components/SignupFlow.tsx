@@ -4,8 +4,10 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Lock, Mail, User } from "lucide-react";
 import { AUTH_ART, AuthShell } from "./AuthShell";
-import { GoogleChooserStep, ProfileSetupStep, VerifyCodeStep, WelcomeStep } from "./AuthSteps";
-import { beginPreviewSession } from "../preview-session";
+import { ProfileSetupStep, VerifyCodeStep, WelcomeStep } from "./AuthSteps";
+import { getBrowserSupabase } from "../../../lib/supabase/browser";
+import { signUpWithEmail, signInWithGoogle } from "../service";
+import { checkGoogleProvider } from "../actions";
 import {
   AuthAlert,
   AuthDivider,
@@ -14,19 +16,17 @@ import {
   GoogleButton,
   PasswordField,
   PrimaryButton,
-  fakeDelay,
 } from "./AuthUi";
 
 /**
- * Sign up sequence (UI only):
+ * Sign up sequence:
  *   Email flow:  account -> verify (6-digit code) -> profile -> welcome
- *   Google flow: account -> google (choose account) -> profile -> welcome
+ *   Google flow: provider OAuth -> callback -> profile
  */
-type SignupStep = "account" | "verify" | "google" | "profile" | "welcome";
+type SignupStep = "account" | "verify" | "profile" | "welcome";
 
 export function SignupFlow() {
   const [step, setStep] = useState<SignupStep>("account");
-  const [viaGoogle, setViaGoogle] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,10 +43,12 @@ export function SignupFlow() {
     if (!agreed) return setError("Please agree to the Terms of Service and Privacy Policy.");
 
     setLoading(true);
-    await fakeDelay();
-    setLoading(false);
-    setViaGoogle(false);
-    setStep("verify");
+    try {
+      const result = await signUpWithEmail(getBrowserSupabase(), { fullName, email, password, origin: window.location.origin });
+      if (!result.ok) setError(result.message);
+      else { setEmail(result.value.email); setPassword(""); setStep("verify"); }
+    } catch { setError("Your account could not be created. Please try again."); }
+    finally { setLoading(false); }
   };
 
   switch (step) {
@@ -63,32 +65,16 @@ export function SignupFlow() {
         </AuthShell>
       );
 
-    case "google":
-      return (
-        <AuthShell stepKey="google" art={{ src: AUTH_ART.thumbsUp }} onBack={() => setStep("account")}>
-          <GoogleChooserStep
-            onSelect={(account) => {
-              setFullName(account.name);
-              setEmail(account.email);
-              setViaGoogle(true);
-              setStep("profile");
-            }}
-            onUseAnother={() => setStep("account")}
-          />
-        </AuthShell>
-      );
-
     case "profile":
       return (
         <AuthShell
           stepKey="profile"
           art={{ src: AUTH_ART.profileCard }}
-          onBack={() => setStep(viaGoogle ? "google" : "verify")}
+          onBack={() => setStep("verify")}
         >
           {error && <AuthAlert>{error}</AuthAlert>}
-          <ProfileSetupStep defaultName={fullName} onContinue={profile => {
-            try { beginPreviewSession(email, profile); setError(null); setStep("welcome"); }
-            catch (issue) { setError(issue instanceof Error ? issue.message : "Your browser could not save your profile. Please try again."); }
+          <ProfileSetupStep defaultName={fullName} onContinue={() => {
+            setError(null); setStep("welcome");
           }} />
         </AuthShell>
       );
@@ -105,7 +91,6 @@ export function SignupFlow() {
         <AuthShell stepKey="account" art={{ src: AUTH_ART.clipboard }} backHref="/">
           <h1 className="auth-title">Create Your Account</h1>
           <p className="auth-subtitle">Start managing your electricity in a smarter and easier way.</p>
-          <p className="auth-preview-note">UI preview · Account creation and email verification are demonstrated locally.</p>
 
           {error && <AuthAlert>{error}</AuthAlert>}
 
@@ -153,7 +138,16 @@ export function SignupFlow() {
               Create account
             </PrimaryButton>
             <AuthDivider />
-            <GoogleButton onClick={() => setStep("google")} disabled={loading} />
+            <GoogleButton onClick={async () => {
+              setLoading(true); setError(null);
+              try {
+                const available = await checkGoogleProvider();
+                if (!available.ok) { setError(available.message); return; }
+                const result = await signInWithGoogle(getBrowserSupabase(), { origin: window.location.origin, next: "/complete-profile" });
+                if (!result.ok) setError(result.message);
+              } catch { setError("Google sign-in could not start. Please try again."); }
+              finally { setLoading(false); }
+            }} disabled={loading} />
           </form>
 
           <p className="auth-switch">

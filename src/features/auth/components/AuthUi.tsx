@@ -13,9 +13,6 @@ import {
 } from "react";
 import { AlertCircle, CheckCircle2, ChevronDown, ChevronRight, Eye, EyeOff } from "lucide-react";
 
-/** UI-only placeholder delay so buttons can show their loading state. */
-export const fakeDelay = (ms = 650) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const subscribeReady = () => () => {};
 const clientReady = () => true;

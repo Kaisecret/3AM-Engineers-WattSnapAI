@@ -8,12 +8,12 @@ import PageShell from "@/features/dashboard/components/PageShell";
 import { usePreviewHousehold } from "@/features/dashboard/use-preview-household";
 import { previewProviders, previewProviderName } from "../provider-preview";
 import { lookupLocation } from "../location-suggestion";
+import { PROVINCES, getMunicipalitiesForProvince, getBarangaysForMunicipality } from "../philippine-locations";
 import "../household-setup.css";
 
 type Draft = { name: string; province: string; municipality: string; barangay: string; provider: string; customProvider: string };
 type FieldErrors = Partial<Record<keyof Draft, string>>;
 const steps = ["Your household", "Electricity provider", "Review & save"];
-const provinces = ["Antique", "Aklan", "Capiz", "Iloilo"];
 
 export default function HouseholdSetupScreen() {
   const { household, update, ready, storageError } = usePreviewHousehold();
@@ -43,7 +43,13 @@ export default function HouseholdSetupScreen() {
   };
   const provider = values.provider === "other" && values.customProvider.trim() ? { id: `custom:${encodeURIComponent(values.customProvider.trim())}`, name: values.customProvider.trim() } : previewProviders.find(item => item.id === values.provider);
   const location = [values.barangay.trim(), values.municipality.trim(), values.province.trim()].filter(Boolean).join(", ");
+<<<<<<< HEAD
   const providerChoices = [...previewProviders, { id: "other", name: "Other provider", detail: "Enter the utility or cooperative printed on your bill", area: "Manual entry" }];
+=======
+  const suggestions = previewProviders.filter(item => item.area.toLowerCase() === values.province.trim().toLowerCase());
+  const availableMunicipalities = getMunicipalitiesForProvince(values.province);
+  const availableBarangays = getBarangaysForMunicipality(values.province, values.municipality);
+>>>>>>> feat/supabase-auth
 
   useEffect(() => {
     const sync = () => setOffline(!navigator.onLine);
@@ -68,6 +74,25 @@ export default function HouseholdSetupScreen() {
   function edit(patch: Partial<Draft>) {
     setDraft({ ...values, ...patch });
     setErrors({});
+  }
+
+  function handleProvinceChange(newProvince: string) {
+    const nextMunis = getMunicipalitiesForProvince(newProvince);
+    const keepMuni = nextMunis.some(m => m.toLowerCase() === values.municipality.toLowerCase());
+    edit({
+      province: newProvince,
+      municipality: keepMuni ? values.municipality : "",
+      barangay: keepMuni ? values.barangay : "",
+    });
+  }
+
+  function handleMunicipalityChange(newMunicipality: string) {
+    const nextBrgys = getBarangaysForMunicipality(values.province, newMunicipality);
+    const keepBrgy = nextBrgys.some(b => b.toLowerCase() === values.barangay.toLowerCase());
+    edit({
+      municipality: newMunicipality,
+      barangay: keepBrgy ? values.barangay : "",
+    });
   }
 
   function go(next: number) {
@@ -167,11 +192,64 @@ export default function HouseholdSetupScreen() {
               {locationState !== "idle" && <p className="hs-inline-note" role="status">Location permission skipped. Continue by entering your home location below.</p>}
               <div className="hs-divider"><span>or enter your home location</span></div>
               <div className="hs-fields-row">
-                <label htmlFor="setup-province"><span id="setup-province-label">Province</span><input id="setup-province" aria-labelledby="setup-province-label" list="setup-provinces" autoComplete="address-level1" maxLength={40} placeholder="e.g. Antique" value={values.province} onChange={event => edit({ province: event.target.value })} aria-invalid={!!errors.province} aria-describedby={errors.province ? "setup-province-error" : undefined} />{errors.province && <span className="hs-field-error" id="setup-province-error">{errors.province}</span>}</label>
-                <label htmlFor="setup-municipality"><span id="setup-municipality-label">Municipality or city</span><input id="setup-municipality" aria-labelledby="setup-municipality-label" autoComplete="address-level2" maxLength={60} placeholder="e.g. San Jose de Buenavista" value={values.municipality} onChange={event => edit({ municipality: event.target.value })} aria-invalid={!!errors.municipality} aria-describedby={errors.municipality ? "setup-municipality-error" : undefined} />{errors.municipality && <span className="hs-field-error" id="setup-municipality-error">{errors.municipality}</span>}</label>
+                <label htmlFor="setup-province">
+                  <span id="setup-province-label">Province</span>
+                  <input
+                    id="setup-province"
+                    aria-labelledby="setup-province-label"
+                    list="setup-provinces"
+                    autoComplete="address-level1"
+                    maxLength={40}
+                    placeholder="e.g. Antique"
+                    value={values.province}
+                    onChange={event => handleProvinceChange(event.target.value)}
+                    aria-invalid={!!errors.province}
+                    aria-describedby={errors.province ? "setup-province-error" : undefined}
+                  />
+                  {errors.province && <span className="hs-field-error" id="setup-province-error">{errors.province}</span>}
+                </label>
+                <label htmlFor="setup-municipality">
+                  <span id="setup-municipality-label">Municipality or city</span>
+                  <input
+                    id="setup-municipality"
+                    aria-labelledby="setup-municipality-label"
+                    list="setup-municipalities"
+                    autoComplete="address-level2"
+                    maxLength={60}
+                    placeholder={availableMunicipalities.length ? `e.g. ${availableMunicipalities[0]}` : "e.g. Hamtic, San Jose"}
+                    value={values.municipality}
+                    onChange={event => handleMunicipalityChange(event.target.value)}
+                    aria-invalid={!!errors.municipality}
+                    aria-describedby={errors.municipality ? "setup-municipality-error" : undefined}
+                  />
+                  {errors.municipality && <span className="hs-field-error" id="setup-municipality-error">{errors.municipality}</span>}
+                </label>
               </div>
-              <datalist id="setup-provinces">{provinces.map(name => <option key={name} value={name} />)}</datalist>
-              <label htmlFor="setup-barangay"><span id="setup-barangay-label">Barangay</span><small>optional</small><input id="setup-barangay" aria-labelledby="setup-barangay-label" aria-describedby="setup-barangay-hint" autoComplete="address-level3" maxLength={60} placeholder="e.g. Payao" value={values.barangay} onChange={event => edit({ barangay: event.target.value })} /><span id="setup-barangay-hint" className="hs-field-hint">A barangay helps make future advisory matching more specific.</span></label>
+              <datalist id="setup-provinces">{PROVINCES.map(name => <option key={name} value={name} />)}</datalist>
+              <datalist id="setup-municipalities">{availableMunicipalities.map(name => <option key={name} value={name} />)}</datalist>
+              <label htmlFor="setup-barangay">
+                <span id="setup-barangay-label">Barangay</span>
+                <small>optional</small>
+                <input
+                  id="setup-barangay"
+                  aria-labelledby="setup-barangay-label"
+                  list="setup-barangays"
+                  aria-describedby="setup-barangay-hint"
+                  autoComplete="address-level3"
+                  maxLength={60}
+                  placeholder={availableBarangays.length ? `e.g. ${availableBarangays[0]}` : "e.g. Malandog, Payao"}
+                  value={values.barangay}
+                  onChange={event => edit({ barangay: event.target.value })}
+                />
+                <span id="setup-barangay-hint" className="hs-field-hint">
+                  {availableBarangays.length > 0 && values.municipality ? (
+                    `Select your barangay in ${values.municipality} (${availableBarangays.length} available) for specific advisory matching.`
+                  ) : (
+                    "A barangay helps make future advisory matching more specific."
+                  )}
+                </span>
+              </label>
+              <datalist id="setup-barangays">{availableBarangays.map(name => <option key={name} value={name} />)}</datalist>
               <button type="button" className="ui-secondary" onClick={saveProfile}>Save household profile</button>
             </div>}
 
