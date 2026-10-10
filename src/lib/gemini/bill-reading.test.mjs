@@ -58,10 +58,10 @@ test("a misread total is caught by the charges", () => {
   assert.equal(missing.amountDue, 3072.6); assert.match(missing.checks.join(" "), /added up from the charges/);
 });
 
-test("a subsidy that does not match the amount due is flagged, and never exceeds the bill", () => {
+test("a subsidy that does not match the amount due is flagged for correction", () => {
   assert.match(readBillReading({ ...september, subsidy: 400 }, now).checks.join(" "), /Check the subsidy/);
   const capped = readBillReading({ ...september, subsidy: 500, amountDue: 0 }, now);
-  assert.equal(capped.subsidy, 418.85); assert.match(capped.checks.join(" "), /larger than the bill/);
+  assert.equal(capped.subsidy, 500); assert.match(capped.checks.join(" "), /larger than the bill/);
   assert.match(readBillReading({ ...september, subsidy: null }, now).checks.join(" "), /If there is a subsidy, enter it/);
 });
 
@@ -69,7 +69,7 @@ test("the amount due is never saved as the bill, and odd dates are flagged", () 
   const unread = readBillReading({ ...september, currentMonthBill: null, charges: [] }, now);
   assert.equal(unread.amountDue, null, "₱0.00 left to pay is not the bill amount");
   assert.ok(unread.unknownFields.includes("amountDue"));
-  assert.match(readBillReading({ ...august, dueDate: "2026-08-01" }, now).checks.join(" "), /before the statement date/);
+  assert.match(readBillReading({ ...august, dueDate: "2026-08-01", unreadable: [] }, now).checks.join(" "), /before the statement date/);
   assert.match(readBillReading({ ...august, billingMonth: "2027-05" }, now).checks.join(" "), /future/);
   const noMonth = readBillReading({ ...august, billingMonth: null }, now);
   assert.equal(noMonth.billingMonth, "2026-08"); assert.match(noMonth.checks.join(" "), /taken from the reading date/);
@@ -83,4 +83,44 @@ test("printed formats are converted, and personal details are never part of the 
   const result = readBillReading({ ...august, accountName: "JUAN DELA CRUZ", meterNumber: "801299478" }, now);
   assert.doesNotMatch(JSON.stringify(result), /JUAN|801299478/);
   assert.ok(!("accountName" in billResponseSchema.properties) && !("meterNumber" in billResponseSchema.properties));
+});
+
+test("explicitly unreadable fields stay unknown even when arithmetic could fill them", () => {
+  const result = readBillReading({ ...august, kwhUsed: null, currentMonthBill: null, unreadable: ["kwhUsed", "currentMonthBill"] }, now);
+  assert.equal(result.consumptionKwh, null);
+  assert.equal(result.amountDue, null);
+  assert.ok(result.unknownFields.includes("consumptionKwh"));
+  assert.ok(result.unknownFields.includes("amountDue"));
+});
+
+test("a readable billing-period endpoint is preserved when the other is missing", () => {
+  const result = readBillReading({ ...august, periodStart: null }, now);
+  assert.equal(result.periodStart, null);
+  assert.equal(result.periodEnd, "2026-08-23");
+  assert.ok(result.unknownFields.includes("periodStart"));
+});
+
+test("an inconsistent subsidy is flagged without replacing the printed value", () => {
+  const result = readBillReading({ ...september, subsidy: 500 }, now);
+  assert.equal(result.subsidy, 500);
+  assert.match(result.checks.join(" "), /larger than the bill/);
+});
+
+test("an unreadable payable amount does not erase the readable current month bill", () => {
+  const result = readBillReading({ ...september, unreadable: ["amountDue"] }, now);
+  assert.equal(result.amountDue, 418.85);
+  assert.equal(result.amountPayable, null);
+});
+
+test("dates, meter readings and subsidy marked unreadable are not used as known values", () => {
+  const result = readBillReading({ ...august, subsidy: 500, unreadable: ["billingMonth", "dueDate", "previousReading", "subsidy"] }, now);
+  assert.equal(result.billingMonth, null);
+  assert.equal(result.dueDate, null);
+  assert.equal(result.previousReading, null);
+  assert.equal(result.subsidy, null);
+});
+
+test("an unreadable meter multiplier cannot be used to derive consumption", () => {
+  const result = readBillReading({ ...august, kwhUsed: null, multiplier: null, unreadable: ["multiplier"] }, now);
+  assert.equal(result.consumptionKwh, null);
 });

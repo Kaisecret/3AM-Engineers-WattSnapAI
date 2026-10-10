@@ -1,8 +1,9 @@
 "use client";
 import type { BillExtractionResult } from "@/contracts/extraction";
 
-const longestSide = 2400;
-const maxUpload = 3_500_000;
+const longestSide = 3072;
+// Base64 adds a third; leave space for JSON below the 4.5 MB hosting limit.
+const maxUpload = 3_200_000;
 
 function blobToBase64(blob: Blob) {
   return new Promise<string>((resolve, reject) => {
@@ -22,13 +23,21 @@ export async function prepareBillUpload(input: Blob | string): Promise<{ base64:
   }
   try {
     const bitmap = await createImageBitmap(blob);
-    const scale = Math.min(1, longestSide / Math.max(bitmap.width, bitmap.height));
     const canvas = document.createElement("canvas");
-    canvas.width = Math.round(bitmap.width * scale); canvas.height = Math.round(bitmap.height * scale);
-    canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    bitmap.close();
-    const jpeg = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.9));
-    if (jpeg && jpeg.size <= maxUpload) return { base64: await blobToBase64(jpeg), mimeType: "image/jpeg" };
+    try {
+      let scale = Math.min(1, longestSide / Math.max(bitmap.width, bitmap.height));
+      for (let attempt = 0; attempt < 5; attempt++) {
+        canvas.width = Math.max(1, Math.round(bitmap.width * scale)); canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+        const context = canvas.getContext("2d");
+        if (!context) break;
+        context.fillStyle = "white"; context.fillRect(0, 0, canvas.width, canvas.height);
+        context.imageSmoothingEnabled = true; context.imageSmoothingQuality = "high";
+        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        const jpeg = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.95));
+        if (jpeg && jpeg.size <= maxUpload) return { base64: await blobToBase64(jpeg), mimeType: "image/jpeg" };
+        scale *= 0.8;
+      }
+    } finally { bitmap.close(); }
   } catch { /* Not decodable here (e.g. HEIC on Android); send the original if it fits. */ }
   if (blob.size > maxUpload) throw new Error("too-large");
   return { base64: await blobToBase64(blob), mimeType: blob.type || "image/jpeg" };

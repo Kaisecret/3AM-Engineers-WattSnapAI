@@ -43,6 +43,7 @@ interface CallGeminiOptions {
   jsonMode?: boolean;
   /** Fixed JSON shape for the answer (Gemini responseSchema). */
   responseSchema?: unknown;
+  mediaResolution?: "MEDIA_RESOLUTION_HIGH" | "MEDIA_RESOLUTION_MEDIUM";
   /** null leaves the model's own default, which newer models recommend. */
   temperature?: number | null;
   maxOutputTokens?: number;
@@ -102,6 +103,7 @@ export async function callGemini({
   tools,
   jsonMode = false,
   responseSchema,
+  mediaResolution,
   temperature = 0.2,
   maxOutputTokens = 2048,
   timeoutMs = 25000,
@@ -125,6 +127,7 @@ export async function callGemini({
       maxOutputTokens,
       ...(jsonMode || responseSchema ? { responseMimeType: "application/json" } : {}),
       ...(responseSchema ? { responseSchema } : {}),
+      ...(mediaResolution ? { mediaResolution } : {}),
     },
     ...(tools ? { tools } : {}),
     ...(systemInstruction
@@ -204,6 +207,7 @@ export async function extractBillWithGemini(
   const read = (model: GeminiModel, schema: boolean, timeoutMs: number) => callGemini({
     model, systemInstruction: billReadingInstruction, parts, responseSchema: schema ? billResponseSchema : undefined, jsonMode: true,
     temperature: null, maxOutputTokens: 8192, timeoutMs,
+    mediaResolution: mimeType === "application/pdf" ? "MEDIA_RESOLUTION_MEDIUM" : "MEDIA_RESOLUTION_HIGH",
   });
 
   const primary = scanModel(), fallback = geminiModel();

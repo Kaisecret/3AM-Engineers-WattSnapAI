@@ -26,6 +26,7 @@ export interface GeminiGenerationConfig {
   maxOutputTokens?: number;
   responseMimeType?: string;
   responseSchema?: unknown;
+  mediaResolution?: "MEDIA_RESOLUTION_HIGH" | "MEDIA_RESOLUTION_MEDIUM";
 }
 
 export interface GeminiRequestBody {

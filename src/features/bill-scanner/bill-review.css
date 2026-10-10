@@ -58,6 +58,22 @@
 .br-original-sample .bill-art { height: auto; filter: drop-shadow(0 6px 8px #8cb1c236); }
 .br-original-caption { margin: 14px 0; font-size: 10px; color: #8198a9; line-height: 1.75; text-align: center; }
 .br-original-dialog > .ui-secondary { display: flex; width: 100%; }
+.br-discard-dialog { width: calc(100% - 32px); max-width: 440px; padding: 28px; border-radius: 24px; }
+.br-discard-icon { display: grid; place-items: center; width: 48px; height: 48px; margin-bottom: 20px; border: 1px solid #f5d8d1; border-radius: 15px; color: #b54735; background: #fff2ee; }
+.br-discard-icon svg { width: 22px; height: 22px; }
+.br-discard-dialog h2 { color: #244967; font-size: 22px; font-weight: 800; letter-spacing: -.5px; line-height: 1.3; }
+.br-discard-dialog p { margin-top: 10px; color: #587386; font-size: 14px; line-height: 1.65; }
+.br-discard-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 26px; }
+.br-discard-actions > button { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 48px; padding: 12px; border-radius: 12px; font: inherit; font-size: 14px; font-weight: 700; line-height: 1.4; cursor: pointer; }
+.br-discard-actions .ui-secondary { border: 1px solid #b9deee; color: #076c93; background: #f0faff; }
+.br-discard-confirm { border: 1px solid #ad3e30; color: white; background: #b54735; }
+.br-discard-confirm:hover { background: #9d3829; }
+html[data-theme="dark"] .br-discard-dialog { border-color: #3b5968; background: #192e3d; }
+html[data-theme="dark"] .br-discard-dialog h2 { color: #edf6fa; }
+html[data-theme="dark"] .br-discard-dialog p { color: #b4c8d5; }
+html[data-theme="dark"] .br-discard-icon { border-color: #71483f; color: #f5b5a5; background: #3d2c2b; }
+html[data-theme="dark"] .br-discard-actions .ui-secondary { border-color: #467184; color: #a7def1; background: #203f50; }
+@media (max-width: 479px) { .br-discard-dialog { padding: 24px; } .br-discard-actions { grid-template-columns: 1fr; gap: 10px; margin-top: 22px; } }
 .br-pdf { display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 25px 15px; background: #f2faff; border-radius: 14px; text-align: center; }
 .br-pdf > svg { width: 55px; height: 55px; color: #16a3d1; }
 .br-pdf > strong { font-size: 13px; overflow-wrap: anywhere; }

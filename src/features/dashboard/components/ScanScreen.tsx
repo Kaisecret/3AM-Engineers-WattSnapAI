@@ -1,9 +1,9 @@
 "use client";
-import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type DragEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Camera, Check, ChevronRight, CircleCheck, ImageUp, Keyboard, Lightbulb, ScanText, Sparkles, Upload, X, Zap, ZapOff } from "lucide-react";
+import { Camera, Check, ChevronRight, CircleCheck, ImageUp, Keyboard, Lightbulb, ScanText, Sparkles, Trash2, Upload, X, Zap, ZapOff } from "lucide-react";
 import PageShell from "./PageShell";
 import { BillArt } from "./DashboardArtwork";
 import { usePreviewHousehold } from "../use-preview-household";
@@ -13,13 +13,14 @@ import { previewProviderName } from "@/features/household-profile/provider-previ
 import { usePreviewStorageKey } from "@/features/auth/use-preview-storage-key";
 import { billDraftStorageKey, normalizeBillDraft } from "@/features/bill-scanner/local-draft";
 import { readBillPhoto } from "@/features/bill-scanner/snap";
+import { cameraImageSize } from "@/features/bill-scanner/camera-frame";
 import type { BillExtractionResult } from "@/contracts/extraction";
 
-type Phase = "camera" | "scanning" | "review";
+type Phase = "camera" | "scanning" | "review" | "failed";
 type CameraState = "idle" | "starting" | "live" | "blocked" | "unavailable";
 
 const acceptedTypes = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "application/pdf"];
-const readingSteps = ["Finding your bill", "Reading kWh, amount & dates", "Checking the math"];
+const readingSteps = ["Reading the printed text", "Extracting kWh, amount & dates", "Comparing the bill values"];
 const emptyDraft: BillReviewDraft = { month: "", kwh: "", amount: "", dueDate: "", periodStart: "", periodEnd: "" };
 const sourceLabels = { scan: "Scanned", manual: "Manual", sample: "Sample" };
 
@@ -28,9 +29,13 @@ export default function ScanScreen() {
   const { household, update, ready, storageError } = usePreviewHousehold();
   const [phase, setPhase] = useState<Phase>("camera");
   const [camera, setCamera] = useState<CameraState>("idle");
+  const [cameraReady, setCameraReady] = useState(false);
+  const [guide, setGuide] = useState<"bill" | "receipt">("bill");
+  const [cameraSize, setCameraSize] = useState({ width: 0, height: 0 });
+  const viewfinder = useRef<HTMLDivElement>(null);
   const [torch, setTorch] = useState(false);
   const [torchAvailable, setTorchAvailable] = useState(false);
-  const [image, setImage] = useState<{ src: string; fit: "cover" | "contain" } | null>(null);
+  const [image, setImage] = useState<{ src: string } | null>(null);
   const [draft, setDraft] = useState<BillReviewDraft>({ month: "", kwh: "", amount: "", dueDate: "", periodStart: "", periodEnd: "" });
   const [source, setSource] = useState<BillPreviewSource | null>(null);
   const [loadingFile, setLoadingFile] = useState(false);
@@ -41,6 +46,7 @@ export default function ScanScreen() {
   const [flash, setFlash] = useState(0);
   const router = useRouter();
   const reading = useRef<AbortController | null>(null);
+  const scanInput = useRef<Blob | string | null>(null);
   const [dragging, setDragging] = useState(false);
   const video = useRef<HTMLVideoElement>(null);
   const stream = useRef<MediaStream | null>(null);
@@ -52,14 +58,15 @@ export default function ScanScreen() {
   const [loadedDraftKey, setLoadedDraftKey] = useState<string | null>(null);
   const [draftNotice, setDraftNotice] = useState("");
   const [draftBlocked, setDraftBlocked] = useState(false);
+  const [pendingDraft, setPendingDraft] = useState<BillReviewDraft | null>(null);
   const discard = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
     if (!ready) return;
-    setDraft(emptyDraft); setSource(null); setImage(null); setAi(null); setPhase("camera"); reading.current?.abort();
+    setDraft(emptyDraft); setPendingDraft(null); setDraftNotice(""); setSource(null); setImage(null); setAi(null); setPhase("camera"); reading.current?.abort(); scanInput.current = null; uploadRequest.current++; setLoadingFile(false); setCameraReady(false);
     request.current++; stream.current?.getTracks().forEach(track => track.stop()); stream.current = null; setCamera("idle");
     if (objectUrl.current) URL.revokeObjectURL(objectUrl.current); objectUrl.current = "";
-    try { const raw = sessionStorage.getItem(draftKey); if (raw) { setDraft(normalizeBillDraft(JSON.parse(raw))); setPhase("review"); setDraftNotice("We restored your unfinished bill."); } setDraftBlocked(false); }
+    try { const raw = sessionStorage.getItem(draftKey); if (raw) { setPendingDraft(normalizeBillDraft(JSON.parse(raw))); setDraftNotice("You have an unfinished bill."); } setDraftBlocked(false); }
     catch { setDraftBlocked(true); setDraftNotice("Your earlier draft could not be opened. It is unchanged. Choose Discard draft to start again, or keep your entered values on this page."); }
     setLoadedDraftKey(draftKey);
   }, [ready, draftKey]);
@@ -75,6 +82,7 @@ export default function ScanScreen() {
     stream.current = null;
     setTorch(false);
     setTorchAvailable(false);
+    setCameraReady(false);
   }, []);
 
   const startCamera = useCallback(async () => {
@@ -83,7 +91,8 @@ export default function ScanScreen() {
     if (!navigator.mediaDevices?.getUserMedia) { setCamera("unavailable"); return; }
     setCamera("starting");
     try {
-      const media = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } } });
+      const portrait = window.innerHeight > window.innerWidth;
+      const media = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: portrait ? 2160 : 3840 }, height: { ideal: portrait ? 3840 : 2160 } } });
       // A newer request or leaving the page makes this stream stale.
       if (id !== request.current) { media.getTracks().forEach(track => track.stop()); return; }
       stream.current = media;
@@ -118,69 +127,99 @@ export default function ScanScreen() {
     }
   }, [camera, phase]);
 
-  function beginScan() {
+  const measureCamera = useCallback(() => {
+    const element = video.current, area = viewfinder.current;
+    if (!element || !area) return;
+    setCameraSize(cameraImageSize(element.videoWidth, element.videoHeight, area.clientWidth, area.clientHeight));
+    setCameraReady(element.readyState >= 2 && element.videoWidth > 0 && element.videoHeight > 0);
+  }, []);
+
+  useEffect(() => {
+    const area = viewfinder.current;
+    if (!area) return;
+    const observer = new ResizeObserver(measureCamera);
+    observer.observe(area);
+    return () => observer.disconnect();
+  }, [measureCamera]);
+
+  function enterFromPhoto() {
+    uploadRequest.current++; setLoadingFile(false); reading.current?.abort();
+    setPendingDraft(null); setDraftNotice("");
     setDraft(previous => ({ ...previous, month: previous.month || currentMonth(), provider: previous.provider || household.provider || "" })); setError(""); setPhase("review");
   }
 
   /** The AI's values go into the form; anything it could not read stays empty for the person to type. */
   function applyReading(data: BillExtractionResult) {
+    setPendingDraft(null); setDraftNotice("");
     const known = (value?: number | null) => value === null || value === undefined ? "" : String(value);
-    const noSubsidy = data.subsidy == null && data.amountPayable != null && data.amountDue != null && Math.abs(data.amountDue - data.amountPayable) < 0.01;
     setDraft({
       month: data.billingMonth ?? "", kwh: known(data.consumptionKwh), amount: known(data.amountDue),
       dueDate: data.dueDate ?? "", periodStart: data.periodStart ?? "", periodEnd: data.periodEnd ?? "", billingDate: data.billingDate ?? "", notes: "",
       provider: data.providerId ?? (data.provider ? `custom:${encodeURIComponent(data.provider)}` : household.provider ?? ""),
-      ...(data.subsidy != null ? { subsidy: String(data.subsidy) } : noSubsidy ? { subsidy: "" } : {}),
+      subsidy: known(data.subsidy),
     });
     setAi({
-      checks: data.checks ?? [], missing: data.unknownFields ?? [], charges: data.charges ?? [],
+      checks: [...(data.checks ?? []), ...(data.notes ? [data.notes] : []), ...(data.unknownFields?.includes("subsidy") ? ["The subsidy could not be read. Check the subsidy and amount due on your bill."] : [])], missing: data.unknownFields ?? [], charges: data.charges ?? [],
       ...(data.previousReading != null && data.presentReading != null ? { readings: { previous: data.previousReading, present: data.presentReading, ...(data.multiplier ? { multiplier: data.multiplier } : {}) } } : {}),
     });
     setError(""); setPhase("review");
   }
 
-  /** Sends the photo to Snap AI. If it cannot be read, the form opens empty with the photo for reference. */
+  /** Review follows a reading. Failed scans offer retry or explicit manual entry. */
   async function readBill(input: Blob | string) {
     reading.current?.abort();
-    if (!navigator.onLine) { setAi({ failed: "You’re offline, so the photo can’t be read now.", checks: [], missing: [], charges: [] }); beginScan(); return; }
+    scanInput.current = input;
+    // A new source must never inherit fields from an earlier bill.
+    setDraft(emptyDraft); setAi(null);
+    const fail = (reason: string) => { setAi({ failed: reason, checks: [], missing: [], charges: [] }); setPhase("failed"); };
+    if (!navigator.onLine) { fail("You’re offline. Connect to read this photo, or enter its details below."); return; }
     const controller = new AbortController(); reading.current = controller;
     setReadingStep(0); setPhase("scanning"); setError("");
     try {
       const hint = household.provider ? previewProviderName(household.provider) : "";
       const outcome = await readBillPhoto(input, hint === "Not selected" ? "" : hint, controller.signal);
       if (controller.signal.aborted) return;
-      if (outcome.ok) applyReading(outcome.data);
-      else { setAi({ failed: outcome.reason, checks: [], missing: [], charges: [] }); beginScan(); }
+      if (outcome.ok && (outcome.data.consumptionKwh != null || outcome.data.amountDue != null)) applyReading(outcome.data);
+      else fail(outcome.ok ? "The bill values weren’t readable. Include the whole receipt and make sure the text is sharp." : outcome.reason);
     } catch {
       if (controller.signal.aborted) return;
-      setAi({ failed: "We couldn’t reach WattSnap AI.", checks: [], missing: [], charges: [] }); beginScan();
+      fail("We couldn’t reach WattSnap AI. Try reading the photo again.");
     }
   }
 
   function capture() {
     uploadRequest.current += 1; setLoadingFile(false);
     const element = video.current;
-    if (camera === "live" && element?.videoWidth) {
+    if (camera === "live" && cameraReady && element?.videoWidth && element.videoHeight) {
       setFlash(value => value + 1);
       const canvas = document.createElement("canvas");
       canvas.width = element.videoWidth; canvas.height = element.videoHeight;
-      canvas.getContext("2d")?.drawImage(element, 0, 0);
-      const photo = canvas.toDataURL("image/jpeg", 0.9);
-      setImage({ src: photo, fit: "cover" });
+      const context = canvas.getContext("2d");
+      if (!context) { setError("This camera photo could not be captured. Try uploading a bill."); return; }
+      context.drawImage(element, 0, 0);
+      const photo = canvas.toDataURL("image/jpeg", 0.95);
+      setImage({ src: photo });
       setSource({ name: "Camera photo", kind: "image", url: photo });
       stopCamera();
       void readBill(photo);
-    } else void startCamera();
+    } else if (camera !== "live" && camera !== "starting") void startCamera();
   }
 
   async function chooseFile(file?: File) {
     setError("");
     if (!file) return;
     if (fileInput.current) fileInput.current.value = "";
+    // Own every async step, including PDF validation, so cancellation and scope changes win.
+    const uploadId = ++uploadRequest.current;
     if (!acceptedTypes.includes(file.type)) { setError("Choose a JPG, PNG, WebP, or PDF bill."); return; }
     if (file.size > 10 * 1024 * 1024) { setError("Choose a file up to 10 MB."); return; }
-    if (file.size === 0 || (file.type === "application/pdf" && !/%PDF-\d\.\d/.test(await file.slice(0, 1024).text()))) { setError("That file could not be opened. Choose a valid bill image or PDF."); return; }
-    const uploadId = ++uploadRequest.current;
+    if (file.size === 0) { setError("That file could not be opened. Choose a valid bill image or PDF."); return; }
+    if (file.type === "application/pdf") {
+      let valid = false;
+      try { valid = /%PDF-\d\.\d/.test(await file.slice(0, 1024).text()); } catch { /* Report an unreadable file below. */ }
+      if (uploadId !== uploadRequest.current) return;
+      if (!valid) { setError("That file could not be opened. Choose a valid bill image or PDF."); return; }
+    }
     const nextUrl = URL.createObjectURL(file);
     setLoadingFile(true);
     if (file.type.startsWith("image/") && !/hei[cf]/.test(file.type)) {
@@ -196,7 +235,7 @@ export default function ScanScreen() {
     if (uploadId !== uploadRequest.current) { URL.revokeObjectURL(nextUrl); return; }
     if (objectUrl.current) URL.revokeObjectURL(objectUrl.current);
     objectUrl.current = nextUrl;
-    setImage(file.type.startsWith("image/") && !/hei[cf]/.test(file.type) ? { src: nextUrl, fit: "contain" } : null);
+    setImage(file.type.startsWith("image/") && !/hei[cf]/.test(file.type) ? { src: nextUrl } : null);
     setSource({ name: file.name, kind: file.type.startsWith("image/") ? "image" : "pdf", url: nextUrl });
     setLoadingFile(false);
     stopCamera();
@@ -206,6 +245,7 @@ export default function ScanScreen() {
   function enterManually() {
     uploadRequest.current += 1; setLoadingFile(false);
     stopCamera();
+    setPendingDraft(null); setDraftNotice("");
     const latest = latestBill(household.bills);
     setDraft(previous => ({ ...previous, month: previous.month || (latest ? shiftMonth(latest.month, 1) : currentMonth()), provider: previous.provider || household.provider || "" }));
     setImage(null); setSource(null); setAi(null); setError(""); setPhase("review");
@@ -214,10 +254,12 @@ export default function ScanScreen() {
   function restart(clear = false) {
     uploadRequest.current += 1; setLoadingFile(false);
     reading.current?.abort();
+    scanInput.current = null;
+    if (phase === "review") { setPendingDraft(draft); setDraftNotice("You have an unfinished bill."); }
     setPhase("camera"); setImage(null); setSource(null); setAi(null); setError("");
     if (objectUrl.current) { URL.revokeObjectURL(objectUrl.current); objectUrl.current = ""; }
     stopCamera();
-    if (clear) { try { sessionStorage.removeItem(draftKey); } catch { /* The reviewed record remains unchanged. */ } setDraft(emptyDraft); setDraftBlocked(false); setDraftNotice(""); }
+    if (clear) { try { sessionStorage.removeItem(draftKey); } catch { setDraftNotice("The draft could not be removed from this browser."); return; } setPendingDraft(null); setDraft(emptyDraft); setDraftBlocked(false); setDraftNotice(""); }
   }
 
   async function toggleTorch() {
@@ -252,16 +294,14 @@ export default function ScanScreen() {
   const live = camera === "live" && phase === "camera";
   const duplicate = phase === "review" ? household.bills.find(bill => bill.month === draft.month) : undefined;
   const recent = sortBillsByMonth(household.bills).slice(-3).reverse();
-  const stage = phase === "camera" ? 0 : 1;
-  const cameraMessage = loadingFile ? "Opening your file…" : camera === "blocked" ? "Camera access is blocked. Upload a photo or enter details manually." : camera === "unavailable" ? "No camera found. Upload a photo or enter details manually." : camera === "live" ? "Fit the whole bill inside the frame" : camera === "starting" ? "Opening your camera…" : "Upload your bill, open your camera, or type its details";
-  const bubble = phase === "camera" ? (live ? "Hold steady!" : "Let’s add your bill!") : phase === "scanning" ? "Reading…" : "Ready to review!";
+  const stage = phase === "review" ? 2 : phase === "scanning" ? 1 : 0;
+  const cameraMessage = loadingFile ? "Opening your file…" : camera === "blocked" ? "Camera access is blocked. Upload a photo or enter details manually." : camera === "unavailable" ? "No camera found. Upload a photo or enter details manually." : camera === "live" ? (cameraReady ? `Fit the whole ${guide} inside the frame` : "Focusing your camera…") : camera === "starting" ? "Opening your camera…" : "Upload your bill, open your camera, or type its details";
+  const bubble = phase === "camera" ? (live ? "Hold steady!" : "Let’s add your bill!") : phase === "scanning" ? "Reading…" : phase === "failed" ? "Try again" : "Ready to review!";
 
   return (
     <PageShell title="Snap AI" subtitle="Scan your bill and add it to your monthly history" active="Snap AI" className="scan-page">
       <div className={`scan-app phase-${phase}${live ? " camera-live" : ""}${image ? " has-photo" : ""}`}>
         <section className={`scan-stage${dragging ? " is-dragging" : ""}`} aria-label="Bill scanner" onDragOver={event => { if (phase === "camera") { event.preventDefault(); setDragging(true); } }} onDragLeave={() => setDragging(false)} onDrop={onDrop}>
-          <video ref={video} className={`scan-video${live ? " is-live" : ""}`} playsInline muted autoPlay aria-hidden="true" />
-          {image && phase !== "camera" && <Image className={`scan-photo is-${image.fit}`} src={image.src} alt="Your bill photo" fill sizes="(min-width: 1200px) 50vw, 100vw" unoptimized />}
           <span className="scan-dots" aria-hidden="true" />
 
           <div className="scan-topbar">
@@ -269,10 +309,15 @@ export default function ScanScreen() {
             <div className="scan-title"><strong>Snap AI</strong><span>Scan your electricity bill</span></div>
             {live ? <button type="button" className={`scan-round${torch ? " is-on" : ""}`} disabled={!torchAvailable} aria-label={!torchAvailable ? "Flashlight unavailable on this camera" : torch ? "Turn flashlight off" : "Turn flashlight on"} aria-pressed={torch} onClick={toggleTorch}>{torch ? <Zap aria-hidden="true" /> : <ZapOff aria-hidden="true" />}</button> : <span className="scan-round is-ghost" aria-hidden="true"><Sparkles /></span>}
           </div>
-          <p className="scan-preview-tag" role="note">{offline ? "Offline · photos and manual entry work locally" : "Add a photo, then review its values"}</p>
+          <p className="scan-preview-tag" role="note">{offline ? "Offline · upload or enter details manually" : "Scan first · review before saving"}</p>
+          {phase === "camera" && draftNotice && <div className="scan-draft-banner"><span>{draftNotice}</span>{pendingDraft && <button type="button" onClick={() => { uploadRequest.current++; setLoadingFile(false); stopCamera(); setDraft(pendingDraft); setPendingDraft(null); setDraftNotice("We restored your unfinished bill."); setPhase("review"); }}>Resume draft</button>}<button type="button" onClick={() => discard.current?.showModal()}>Discard draft</button></div>}
+          {phase === "camera" && <div className="scan-guide-options" aria-label="Bill shape"><button type="button" aria-pressed={guide === "bill"} onClick={() => setGuide("bill")}>Bill</button><button type="button" aria-pressed={guide === "receipt"} onClick={() => setGuide("receipt")}>Receipt</button></div>}
 
           <div className="scan-frame-wrap">
-            <div className="scan-frame">
+            <div ref={viewfinder} className="scan-viewfinder" style={live && cameraSize.width > 0 ? { "--camera-image-width": `${cameraSize.width}px`, "--camera-image-height": `${cameraSize.height}px` } as CSSProperties : undefined}>
+              <video ref={video} className={`scan-video${live ? " is-live" : ""}`} playsInline muted autoPlay aria-hidden="true" onLoadedData={measureCamera} onResize={measureCamera} />
+              {image && phase !== "camera" && <Image className="scan-photo is-contain" src={image.src} alt="Your bill photo" fill sizes="(min-width: 1200px) 50vw, 100vw" unoptimized />}
+            <div className={`scan-frame guide-${guide}`}>
               {!image && !live && <div className="scan-frame-bill"><BillArt period="Your billing period" kwh="—" amount="—" due="—" /></div>}
               <i className="scan-corner is-tl" /><i className="scan-corner is-tr" /><i className="scan-corner is-bl" /><i className="scan-corner is-br" />
               <div className="scan-track" aria-hidden="true">
@@ -285,14 +330,15 @@ export default function ScanScreen() {
               </div>
               {phase === "review" && <span className="scan-done-badge" aria-hidden="true"><CircleCheck /></span>}
             </div>
+            </div>
           </div>
 
-          {phase === "camera" && <p className="scan-hint" role="status">{cameraMessage}{(camera === "blocked" || camera === "unavailable" || camera === "idle") && <button type="button" onClick={() => void startCamera()}>{camera === "idle" ? "Open camera" : "Try camera again"}</button>}</p>}
+          {phase === "camera" && <p className="scan-hint" role="status">{cameraMessage}{(camera === "blocked" || camera === "unavailable" || camera === "idle") && <button type="button" disabled={!ready || loadingFile} onClick={() => void startCamera()}>{camera === "idle" ? "Open camera" : "Try camera again"}</button>}</p>}
           {phase === "camera" && error && <p className="scan-toast" role="alert">{error}</p>}
 
           {phase === "camera" && <div className="scan-controls">
             <button type="button" className="scan-side" disabled={!ready || loadingFile} onClick={() => fileInput.current?.click()}><span><ImageUp aria-hidden="true" /></span>Upload</button>
-            <button type="button" className="scan-shutter" disabled={!ready || loadingFile} aria-label={live ? "Capture bill photo" : "Open bill camera"} onClick={capture}><span /></button>
+            <button type="button" className="scan-shutter" disabled={!ready || loadingFile || camera === "starting" || (live && !cameraReady)} aria-label={live ? "Capture bill photo" : "Open bill camera"} onClick={capture}><span /></button>
             <button type="button" className="scan-side" disabled={!ready || loadingFile} onClick={enterManually}><span><Keyboard aria-hidden="true" /></span>Type it</button>
             {live && <button type="button" className="scan-side scan-stop-camera" onClick={stopCamera}><span><X aria-hidden="true" /></span>Close camera</button>}
           </div>}
@@ -302,6 +348,7 @@ export default function ScanScreen() {
             <div className="scan-progress-bar is-indeterminate"><span /></div>
             <small>{readingSteps[readingStep]}</small>
           </div>}
+          {phase === "failed" && <div className="scan-retry" role="alert"><h2>Try a clearer scan</h2><p>{ai?.failed}</p>{error && <p className="ui-error">{error}</p>}<div><button type="button" className="ui-primary" onClick={() => { if (scanInput.current) void readBill(scanInput.current); }} disabled={offline || loadingFile}>Try reading again</button><button type="button" className="ui-secondary" onClick={() => { restart(); void startCamera(); }}>Retake photo</button><button type="button" className="ui-secondary" disabled={loadingFile} onClick={() => fileInput.current?.click()}>{loadingFile ? "Opening file…" : "Upload another bill"}</button><button type="button" className="scan-retry-manual" onClick={enterFromPhoto}>Enter details from photo</button></div></div>}
 
           {phase === "camera" && !live && <div className={`scan-placeholder${dragging ? " is-dragging" : ""}`}>
             <div className="scan-placeholder-art" aria-hidden="true">
@@ -312,7 +359,7 @@ export default function ScanScreen() {
             <p>Upload or photograph your bill. WattSnap AI fills in the values, and you review them before saving.</p>
             <div className="scan-placeholder-actions">
               <button type="button" className="ui-primary" disabled={!ready || loadingFile} onClick={() => fileInput.current?.click()}><Upload size={18} aria-hidden="true" /> {loadingFile ? "Opening file…" : "Upload bill"}</button>
-              <button type="button" className="ui-secondary" onClick={() => void startCamera()} disabled={camera === "starting"}><Camera size={18} aria-hidden="true" /> {camera === "starting" ? "Opening camera…" : "Use webcam"}</button>
+              <button type="button" className="ui-secondary" onClick={() => void startCamera()} disabled={!ready || loadingFile || camera === "starting"}><Camera size={18} aria-hidden="true" /> {camera === "starting" ? "Opening camera…" : "Use webcam"}</button>
             </div>
             <span className="scan-file-note">JPG, PNG, WebP or PDF · up to 10 MB</span>
             {(camera === "blocked" || camera === "unavailable") && <p className="scan-inline-note">{camera === "blocked" ? "Webcam access is blocked in this browser." : "No webcam was found."} You can still upload a bill.</p>}
@@ -324,7 +371,7 @@ export default function ScanScreen() {
 
         <section className="scan-panel" aria-label="Scan details">
           <ol className="scan-steps" aria-label="Scan progress">
-            {["Choose input", "Review values", "Saved"].map((label, index) => <li key={label} className={index < stage ? "is-done" : index === stage ? "is-current" : ""} aria-current={index === stage ? "step" : undefined}><span>{index < stage ? <Check aria-hidden="true" /> : index + 1}</span>{label}</li>)}
+            {["Scan bill", "AI reading", "Review & save"].map((label, index) => <li key={label} className={index < stage ? "is-done" : index === stage ? "is-current" : ""} aria-current={index === stage ? "step" : undefined}><span>{index < stage ? <Check aria-hidden="true" /> : index + 1}</span>{label}</li>)}
           </ol>
 
           {phase === "camera" && <div className="scan-intro">
@@ -347,12 +394,20 @@ export default function ScanScreen() {
             <button type="button" className="ui-secondary scan-manual" onClick={() => restart()}>Cancel</button>
           </div>}
 
-          {draftNotice && <p className="br-note" role="status">{draftNotice}</p>}
-          {draftNotice && phase !== "review" && <button type="button" className="ui-secondary" onClick={() => discard.current?.showModal()}>Discard draft</button>}
+          {draftNotice && phase === "review" && <p className="br-note" role="status">{draftNotice}</p>}
+          {phase === "review" && error && <p className="ui-error" role="alert">{error}</p>}
           {phase === "review" && <BillReview mode="manual" ai={ai} draft={draft} original={null} source={source} duplicate={duplicate} offline={offline} ready={ready} storageError={storageError} onChange={setDraft} onRestart={() => restart()} onDiscard={() => discard.current?.showModal()} monthlySubsidy={household.monthlySubsidy} onSave={save} onReplaceSource={() => fileInput.current?.click()} onRemoveSource={() => { if (objectUrl.current) URL.revokeObjectURL(objectUrl.current); objectUrl.current = ""; setSource(null); setImage(null); }} />}
         </section>
       </div>
-      <dialog ref={discard} className="br-original-dialog" aria-labelledby="discard-bill-title"><h2 id="discard-bill-title">Discard unfinished bill?</h2><p>Your saved bills remain unchanged. Only this unfinished draft is removed.</p><button type="button" className="ui-secondary" autoFocus onClick={() => discard.current?.close()}>Keep draft</button><button type="button" className="ui-primary" onClick={() => { discard.current?.close(); restart(true); }}>Discard unfinished bill</button></dialog>
+      <dialog ref={discard} className="br-original-dialog br-discard-dialog" aria-labelledby="discard-bill-title" aria-describedby="discard-bill-description">
+        <span className="br-discard-icon" aria-hidden="true"><Trash2 /></span>
+        <h2 id="discard-bill-title">Discard unfinished bill?</h2>
+        <p id="discard-bill-description">Only this unfinished draft will be removed. Your saved bills stay in your history.</p>
+        <div className="br-discard-actions">
+          <button type="button" className="ui-secondary" autoFocus onClick={() => discard.current?.close()}>Keep draft</button>
+          <button type="button" className="br-discard-confirm" onClick={() => { discard.current?.close(); restart(true); }}>Discard draft</button>
+        </div>
+      </dialog>
     </PageShell>
   );
 }
