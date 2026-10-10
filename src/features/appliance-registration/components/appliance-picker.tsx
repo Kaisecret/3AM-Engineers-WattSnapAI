@@ -4,7 +4,7 @@ import { AirVent, CookingPot, Fan, Laptop, Lightbulb, Microwave, Plug, Refrigera
 import { appliancePresets, type ApplianceKind } from "@/features/dashboard/preview-data";
 
 export const applianceIcons: Record<ApplianceKind, LucideIcon> = { fan: Fan, aircon: AirVent, fridge: Refrigerator, tv: Tv, "rice-cooker": CookingPot, washer: WashingMachine, lights: Lightbulb, laptop: Laptop, phone: Smartphone, microwave: Microwave, iron: Shirt, other: Plug };
-const labels: Record<ApplianceKind, string> = { fan: "Fan", aircon: "Aircon", fridge: "Fridge", tv: "TV", "rice-cooker": "Rice cooker", washer: "Washer", lights: "Lights", laptop: "Laptop", phone: "Charger", microwave: "Microwave", iron: "Iron", other: "Other" };
+const labels: Record<ApplianceKind, string> = { fan: "Electric fan", aircon: "Air conditioner", fridge: "Refrigerator", tv: "Television", "rice-cooker": "Rice cooker", washer: "Washing machine", lights: "Lighting", laptop: "Computer", phone: "Phone charger", microwave: "Microwave", iron: "Iron", other: "Other appliance" };
 
 export default function AppliancePicker({ value, onChange }: { value: ApplianceKind; onChange: (kind: ApplianceKind) => void }) {
   return <fieldset className="ap-presets"><legend>Appliance type</legend>

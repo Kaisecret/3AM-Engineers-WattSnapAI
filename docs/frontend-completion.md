@@ -26,7 +26,7 @@ Baseline evidence: 76 feature tests pass; `npx.cmd tsc --noEmit` passes. Existin
 | 5 | Local household access and provider | Password-free local installation; explicit manual provider and preserved scopes |
 | 6 | Bill upload/manual review/draft | Real photo/manual entry, optional fields, confirmed saves and tab draft recovery |
 | 7 | Actual bill history/dashboard/change | Actual periods, transparent change threshold and confirmed removal |
-| 8 | Appliance capture/management | Pending |
+| 8 | Appliance capture/management | Manual/photo review, familiar labels, editing and confirmed removal |
 | 9 | Appliance estimator | Pending |
 | 10 | Deterministic local tips | Pending |
 | 11 | Manual advisory review/history | Pending |
@@ -69,3 +69,7 @@ Versioned session drafts retain typed fields across refresh, without retaining p
 ## 7. Bill history and consumption changes
 
 History and chart comparisons use actual saved periods, including gaps and year labels. A 20% change threshold highlights notable changes without inferring their causes; different or unknown period lengths are qualified. Charts expose full-height touch targets without distorting bar values. Bill removal now requires confirmation and preserves other records. The remaining sample-history control is removed. Checks cover actual history, gaps, refresh, deletion confirmation and threshold calculations.
+
+## 8. Appliance registration and management
+
+Appliance choices use full familiar names with existing icons. Photo replacement and removal preserve typed values and require a fresh review; uploaded labels never populate invented wattage. Camera input uses supported device capture with a file-picker fallback. Editing preserves metadata and validates inputs; deletion now asks for confirmation. Photos remain temporary and only reviewed values are persisted. Browser checks exercise real photo input, blank wattage, confirmed registration, editing, retained values, deletion and refresh.

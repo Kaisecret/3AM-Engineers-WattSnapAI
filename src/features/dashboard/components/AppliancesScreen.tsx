@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, Minus, Pencil, Plus, SlidersHorizontal, Trash2, X, Zap } from "lucide-react";
 import AppliancePicker, { applianceIcons as kindIcons } from "@/features/appliance-registration/components/appliance-picker";
+import ConfirmRecordRemoval from "@/components/ui/ConfirmRecordRemoval";
 import PageShell from "./PageShell";
 import { usePreviewHousehold } from "../use-preview-household";
 import { appliancePresets, dailyApplianceKwh, effectiveRate, guessApplianceKind, pesos, validateAppliance, type ApplianceKind, type PreviewAppliance } from "../preview-data";
@@ -17,6 +18,7 @@ const trim = (value: number) => Number(value.toFixed(2)).toString();
 export default function AppliancesScreen() {
   const { household, update, ready, storageError } = usePreviewHousehold();
   const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const [removing, setRemoving] = useState<PreviewAppliance | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -63,7 +65,7 @@ export default function AppliancesScreen() {
   }
 
   function remove(item: PreviewAppliance) {
-    if (update({ appliances: household.appliances.filter(appliance => appliance.id !== item.id) })) setMessage(`${item.name} removed.`);
+    if (update({ appliances: household.appliances.filter(appliance => appliance.id !== item.id) })) { setMessage(`${item.name} removed.`); return true; } return false;
   }
 
   return <PageShell title="Appliances" subtitle="See how your appliances use energy" active="Appliances" className="ap-page">
@@ -99,12 +101,13 @@ export default function AppliancesScreen() {
           </div>
           <div className="ap-item-actions">
             <button type="button" className="ui-icon-button ap-edit" disabled={!ready} aria-label={`Edit ${item.name}`} onClick={() => open(item)}><Pencil size={16} /></button>
-            <button type="button" className="ui-icon-button" disabled={!ready} aria-label={`Remove ${item.name}`} onClick={() => remove(item)}><Trash2 size={16} /></button>
+            <button type="button" className="ui-icon-button" disabled={!ready} aria-label={`Remove ${item.name}`} onClick={() => setRemoving(item)}><Trash2 size={16} /></button>
           </div>
         </li>; })}
       </ul> : <div className="ap-empty"><Image src="/assets/branding/actions-7.png" alt="" width={200} height={200} sizes="120px" /><h3>No appliances yet</h3><p>Add the appliances you use at home to see which ones use the most energy.</p><Link className="ui-primary" href="/appliances/new"><Plus size={18} aria-hidden="true" /> Add appliance</Link></div>}
       <p className="ui-helper">Monthly comparisons use watts × hours × quantity over 30 days. Each entry also shows its selected period. These estimates cover registered appliances only; actual use varies with settings, age, and cycling.</p>
     </section>
+    <ConfirmRecordRemoval name={removing?.name ?? null} error={storageError} onKeep={() => setRemoving(null)} onRemove={() => removing ? remove(removing) : false} />
     {message && <p className="ui-success" role="status">{message}</p>}{storageError && <p className="ui-error" role="alert">{storageError}</p>}
 
     <dialog ref={dialog} className="ap-dialog" aria-labelledby="ap-dialog-title" onClose={() => opener.current?.focus()} onClick={event => { if (event.target === event.currentTarget) close(); }}>

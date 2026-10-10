@@ -123,6 +123,38 @@ async function bills(browser) {
   await context.close(); console.log('PASS: bill photo/manual review, draft recovery, optional fields, confirmation and duplicate protection without AI calls');
 }
 
+async function appliances(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await context.newPage(); await page.goto(`${baseURL}/appliances/new`);
+  await page.getByRole('button', { name: 'Upload photo', exact: true }).waitFor();
+  await page.waitForFunction(() => !document.querySelector('input[type=file]').disabled);
+  await page.locator('input[type=file]').first().setInputFiles({ name: 'label.png', mimeType: 'image/png', buffer: await fs.readFile('public/assets/branding/wattsnap-icon-192.png') });
+  await page.getByLabel('Rated power', { exact: true }).waitFor();
+  assert.equal(await page.getByLabel('Rated power', { exact: true }).inputValue(), '');
+  await page.getByRole('radio', { name: 'Electric fan', exact: true }).check();
+  await page.getByLabel('Rated power', { exact: true }).fill('55');
+  await page.getByLabel('Hours per day', { exact: true }).fill('8');
+  await page.getByLabel('Quantity', { exact: true }).fill('2');
+  await page.getByRole('button', { name: 'Remove photo', exact: true }).click();
+  assert.equal(await page.getByLabel('Rated power', { exact: true }).inputValue(), '55');
+  await page.getByRole('checkbox', { name: /I checked the power/ }).check();
+  await page.getByRole('button', { name: 'Save appliance', exact: true }).click();
+  await page.getByRole('heading', { name: 'Appliance added!' }).waitFor();
+  await page.getByRole('link', { name: 'View appliances', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit Electric fan', exact: true }).click();
+  await page.getByLabel('Hours per day', { exact: true }).fill('6');
+  await page.getByRole('checkbox', { name: 'I reviewed the power, quantity, hours, and days.' }).check();
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'updated' }).waitFor();
+  await page.reload(); await page.getByRole('button', { name: 'Remove Electric fan', exact: true }).click();
+  await page.getByRole('button', { name: 'Keep record', exact: true }).click();
+  assert.equal(await page.locator('.ap-list > li').count(), 1);
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1')).appliances[0].hours), 6);
+  await page.getByRole('button', { name: 'Remove Electric fan', exact: true }).click(); await page.getByRole('button', { name: 'Remove record', exact: true }).click();
+  await page.getByRole('heading', { name: 'No appliances yet' }).waitFor();
+  await context.close(); console.log('PASS: actual appliance photo review, manual wattage, editing, calculation and confirmed removal');
+}
+
 async function history(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River home', budget: 0, appliances: [], bills: [{ id: 'actual-1', month: '2026-07', kwh: 100, amount: 1200, source: 'manual', periodStart: '2026-07-01', periodEnd: '2026-07-31' }, { id: 'actual-2', month: '2026-09', kwh: 150, amount: 1800, source: 'manual', periodStart: '2026-09-01', periodEnd: '2026-09-30' }] })); });
@@ -144,5 +176,5 @@ async function history(browser) {
 
 (async () => {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
-  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history'])) await ({ design, records, household, bills, history })[check](browser); } finally { await browser.close(); }
+  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history', 'appliances'])) await ({ design, records, household, bills, history, appliances })[check](browser); } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
