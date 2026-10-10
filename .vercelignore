@@ -7,3 +7,5 @@
 /supabase/
 *.docx
 *.tsbuildinfo
+/.env*
+/.git/
