@@ -61,7 +61,7 @@ export default function ApplianceRegistrationScreen() {
   }
 
   const stage = phase === "input" ? 0 : phase === "review" ? 1 : 2;
-  return <PageShell title="Add appliance" subtitle="Review its nameplate and your usage" active="Appliances" className="np-page">
+  return <PageShell active="Appliances" className="np-page">
     <div className="np-toolbar"><Link href="/appliances"><ArrowLeft size={17} aria-hidden="true" />Back to appliances</Link><span>Saved on this device</span></div>
     <ol className="np-steps" aria-label="Appliance registration progress">{["Choose input", "Review details", "Saved"].map((label, index) => <li key={label} aria-current={index === stage ? "step" : undefined} className={index < stage ? "is-done" : index === stage ? "is-current" : ""}><span>{index < stage ? <Check aria-hidden="true" /> : index + 1}</span>{label}</li>)}</ol>
     {phase !== "input" && <h2 className="ws-sr-only" ref={stageHeading} tabIndex={-1}>{phase === "review" ? "Review appliance details" : "Appliance saved"}</h2>}

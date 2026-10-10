@@ -1,4 +1,5 @@
 .np-page :focus-visible { outline: 2px solid #0094cc; outline-offset: 3px; }
+.np-page .ui-mobile-heading { display: none; }
 .np-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 .np-toolbar a { display: inline-flex; gap: 7px; align-items: center; color: #1689bd; font-size: 12px; font-weight: 700; }
 .np-toolbar > span { color: #8298ac; font-size: 10px; }
