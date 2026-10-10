@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { ChartNoAxesColumnIncreasing, ReceiptText, ScanLine } from "lucide-react";
 import { usePreviewHousehold } from "../use-preview-household";
-import { billMonth, pesos } from "../preview-data";
+import { amountPaid, billMonth, pesos } from "../preview-data";
 
 function SetupArtwork({ budget = false }: { budget?: boolean }) {
   return <svg viewBox="0 0 150 125" aria-hidden="true">
@@ -13,7 +13,7 @@ export default function DesktopHomeCards() {
   const { household } = usePreviewHousehold();
   const latest = [...household.bills].sort((a, b) => b.month.localeCompare(a.month))[0];
   return <div className="ws-desktop-setup">
-    <section className="ws-card ws-setup-card"><div className="ws-heading-label"><span className="ws-icon-tile ws-icon-blue"><ReceiptText aria-hidden="true" /></span><h2>Latest Bill</h2></div><div className="ws-setup-content"><SetupArtwork /><div><h3>{latest ? pesos(latest.amount) : "Add your latest bill"}</h3><p>{latest ? `${billMonth(latest.month)} · ${latest.kwh} kWh` : "Scan your bill to track your monthly costs."}</p><Link href={latest ? "/bills" : "/bills/new"} className="ui-primary"><ScanLine size={20} aria-hidden="true" />{latest ? "View bills" : "Scan bill"}</Link></div></div></section>
-    <section className="ws-card ws-setup-card"><div className="ws-heading-label"><span className="ws-icon-tile ws-icon-green"><ChartNoAxesColumnIncreasing aria-hidden="true" /></span><h2>Smart Energy Budget</h2></div><div className="ws-setup-content"><SetupArtwork budget /><div><h3>{household.budget > 0 ? pesos(household.budget) : "Set your monthly budget"}</h3><p>{household.budget > 0 && latest ? `${Math.round(latest.amount / household.budget * 100)}% used by the ${billMonth(latest.month)} bill.` : "Keep your electricity spending on track."}</p><Link href="/budget" className="ui-secondary">{household.budget > 0 ? "Adjust budget" : "Set budget"}</Link></div></div></section>
+    <section className="ws-card ws-setup-card"><div className="ws-heading-label"><span className="ws-icon-tile ws-icon-blue"><ReceiptText aria-hidden="true" /></span><h2>Latest Bill</h2></div><div className="ws-setup-content"><SetupArtwork /><div><h3>{latest ? pesos(latest.amount) : "Add your latest bill"}</h3><p>{latest ? `${billMonth(latest.month)} · ${latest.kwh} kWh${latest.subsidy ? ` · You pay ${pesos(amountPaid(latest))}` : ""}` : "Scan your bill to track your monthly costs."}</p><Link href={latest ? "/bills" : "/bills/new"} className="ui-primary"><ScanLine size={20} aria-hidden="true" />{latest ? "View bills" : "Scan bill"}</Link></div></div></section>
+    <section className="ws-card ws-setup-card"><div className="ws-heading-label"><span className="ws-icon-tile ws-icon-green"><ChartNoAxesColumnIncreasing aria-hidden="true" /></span><h2>Smart Energy Budget</h2></div><div className="ws-setup-content"><SetupArtwork budget /><div><h3>{household.budget > 0 ? pesos(household.budget) : "Set your monthly budget"}</h3><p>{household.budget > 0 && latest ? `${Math.round(amountPaid(latest) / household.budget * 100)}% used by the ${billMonth(latest.month)} bill.` : "Keep your electricity spending on track."}</p><Link href="/budget" className="ui-secondary">{household.budget > 0 ? "Adjust budget" : "Set budget"}</Link></div></div></section>
   </div>;
 }

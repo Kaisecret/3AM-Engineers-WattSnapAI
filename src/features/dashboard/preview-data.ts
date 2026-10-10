@@ -4,6 +4,8 @@ export interface PreviewBill {
   id: string; month: string; amount: number; kwh: number; dueDate?: string; source?: BillSource;
   periodStart?: string; periodEnd?: string; provider?: string; sourceName?: string;
   billingDate?: string; notes?: string;
+  /** Government subsidy deducted on the receipt, e.g. Antique PEPS. `amount` stays the bill before it. */
+  subsidy?: number;
 }
 export interface PreviewAppliance {
   id: string; name: string; watts: number; hours: number; quantity: number; kind?: ApplianceKind;
@@ -15,6 +17,8 @@ export interface PreviewHousehold {
   /** Square JPEG/PNG/WebP data URL, resized in the browser before saving. */
   photo?: string; email?: string; location?: string; provider?: string; notifications?: NotificationPrefs;
   locality?: { province: string; municipality: string; barangay: string };
+  /** Monthly bill subsidy in pesos. Unset means the provider default (₱500 for ANTECO). */
+  monthlySubsidy?: number;
 }
 
 export const emptyPreview: PreviewHousehold = { bills: [], appliances: [], budget: 0, name: "Your home" };
@@ -97,6 +101,7 @@ export function validateBill(bill: Omit<PreviewBill, "id">) {
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(bill.month) || bill.month.startsWith("0000")) return "Choose a valid billing month.";
   if (!Number.isFinite(bill.amount) || bill.amount <= 0) return "Enter a bill amount greater than zero.";
   if (!Number.isFinite(bill.kwh) || bill.kwh <= 0) return "Enter consumption greater than zero.";
+  if (bill.subsidy !== undefined && (!Number.isFinite(bill.subsidy) || bill.subsidy < 0 || bill.subsidy > bill.amount)) return "The subsidy must be between ₱0 and the bill amount.";
   if (bill.dueDate && !isCalendarDate(bill.dueDate)) return "Choose a valid due date.";
   if (bill.billingDate && !isCalendarDate(bill.billingDate)) return "Choose a valid billing date.";
   if (bill.billingDate && bill.dueDate && bill.billingDate > bill.dueDate) return "The due date cannot be before the billing date.";
@@ -142,6 +147,7 @@ export function normalizePreview(value: unknown): PreviewHousehold {
     ...(isProviderChoice(data.provider) ? { provider: data.provider } : {}),
     ...(data.locality && typeof data.locality.province === "string" && typeof data.locality.municipality === "string" && typeof data.locality.barangay === "string" ? { locality: { province: data.locality.province.trim().slice(0, 40), municipality: data.locality.municipality.trim().slice(0, 60), barangay: data.locality.barangay.trim().slice(0, 60) } } : {}),
     ...(notifications ? { notifications } : {}),
+    ...(typeof data.monthlySubsidy === "number" && Number.isFinite(data.monthlySubsidy) && data.monthlySubsidy >= 0 && data.monthlySubsidy <= maxMonthlySubsidy ? { monthlySubsidy: data.monthlySubsidy } : {}),
     bills: Array.isArray(data.bills) ? data.bills.filter(item => item && typeof item.id === "string" && typeof item.month === "string" && !validateBill(item)) : [],
     appliances: Array.isArray(data.appliances) ? data.appliances.filter(item => item && typeof item.id === "string" && typeof item.name === "string" && !validateAppliance(item)) : [],
     budget: typeof data.budget === "number" && Number.isFinite(data.budget) && data.budget > 0 ? data.budget : 0,
@@ -187,6 +193,22 @@ export function averageKwh(bills: PreviewBill[]) {
   return bills.length ? bills.reduce((sum, bill) => sum + bill.kwh, 0) / bills.length : 0;
 }
 /** Peso per kWh from the latest bill, used to label appliance cost estimates. */
+/** Antique's Provincial Electric Power Subsidy (PEPS) covers up to ₱500 of a household's monthly ANTECO bill. */
+export const antiquePepsSubsidy = 500;
+export const maxMonthlySubsidy = 10000;
+/** The household's monthly subsidy: their own setting, or ₱500 for ANTECO households until they change it. */
+export function monthlySubsidyFor(home: Pick<PreviewHousehold, "monthlySubsidy" | "provider">) {
+  return home.monthlySubsidy ?? (home.provider === "anteco" ? antiquePepsSubsidy : 0);
+}
+/** The subsidy a bill receives: the monthly amount, but never more than the bill itself. */
+export function subsidyFor(amount: number, monthly: number) {
+  return amount > 0 && monthly > 0 ? Math.min(monthly, amount) : 0;
+}
+/** What the household pays: the bill minus the subsidy recorded on it. */
+export function amountPaid(bill: Pick<PreviewBill, "amount" | "subsidy">) {
+  return Math.max(0, Math.round((bill.amount - (bill.subsidy ?? 0)) * 100) / 100);
+}
+/** Peso per kWh from the bill before any subsidy: the subsidy is a fixed monthly amount, not a per-kWh discount. */
 export function effectiveRate(bills: PreviewBill[]) {
   const latest = latestBill(bills);
   return latest && latest.kwh > 0 && latest.amount > 0 ? latest.amount / latest.kwh : 0;
@@ -225,11 +247,11 @@ export function budgetStatus(spent: number, budget: number): BudgetStatus {
   const used = spent / budget;
   return used > 1 ? "over" : used >= 0.85 ? "near" : "on-track";
 }
-/** Recent average bill plus 5% headroom, rounded up to the next ₱100. */
+/** Recent average amount paid plus 5% headroom, rounded up to the next ₱100. */
 export function suggestedBudget(bills: PreviewBill[]) {
   const recent = monthlySeries(bills, 6);
   if (!recent.length) return null;
-  const average = recent.reduce((sum, bill) => sum + bill.amount, 0) / recent.length;
+  const average = recent.reduce((sum, bill) => sum + amountPaid(bill), 0) / recent.length;
   return Math.ceil(average * 1.05 / 100) * 100;
 }
 /** Accepts typed amounts such as "1,600", "₱ 2500" or "1500.50". */

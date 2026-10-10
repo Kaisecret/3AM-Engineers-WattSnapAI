@@ -13,7 +13,7 @@ import LogoutDialog from "./LogoutDialog";
 import AppNavigation from "./AppNavigation";
 import DesktopHomeCards from "./DesktopHomeCards";
 import { usePreviewHousehold } from "../use-preview-household";
-import { billMonth, chartMonths, compareWithPrevious, dueDateLabel, latestBill, monthName, pesos, shortMonth } from "../preview-data";
+import { amountPaid, billMonth, chartMonths, compareWithPrevious, dueDateLabel, latestBill, monthName, pesos, shortMonth } from "../preview-data";
 
 const assistantPrompts = ["Why did my bill change?", "How can I save on aircon?", "Any brownout today?"];
 // Decorative outline shown before the first bill; it is not data and is hidden from assistive technology.
@@ -47,7 +47,7 @@ export default function HomeScreen() {
   const change = latest ? compareWithPrevious(household.bills, latest.month) : null;
   const selected = months.find(bar => bar.month === selectedMonth) ?? months[months.length - 1];
   const chartMax = Math.max(...months.map(bar => bar.kwh), 1) * 1.08;
-  const budgetPercent = latest && household.budget > 0 ? Math.round(latest.amount / household.budget * 100) : 0;
+  const budgetPercent = latest && household.budget > 0 ? Math.round(amountPaid(latest) / household.budget * 100) : 0;
   const firstName = household.name.split(/\s+/)[0];
 
   return (
@@ -91,7 +91,7 @@ export default function HomeScreen() {
             {hasExamples && <p className="ws-chart-note"><i aria-hidden="true" /> Striped bars are example months. <Link href="/bills/new">Scan more bills</Link> to see your real history.</p>}
           </section>
           <div className="ws-financial-row">
-            <Link href="/bills" className="ws-card ws-bill" aria-label={latest ? `Latest bill: ${pesos(latest.amount)} for ${billMonth(latest.month)}. View bills.` : "No bills yet. View bills."}><div className="ws-heading-label"><span className="ws-icon-tile ws-icon-blue"><ReceiptText aria-hidden="true" /></span><h2>Latest Bill</h2></div><div className="ws-bill-amount">{latest ? pesos(latest.amount) : "—"}</div><p className="ws-muted">{latest?.dueDate ? `Due on ${dueDateLabel(latest.dueDate)}` : latest ? billMonth(latest.month) : "Scan your first bill"}</p><span className="ws-bill-arrow"><ChevronRight aria-hidden="true" /></span></Link>
+            <Link href="/bills" className="ws-card ws-bill" aria-label={latest ? `Latest bill: ${pesos(latest.amount)} for ${billMonth(latest.month)}. View bills.` : "No bills yet. View bills."}><div className="ws-heading-label"><span className="ws-icon-tile ws-icon-blue"><ReceiptText aria-hidden="true" /></span><h2>Latest Bill</h2></div><div className="ws-bill-amount">{latest ? pesos(latest.amount) : "—"}</div>{latest?.subsidy ? <p className="ws-bill-paid">You pay {pesos(amountPaid(latest))}</p> : null}<p className="ws-muted">{latest?.dueDate ? `Due on ${dueDateLabel(latest.dueDate)}` : latest ? billMonth(latest.month) : "Scan your first bill"}</p><span className="ws-bill-arrow"><ChevronRight aria-hidden="true" /></span></Link>
             <Link href="/budget" className="ws-card ws-budget" aria-label={`Smart Energy Budget: ${budgetPercent} percent used of ${household.budget > 0 ? `${pesos(household.budget)} monthly budget` : "No budget set yet"}. View budget.`}><div className="ws-heading-label"><span className="ws-icon-tile ws-icon-green"><ChartNoAxesColumnIncreasing aria-hidden="true" /></span><h2>Smart Energy Budget</h2></div><div className="ws-budget-summary"><strong>{household.budget > 0 ? `${budgetPercent}% used` : "Set a monthly budget"}</strong><ChevronRight aria-hidden="true" /></div><div className="ws-progress" role="progressbar" aria-label="Monthly energy budget used" aria-valuenow={budgetPercent} aria-valuemin={0} aria-valuemax={Math.max(100, budgetPercent)}><span style={{ width: `${Math.min(budgetPercent, 100)}%`, background: budgetPercent > 100 ? "#f2a238" : undefined }} /></div><p className="ws-muted">{household.budget > 0 ? `${pesos(household.budget)} monthly budget` : "No budget set yet"}</p></Link>
           </div>
           <DesktopHomeCards />

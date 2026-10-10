@@ -40,9 +40,26 @@ Snap AI → Type it (or Enter bill manually on desktop).
 | Due Date | Due date (optional) | as printed |
 | KWH USED | Energy used | 192 |
 | **CURRENT MONTH BILL** | **Current month bill** | 3,072.60 |
+| Provincial Electric Power Subsidy | Subsidy (filled in automatically) | 500 |
 | Reading dates | Exact billing period (optional) | 07/23/2026 to 08/23/2026 |
 
-- **Use "Current month bill", not "Amount Due".** Under the Provincial Electric Power Subsidy (PEPS), a receipt can show Current Month Bill ₱418.85, a subsidy of −₱418.85 and Amount Due ₱0.00. The app needs the charge before any subsidy or past balance, because it is also used to work out your price per kWh (₱3,072.60 ÷ 192 = **₱16.00/kWh**).
+- **Use "Current month bill", not "Amount Due".** The app needs the charge before any subsidy or past balance.
+
+### Antique's ₱500 monthly subsidy (PEPS)
+
+Antique's Provincial Electric Power Subsidy covers up to ₱500 of a household's monthly ANTECO bill. The September receipt shows Current Month Bill ₱418.85, subsidy −₱418.85 and Amount Due ₱0.00.
+
+| Where | What the app does |
+|---|---|
+| Household settings | **Monthly subsidy** is ₱500 for ANTECO households until changed. Enter 0 to turn it off, or another amount if yours differs. |
+| Bill form | **Subsidy** fills itself in with the smaller of the monthly subsidy and the bill (₱500 on ₱3,072.60; ₱418.85 on ₱418.85). It can be edited to match the receipt. **You pay** updates as you type. |
+| Home, Energy, saved bill | Show the bill and **You pay** (₱3,072.60 → ₱2,572.60). |
+| Smart budget | Compares the budget with **what you pay**. The average and history bars use it too. |
+| Price per kWh | Uses the **full bill** (₱3,072.60 ÷ 192 = **₱16.00/kWh**). The subsidy is a fixed monthly amount, not a per-kWh discount, so each extra kWh still costs the full price. Subtracting it would make every device and Watt-If estimate too low (₱13.40/kWh). |
+
+Code: `antiquePepsSubsidy`, `monthlySubsidyFor`, `subsidyFor` and `amountPaid` in `src/features/dashboard/preview-data.ts`, tested in `subsidy.test.mjs`. A bill stores `amount` (before subsidy) and an optional `subsidy`; the household stores an optional `monthlySubsidy`.
+
+Not yet: Watt-If and Tipid Tips do not mention that savings stop lowering what you pay once the bill is under ₱500.
 - **Check the kWh.** Present reading − previous reading should equal KWH USED (10994 − 10802 = 192).
 - **Photo tips for long thermal receipts.** Hold the phone close, lay the receipt flat in good light, and take two photos if it does not fit.
 

@@ -1,17 +1,17 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { CalendarClock, Camera, Check, ChevronRight, CircleCheck, Database, House, ImageUp, Lightbulb, LogOut, MapPin, Megaphone, PlugZap, ReceiptText, ShieldCheck, Sparkles, Trash2, UserRound, Wallet, Zap } from "lucide-react";
+import { CalendarClock, Camera, Check, ChevronRight, CircleCheck, Database, HandCoins, House, ImageUp, Lightbulb, LogOut, MapPin, Megaphone, PlugZap, ReceiptText, ShieldCheck, Sparkles, Trash2, UserRound, Wallet, Zap } from "lucide-react";
 import PageShell from "./PageShell";
 import UserAvatar from "./UserAvatar";
 import PhotoEditor from "./PhotoEditor";
 import LogoutDialog from "./LogoutDialog";
 import { usePreviewHousehold } from "../use-preview-household";
-import { isPhotoDataUrl, pesos, validateProfile, type NotificationPrefs } from "../preview-data";
+import { isPhotoDataUrl, maxMonthlySubsidy, monthlySubsidyFor, pesos, validateProfile, type NotificationPrefs } from "../preview-data";
 import { previewProviderName } from "@/features/household-profile/provider-preview";
 import { ThemeSettings } from "@/features/onboarding/components/ThemeSupport";
 
-type Draft = { name: string; email: string; location: string };
+type Draft = { name: string; email: string; location: string; subsidy: string };
 const alerts: { key: keyof NotificationPrefs; title: string; detail: string; icon: typeof Megaphone; tone: string }[] = [
   { key: "brownouts", title: "Brownout alerts", detail: "When an advisory lists your area", icon: Megaphone, tone: "is-orange" },
   { key: "billReminders", title: "Bill due reminders", detail: "A few days before your due date", icon: CalendarClock, tone: "is-blue" },
@@ -28,9 +28,9 @@ export default function SettingsScreen() {
   const [logout, setLogout] = useState(false);
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
-  const saved: Draft = { name: household.name, email: household.email ?? "", location: household.location ?? "" };
+  const saved: Draft = { name: household.name, email: household.email ?? "", location: household.location ?? "", subsidy: String(monthlySubsidyFor(household)) };
   const values = draft ?? saved;
-  const dirty = draft !== null && (draft.name !== saved.name || draft.email !== saved.email || draft.location !== saved.location);
+  const dirty = draft !== null && (draft.name !== saved.name || draft.email !== saved.email || draft.location !== saved.location || draft.subsidy !== saved.subsidy);
   const sampleBills = household.bills.filter(bill => bill.source === "sample").length;
   const sampleAppliances = household.appliances.filter(item => item.id.startsWith("sample-")).length;
 
@@ -60,7 +60,9 @@ export default function SettingsScreen() {
     event.preventDefault();
     const issue = validateProfile(values);
     if (issue) { setError(issue); return; }
-    if (update({ name: values.name.trim(), email: values.email.trim() || undefined, location: values.location.trim(), locality: values.location.trim() === saved.location ? household.locality : undefined })) { setDraft(null); notify("Profile saved"); }
+    const subsidy = values.subsidy.trim() === "" ? 0 : Number(values.subsidy);
+    if (!Number.isFinite(subsidy) || subsidy < 0 || subsidy > maxMonthlySubsidy) { setError(`Enter a monthly subsidy from ₱0 to ${pesos(maxMonthlySubsidy)}.`); return; }
+    if (update({ name: values.name.trim(), email: values.email.trim() || undefined, location: values.location.trim(), locality: values.location.trim() === saved.location ? household.locality : undefined, ...(values.subsidy !== saved.subsidy ? { monthlySubsidy: subsidy } : {}) })) { setDraft(null); notify("Profile saved"); }
   }
 
   function clearSamples() {
@@ -111,6 +113,7 @@ export default function SettingsScreen() {
             <label><span className="st-label">Email <small>optional</small></span><input type="email" value={values.email} maxLength={120} autoComplete="email" placeholder="maria@gmail.com" onChange={event => edit({ email: event.target.value })} /></label>
             <label className="st-wide"><span className="st-label">Home location</span><span className="st-icon-input"><MapPin aria-hidden="true" /><input value={values.location} maxLength={200} placeholder="Municipality, province" required onChange={event => edit({ location: event.target.value })} /></span></label>
             <div className="st-wide st-provider"><span className="st-label">Electricity provider</span><div className="st-provider-box"><span className="st-provider-logo"><Zap aria-hidden="true" /></span><span><strong>{previewProviderName(household.provider)}</strong><small>Your manually selected provider</small></span><Link href="/onboarding" className="st-verified"><ChevronRight size={15} aria-hidden="true" /> Change</Link></div><small className="st-hint">Choose and confirm your provider in Household setup.</small></div>
+            <label className="st-wide"><span className="st-label">Monthly subsidy <small>e.g. Antique PEPS ₱500 · 0 for none</small></span><span className="st-icon-input"><HandCoins aria-hidden="true" /><input type="number" inputMode="decimal" min="0" step="1" value={values.subsidy} onChange={event => edit({ subsidy: event.target.value })} /></span></label>
             {(error || storageError) && <p className="ui-error st-wide" role="alert">{error || storageError}</p>}
             <div className="st-form-actions st-wide">
               {dirty && <span className="st-unsaved">Unsaved changes</span>}

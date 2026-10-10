@@ -6,7 +6,7 @@ import { ArrowDown, ArrowUp, Camera, Check, ChevronRight, CircleCheck, ImageUp, 
 import PageShell from "./PageShell";
 import { BillArt } from "./DashboardArtwork";
 import { usePreviewHousehold } from "../use-preview-household";
-import { billMonth, compareWithPrevious, currentMonth, dueDateLabel, latestBill, monthName, pesos, shiftMonth, sortBillsByMonth, type PreviewBill } from "../preview-data";
+import { amountPaid, billMonth, compareWithPrevious, currentMonth, dueDateLabel, latestBill, monthName, pesos, shiftMonth, sortBillsByMonth, type PreviewBill } from "../preview-data";
 import BillReview, { type BillReviewDraft, type BillPreviewSource } from "@/features/bill-scanner/components/bill-review";
 import { previewProviderName } from "@/features/household-profile/provider-preview";
 import { usePreviewStorageKey } from "@/features/auth/use-preview-storage-key";
@@ -291,7 +291,7 @@ export default function ScanScreen() {
 
           {draftNotice && <p className="br-note" role="status">{draftNotice}</p>}
           {draftNotice && phase !== "review" && <button type="button" className="ui-secondary" onClick={() => discard.current?.showModal()}>Discard draft</button>}
-          {phase === "review" && <BillReview mode="manual" draft={draft} original={null} source={source} duplicate={duplicate} offline={offline} ready={ready} storageError={storageError} onChange={setDraft} onRestart={() => restart()} onDiscard={() => discard.current?.showModal()} onSave={save} onReplaceSource={() => fileInput.current?.click()} onRemoveSource={() => { if (objectUrl.current) URL.revokeObjectURL(objectUrl.current); objectUrl.current = ""; setSource(null); setImage(null); }} />}
+          {phase === "review" && <BillReview mode="manual" draft={draft} original={null} source={source} duplicate={duplicate} offline={offline} ready={ready} storageError={storageError} onChange={setDraft} onRestart={() => restart()} onDiscard={() => discard.current?.showModal()} monthlySubsidy={household.monthlySubsidy} onSave={save} onReplaceSource={() => fileInput.current?.click()} onRemoveSource={() => { if (objectUrl.current) URL.revokeObjectURL(objectUrl.current); objectUrl.current = ""; setSource(null); setImage(null); }} />}
 
           {phase === "saved" && saved && <div className="scan-saved" role="status">
             <Image className="scan-saved-art" src="/assets/branding/actions-3.png" alt="" width={240} height={240} sizes="150px" />
@@ -302,6 +302,7 @@ export default function ScanScreen() {
               <div><small>Billing month</small><strong>{billMonth(saved.month)}</strong></div>
               <div><small>Energy used</small><strong>{saved.kwh} kWh</strong></div>
               <div><small>Current month bill</small><strong>{pesos(saved.amount)}</strong></div>
+              {saved.subsidy ? <div><small>You pay</small><strong>{pesos(amountPaid(saved))}</strong></div> : null}
               {saved.dueDate && <div><small>Due date</small><strong>{dueDateLabel(saved.dueDate)}</strong></div>}
               {saved.periodStart && saved.periodEnd && <div className="scan-saved-wide"><small>Billing period</small><strong>{dueDateLabel(saved.periodStart)} – {dueDateLabel(saved.periodEnd)}</strong></div>}
               <div><small>Provider snapshot</small><strong>{previewProviderName(saved.provider)}</strong></div>

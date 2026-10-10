@@ -141,3 +141,4 @@
   .en-hero-art { animation: ws-float 3.4s ease-in-out infinite; }
 }
 @keyframes en-flash { 0%, 100% { background: #eafaf1; } 50% { background: #c9f3d9; } }
+.en-list-values small { display: block; color: #17734a; font-size: 12px; font-weight: 700; }

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowDown, ArrowUp, ChartColumnBig, ChevronRight, ReceiptText, ScanText, Trash2, TrendingDown, TrendingUp } from "lucide-react";
 import PageShell from "./PageShell";
 import { usePreviewHousehold } from "../use-preview-household";
-import { averageKwh, billMonth, chartMonths, compareWithPrevious, dueDateLabel, monthName, monthlySeries, pesos, shortMonth, sortBillsByMonth, type PreviewBill } from "../preview-data";
+import { amountPaid, averageKwh, billMonth, chartMonths, compareWithPrevious, dueDateLabel, monthName, monthlySeries, pesos, shortMonth, sortBillsByMonth, type PreviewBill } from "../preview-data";
 import { previewProviderName } from "@/features/household-profile/provider-preview";
 import ConfirmRecordRemoval from "@/components/ui/ConfirmRecordRemoval";
 import { consumptionChange } from "@/features/consumption-change/local-summary";
@@ -118,7 +118,7 @@ export default function EnergyScreen() {
         {history.map(bill => { const change = compareWithPrevious(household.bills, bill.month); const source = bill.source ?? "manual"; return <li key={bill.id} id={`bill-${bill.id}`} className={bill.id === highlight ? "is-new" : ""}>
           <MonthTile month={bill.month} />
           <div className="en-list-main"><strong>{billMonth(bill.month)}{bill.id === highlight && <span className="en-new">New</span>}</strong><span>{bill.dueDate ? `Due ${dueDateLabel(bill.dueDate)}` : "No due date"} · <em className={`en-source is-${source}`}>{sourceLabels[source]}</em>{bill.provider && ` · ${previewProviderName(bill.provider)}`}</span>{bill.periodStart && bill.periodEnd && <span>{dueDateLabel(bill.periodStart)} – {dueDateLabel(bill.periodEnd)}</span>}{bill.billingDate && <span>Bill issued {dueDateLabel(bill.billingDate)}</span>}{bill.notes && <span>Notes: {bill.notes}</span>}</div>
-          <div className="en-list-values"><strong>{bill.kwh} kWh</strong><span>{pesos(bill.amount)}</span></div>
+          <div className="en-list-values"><strong>{bill.kwh} kWh</strong><span>{pesos(bill.amount)}</span>{bill.subsidy ? <small>You paid {pesos(amountPaid(bill))}</small> : null}</div>
           <div className="en-list-change">{change ? <Change percent={change.kwhPercent} compact /> : <span className="en-first">First</span>}</div>
           <button type="button" className="ui-icon-button" disabled={!ready} aria-label={`Remove ${billMonth(bill.month)} bill`} onClick={() => setRemoving(bill)}><Trash2 size={17} /></button>
         </li>; })}

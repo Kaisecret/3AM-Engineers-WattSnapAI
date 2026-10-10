@@ -4,7 +4,7 @@ import { useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
 import { Check, ChevronDown, FileImage, FileText, Info, Keyboard, RotateCcw, ShieldCheck, Sparkles, Trash2, TriangleAlert, WifiOff, X } from "lucide-react";
 import { BillArt } from "@/features/dashboard/components/DashboardArtwork";
-import { billMonth, dueDateLabel, isProviderChoice, pesos, validateBill, type PreviewBill } from "@/features/dashboard/preview-data";
+import { antiquePepsSubsidy, billMonth, dueDateLabel, isProviderChoice, pesos, subsidyFor, validateBill, type PreviewBill } from "@/features/dashboard/preview-data";
 import { previewProviderName, previewProviders } from "@/features/household-profile/provider-preview";
 import type { LocalBillDraft } from "../local-draft";
 import "../bill-review.css";
@@ -18,6 +18,8 @@ type Props = {
   original: Omit<PreviewBill, "id"> | null;
   source: BillPreviewSource | null;
   duplicate?: PreviewBill;
+  /** The household’s own monthly subsidy setting, if any. */
+  monthlySubsidy?: number;
   offline: boolean;
   ready: boolean;
   storageError: string;
@@ -29,7 +31,7 @@ type Props = {
   onRemoveSource?: () => void;
 };
 
-export default function BillReview({ mode, draft, original, source, duplicate, offline, ready, storageError, onChange, onRestart, onDiscard, onSave, onReplaceSource, onRemoveSource }: Props) {
+export default function BillReview({ mode, draft, original, source, duplicate, monthlySubsidy, offline, ready, storageError, onChange, onRestart, onDiscard, onSave, onReplaceSource, onRemoveSource }: Props) {
   const [reviewed, setReviewed] = useState(false);
   const [replace, setReplace] = useState(false);
   const [error, setError] = useState("");
@@ -43,6 +45,13 @@ export default function BillReview({ mode, draft, original, source, duplicate, o
     const field = key as "month" | "kwh" | "amount" | "dueDate";
     return field === "kwh" || field === "amount" ? Number(draft[field]) !== original[field] : draft[field] !== (original[field] ?? "");
   }).length : 0;
+
+  // The subsidy follows the bill automatically until the person types their own value.
+  const billAmount = Number(draft.amount);
+  const defaultMonthly = monthlySubsidy ?? (draft.provider === "anteco" ? antiquePepsSubsidy : 0);
+  const subsidyText = draft.subsidy ?? (billAmount > 0 && defaultMonthly > 0 ? String(subsidyFor(billAmount, defaultMonthly)) : "");
+  const subsidy = subsidyText.trim() === "" ? 0 : Number(subsidyText);
+  const pay = billAmount > 0 && Number.isFinite(subsidy) && subsidy >= 0 ? Math.max(0, Math.round((billAmount - subsidy) * 100) / 100) : null;
 
   function edit(patch: Partial<BillReviewDraft>) {
     setError("");
@@ -58,6 +67,7 @@ export default function BillReview({ mode, draft, original, source, duplicate, o
       dueDate: draft.dueDate || undefined, periodStart: draft.periodStart || undefined, periodEnd: draft.periodEnd || undefined,
       source: sample ? "sample" : "manual", sourceName: source?.name,
       provider: draft.provider, billingDate: draft.billingDate || undefined, notes: draft.notes?.trim() || undefined,
+      subsidy: subsidyText.trim() === "" || subsidy === 0 ? undefined : subsidy,
     };
     const issue = validateBill(bill);
     if (issue) { setError(issue); if (issue.includes("period")) setPeriodOpen(true); return; }
@@ -85,6 +95,8 @@ export default function BillReview({ mode, draft, original, source, duplicate, o
       <label htmlFor="review-due"><span className="scan-label"><span id="review-due-label">Due date</span><small>optional</small></span><input id="review-due" aria-labelledby="review-due-label" type="date" value={draft.dueDate} onChange={event => edit({ dueDate: event.target.value })} /></label>
       <label htmlFor="review-kwh"><span id="review-kwh-label" className="scan-label">Energy used</span><span className="scan-unit"><input id="review-kwh" aria-labelledby="review-kwh-label" type="number" inputMode="decimal" min="0.01" step="0.01" placeholder="e.g. 109" required value={draft.kwh} onChange={event => edit({ kwh: event.target.value })} /><em>kWh</em></span></label>
       <label htmlFor="review-amount"><span id="review-amount-label" className="scan-label">Current month bill</span><span className="scan-unit is-prefix"><em>₱</em><input id="review-amount" aria-labelledby="review-amount-label" aria-describedby="review-amount-hint" type="number" inputMode="decimal" min="0.01" step="0.01" placeholder="e.g. 1248.50" required value={draft.amount} onChange={event => edit({ amount: event.target.value })} /></span><small id="review-amount-hint" className="br-field-hint">Before any subsidy or past balance.</small></label>
+      <label htmlFor="review-subsidy"><span className="scan-label"><span id="review-subsidy-label">Subsidy</span><small>optional</small></span><span className="scan-unit is-prefix"><em>₱</em><input id="review-subsidy" aria-labelledby="review-subsidy-label" aria-describedby="review-subsidy-hint" type="number" inputMode="decimal" min="0" step="0.01" placeholder="0" value={subsidyText} onChange={event => edit({ subsidy: event.target.value })} /></span><small id="review-subsidy-hint" className="br-field-hint">e.g. Antique PEPS, up to ₱500</small></label>
+      <div className="br-pay" aria-live="polite"><span className="scan-label">You pay</span><strong>{pay === null ? "—" : pesos(pay)}</strong></div>
     </div>
     {source && <div className="br-actions">{onReplaceSource && <button type="button" className="ui-secondary" onClick={() => { setReviewed(false); onReplaceSource(); }}>Replace file</button>}{onRemoveSource && <button type="button" className="ui-secondary" onClick={() => { setReviewed(false); onRemoveSource(); }}>Remove file</button>}</div>}
     <div className="br-period">

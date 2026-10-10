@@ -319,3 +319,4 @@
   .ws-home-screen .ws-chart-placeholder i { max-width: 66px; border-radius: 5px 5px 0 0; }
   .ws-home-screen .ws-chart-placeholder p { font-size: 13px; }
 }
+.ws-bill-paid { margin-top: 2px; color: #17734a; font-size: 12px; font-weight: 700; }
