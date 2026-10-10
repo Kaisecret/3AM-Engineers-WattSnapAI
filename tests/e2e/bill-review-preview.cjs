@@ -67,7 +67,7 @@ async function billFlow(browser, viewport, name) {
   await page.keyboard.press('Escape');
   assert.equal(await page.getByRole('button', { name: 'View original', exact: true }).evaluate(button => document.activeElement === button), true, 'Original preview returns keyboard focus');
   await page.getByLabel('Energy used', { exact: true }).fill('130.5');
-  await page.getByLabel('Amount due', { exact: true }).fill('1500.75');
+  await page.getByLabel('Current month bill', { exact: true }).fill('1500.75');
   await page.getByLabel('Due date', { exact: true }).fill('');
   await page.getByText('fields corrected from the example reading', { exact: false }).waitFor();
   await page.getByRole('button', { name: 'Save sample bill', exact: true }).click();
@@ -98,10 +98,10 @@ async function billFlow(browser, viewport, name) {
   await page.getByRole('heading', { name: 'Enter your bill details' }).waitFor();
   await page.getByLabel('Billing month', { exact: true }).fill('2026-10');
   await page.getByLabel('Energy used', { exact: true }).fill('142');
-  await page.getByLabel('Amount due', { exact: true }).fill('-1');
+  await page.getByLabel('Current month bill', { exact: true }).fill('-1');
   await page.getByRole('button', { name: 'Replace bill', exact: true }).click();
   await page.getByRole('alert').filter({ hasText: 'greater than zero' }).waitFor();
-  await page.getByLabel('Amount due', { exact: true }).fill('1700.25');
+  await page.getByLabel('Current month bill', { exact: true }).fill('1700.25');
   await page.getByRole('button', { name: 'Exact billing period', exact: false }).click();
   await page.getByLabel('Period start', { exact: true }).fill('2026-09-15');
   await page.getByRole('button', { name: 'Replace bill', exact: true }).click();

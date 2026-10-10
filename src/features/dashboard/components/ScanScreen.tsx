@@ -301,7 +301,7 @@ export default function ScanScreen() {
             <div className="scan-saved-card">
               <div><small>Billing month</small><strong>{billMonth(saved.month)}</strong></div>
               <div><small>Energy used</small><strong>{saved.kwh} kWh</strong></div>
-              <div><small>Amount due</small><strong>{pesos(saved.amount)}</strong></div>
+              <div><small>Current month bill</small><strong>{pesos(saved.amount)}</strong></div>
               {saved.dueDate && <div><small>Due date</small><strong>{dueDateLabel(saved.dueDate)}</strong></div>}
               {saved.periodStart && saved.periodEnd && <div className="scan-saved-wide"><small>Billing period</small><strong>{dueDateLabel(saved.periodStart)} – {dueDateLabel(saved.periodEnd)}</strong></div>}
               <div><small>Provider snapshot</small><strong>{previewProviderName(saved.provider)}</strong></div>

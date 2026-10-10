@@ -86,12 +86,12 @@ async function bills(browser) {
   assert.equal(await page.getByLabel('Energy used', { exact: true }).inputValue(), '', 'Upload does not invent extraction');
   await page.getByLabel('Billing month', { exact: true }).fill('2026-09');
   await page.getByLabel('Energy used', { exact: true }).fill('100');
-  await page.getByLabel('Amount due', { exact: true }).fill('1200');
+  await page.getByLabel('Current month bill', { exact: true }).fill('1200');
   await page.getByLabel('Due date', { exact: true }).fill('2026-10-15');
   await page.getByLabel('Billing date', { exact: false }).fill('2026-10-01');
   await page.getByLabel('Bill notes', { exact: false }).fill('Actual entered fields');
   await page.getByRole('button', { name: 'Remove file', exact: true }).click();
-  assert.equal(await page.getByLabel('Amount due', { exact: true }).inputValue(), '1200');
+  assert.equal(await page.getByLabel('Current month bill', { exact: true }).inputValue(), '1200');
   await page.reload();
   assert.equal(await page.getByLabel('Energy used', { exact: true }).inputValue(), '100');
   assert.equal(await page.getByRole('checkbox', { name: 'I reviewed all the values above.', exact: false }).isChecked(), false, 'Refresh does not confirm a draft');
@@ -106,7 +106,7 @@ async function bills(browser) {
   await page.goto(`${baseURL}/bills/new`); await page.getByRole('button', { name: 'Type it', exact: true }).click();
   await page.getByLabel('Billing month', { exact: true }).fill('2026-09');
   await page.getByLabel('Energy used', { exact: true }).fill('105');
-  await page.getByLabel('Amount due', { exact: true }).fill('1250');
+  await page.getByLabel('Current month bill', { exact: true }).fill('1250');
   await page.getByRole('checkbox', { name: 'I reviewed all the values above.', exact: false }).check();
   await page.getByRole('button', { name: 'Replace bill', exact: true }).click();
   await page.getByRole('alert').filter({ hasText: 'Confirm replacement' }).waitFor();
@@ -441,7 +441,7 @@ async function polish(browser) {
     await page.getByText('Notes: My verified meter note', { exact: false }).waitFor(); await page.getByText('Bill issued', { exact: false }).first().waitFor();
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true, 'Long bill note fits');
     await page.goto(baseURL + '/bills/new'); await page.getByRole('button', { name: width >= 1100 ? 'Enter bill manually' : 'Type it', exact: true }).click();
-    await page.getByLabel('Billing month', { exact: true }).fill('2026-10'); await page.getByLabel('Energy used', { exact: true }).fill('100'); await page.getByLabel('Amount due', { exact: true }).fill('1200');
+    await page.getByLabel('Billing month', { exact: true }).fill('2026-10'); await page.getByLabel('Energy used', { exact: true }).fill('100'); await page.getByLabel('Current month bill', { exact: true }).fill('1200');
     await page.getByRole('checkbox', { name: 'I reviewed all the values above.', exact: false }).check(); await page.getByRole('button', { name: 'Save to history', exact: true }).click();
     await page.getByText('No change from September', { exact: true }).waitFor();
     await page.goto(baseURL + '/appliances/new'); await page.getByRole('button', { name: 'Add device', exact: true }).click(); await page.getByRole('button', { name: 'Enter manually', exact: true }).click(); await page.getByRole('button', { name: 'Add photo', exact: true }).waitFor();

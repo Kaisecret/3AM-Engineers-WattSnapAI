@@ -71,7 +71,7 @@ async function count(page, expected) {
     await page.getByRole('button', { name: 'Type it', exact: true }).click();
     await page.getByLabel('Billing month', { exact: true }).fill('2026-09');
     await page.getByLabel('Energy used', { exact: true }).fill('210');
-    await page.getByLabel('Amount due', { exact: true }).fill('2480');
+    await page.getByLabel('Current month bill', { exact: true }).fill('2480');
     await page.getByLabel('Due date', { exact: true }).fill('2026-10-15');
     await page.getByRole('button', { name: /Exact billing period/ }).click();
     await page.getByLabel('Period start', { exact: true }).fill('2026-09-01');
