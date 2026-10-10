@@ -38,7 +38,7 @@ test("zero-use entries cannot become a fabricated top energy user", () => {
 });
 test("comparable periods report the proposal change without asserting appliance causation", () => {
   const context = billTipContext([old, latest]);
-  assert.match(context.reason, /20\.00 kWh \(20\.0%\) higher/); assert.match(context.reason, /10% preview review threshold/); assert.deepEqual(context.limitations, []);
+  assert.match(context.reason, /20\.00 kWh \(20\.0%\) higher/); assert.match(context.reason, /20% review threshold/); assert.deepEqual(context.limitations, []);
   assert.match(generatePreviewTips(household, now).tips[0].action, /cannot identify an appliance/);
   const lower = billTipContext([{ ...old, kwh: 120 }, { ...latest, kwh: 100 }]);
   assert.match(lower.reason, /20\.00 kWh \(16\.7%\) lower/);

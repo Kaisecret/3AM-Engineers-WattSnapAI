@@ -169,6 +169,24 @@ async function estimates(browser) {
   await context.close(); console.log('PASS: energy formula, selected days, unknown rate and genuine bill-derived costs');
 }
 
+async function tips(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River home', bills: [], budget: 0, appliances: [{ id: 'my-fridge', name: 'My refrigerator', kind: 'fridge', watts: 80, hours: 16, quantity: 1 }] })); });
+  const page = await context.newPage(); await page.goto(`${baseURL}/tips`);
+  await page.getByRole('button', { name: 'Create tips', exact: true }).click();
+  await page.getByRole('heading', { name: 'Care for My refrigerator', exact: true }).waitFor();
+  assert.match(await page.locator('.tt-page').innerText(), /Keep the refrigerator powered/);
+  await page.evaluate(() => { const home = JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1')); home.appliances[0].name = 'Kitchen refrigerator'; localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify(home)); window.dispatchEvent(new Event('wattsnap-preview-change')); });
+  await page.getByRole('heading', { name: 'Your inputs changed', exact: true }).waitFor();
+  await context.setOffline(true);
+  await page.getByRole('button', { name: 'Refresh tips', exact: true }).click();
+  await page.getByRole('heading', { name: 'Care for Kitchen refrigerator', exact: true }).waitFor();
+  assert.equal(await page.getByRole('heading', { name: 'Your inputs changed', exact: true }).count(), 0);
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-tips-ui-preview-v1')).context.applianceCount), 1);
+  await context.setOffline(false); await page.reload(); await page.getByRole('heading', { name: 'Care for Kitchen refrigerator', exact: true }).waitFor();
+  await context.close(); console.log('PASS: relevant local tips, essential-device guidance, stale inputs and offline refresh');
+}
+
 async function history(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River home', budget: 0, appliances: [], bills: [{ id: 'actual-1', month: '2026-07', kwh: 100, amount: 1200, source: 'manual', periodStart: '2026-07-01', periodEnd: '2026-07-31' }, { id: 'actual-2', month: '2026-09', kwh: 150, amount: 1800, source: 'manual', periodStart: '2026-09-01', periodEnd: '2026-09-30' }] })); });
@@ -190,5 +208,5 @@ async function history(browser) {
 
 (async () => {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
-  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history', 'appliances', 'estimates'])) await ({ design, records, household, bills, history, appliances, estimates })[check](browser); } finally { await browser.close(); }
+  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history', 'appliances', 'estimates', 'tips'])) await ({ design, records, household, bills, history, appliances, estimates, tips })[check](browser); } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

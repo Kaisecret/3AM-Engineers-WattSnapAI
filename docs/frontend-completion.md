@@ -28,7 +28,7 @@ Baseline evidence: 76 feature tests pass; `npx.cmd tsc --noEmit` passes. Existin
 | 7 | Actual bill history/dashboard/change | Actual periods, transparent change threshold and confirmed removal |
 | 8 | Appliance capture/management | Manual/photo review, familiar labels, editing and confirmed removal |
 | 9 | Appliance estimator | Validated local formula; no invented tariff or meter matching |
-| 10 | Deterministic local tips | Pending |
+| 10 | Deterministic local tips | Actual input basis; immediate offline creation and refresh |
 | 11 | Manual advisory review/history | Pending |
 | 12 | Offline persistence/shell | Pending |
 | 13 | Senior accessibility | Pending |
@@ -77,3 +77,7 @@ Appliance choices use full familiar names with existing icons. Photo replacement
 ## 9. Consumption estimates
 
 Existing local calculations use watts × hours/day × quantity × days ÷ 1,000. Daily and 30-day comparisons retain consistent scales; each appliance also shows its selected period. Registered estimates are never forced to equal the meter bill. The fixed fallback rate is removed from public estimates. Approximate costs require an actual saved bill and are explicitly based on amount divided by kWh, including fees rather than an official tariff. Without a bill, energy estimates remain available. Assistant replies no longer assign a sample air-conditioner load or cost to the household.
+
+## 10. Personalized local guidance
+
+Tips now create and refresh immediately from reviewed local records, including while offline. Removed simulated delay, timeout and rate-limit outcomes. Advice names only registered devices, explains the input basis and limitations, and preserves a saved snapshot until an explicit refresh. Changed inputs show a freshness warning. The bill-review threshold matches the dashboard’s 20% threshold. Guidance avoids guaranteed savings and reducing essential refrigeration. Rule and browser checks cover relevance, stale records, offline refresh and persistence.
