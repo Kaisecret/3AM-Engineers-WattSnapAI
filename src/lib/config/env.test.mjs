@@ -33,3 +33,9 @@ test("the secret key is named when missing and returned when present", () => {
   assert.throws(() => readSupabaseSecretKey("   "), /SUPABASE_SECRET_KEY/);
   assert.equal(readSupabaseSecretKey(" sb_secret_example "), "sb_secret_example");
 });
+
+test("a publishable key is refused under the secret name", () => {
+  assert.throws(() => readSupabaseSecretKey("sb_publishable_example"), /publishable key/);
+  assert.throws(() => readSupabaseSecretKey(jwt("anon")), /publishable key/);
+  assert.equal(readSupabaseSecretKey(jwt("service_role")), jwt("service_role"));
+});

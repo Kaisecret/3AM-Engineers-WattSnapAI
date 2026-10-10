@@ -1,13 +1,15 @@
 /** Supabase settings. Read when a client is created, never when this file is imported. */
 export interface PublicSupabaseEnv { url: string; publishableKey: string }
 
-function isSecretKey(value: string) {
-  if (value.startsWith("sb_secret_")) return true;
+/** The role inside an older, JWT-style Supabase key, or null for any other value. */
+function legacyKeyRole(value: string): string | null {
   const payload = value.split(".")[1];
-  if (!payload) return false;
-  try { return JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/"))).role === "service_role"; }
-  catch { return false; }
+  if (!payload) return null;
+  try { return String(JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/"))).role ?? "") || null; }
+  catch { return null; }
 }
+const isSecretKey = (value: string) => value.startsWith("sb_secret_") || legacyKeyRole(value) === "service_role";
+const isPublishableKey = (value: string) => value.startsWith("sb_publishable_") || legacyKeyRole(value) === "anon";
 
 function isProjectUrl(value: string) {
   try {
@@ -33,5 +35,6 @@ export function readSupabaseSecretKey(value: string | undefined = process.env.SU
   if (typeof window !== "undefined") throw new Error("SUPABASE_SECRET_KEY must never be read in the browser.");
   const key = value?.trim() ?? "";
   if (!key) throw new Error("Missing environment variable: SUPABASE_SECRET_KEY. See .env.example.");
+  if (isPublishableKey(key)) throw new Error("SUPABASE_SECRET_KEY holds a publishable key. Put the secret key there; it starts with sb_secret_.");
   return key;
 }
