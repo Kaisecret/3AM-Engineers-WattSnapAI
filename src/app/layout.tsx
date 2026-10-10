@@ -4,6 +4,7 @@ import { siteDescription, siteTitle, siteUrl } from "@/lib/site";
 import "./globals.css";
 import "@/features/onboarding/theme.css";
 import "@/features/onboarding/accessibility.css";
+import "@/features/dashboard/frontend-refinements.css";
 import { ThemeSupport } from "@/features/onboarding/components/ThemeSupport";
 import OfflineSupport from "@/components/OfflineSupport";
 

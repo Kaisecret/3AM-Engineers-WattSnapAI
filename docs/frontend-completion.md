@@ -21,7 +21,7 @@ Baseline evidence: 76 feature tests pass; `npx.cmd tsc --noEmit` passes. Existin
 | --- | --- | --- |
 | 1 | Objective and architecture audit | Reviewed; baseline verified |
 | 2 | Safety and protected boundaries | Separate branch; boundary guard passes |
-| 3 | Preserve design; targeted refinement | Pending |
+| 3 | Preserve design; targeted refinement | Existing layout retained; focus and controls checked at 320–1440px |
 | 4 | Remove prototype/sample presentation | Pending |
 | 5 | Local household access and provider | Pending |
 | 6 | Bill upload/manual review/draft | Pending |
@@ -43,3 +43,7 @@ Baseline evidence: 76 feature tests pass; `npx.cmd tsc --noEmit` passes. Existin
 ## 2. Safety review
 
 The starting working tree was clean. All work is isolated on the review branch; `main` is unchanged. `scripts/check-frontend-boundaries.cjs` checks tracked and new files against the starting commit and rejects changes to API routes, service/repository implementations, Gemini/Supabase/offline infrastructure, auth contracts, environment files and deployment configuration. No user-browser records or secrets are read by tests; browser verification uses synthetic isolated contexts. No destructive migration, automatic merge or deployment is included.
+
+## 3. Design preservation
+
+Original colors, fonts, art, sidebar and mobile navigation remain in use. A scoped refinement sheet adds visible input focus and comfortable existing primary/secondary controls. No new dashboard arrangement or design system is introduced. Local Chrome checks cover the unchanged logo/navigation, form focus and horizontal fit at 320, 390, 768 and 1440 pixels.

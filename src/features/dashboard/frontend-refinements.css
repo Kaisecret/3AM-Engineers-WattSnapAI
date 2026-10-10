@@ -1,0 +1,5 @@
+/* Small refinements to the existing controls; preserve layout and artwork. */
+.ws-home :is(input, select, textarea):focus-visible { outline: 3px solid #1687b2; outline-offset: 2px; }
+.ws-home :is(.ui-primary, .ui-secondary) { min-height: 44px; font-size: 16px; }
+.ws-home :is(button, input, select, textarea):disabled { cursor: not-allowed; }
+.ws-home :is(input, select, textarea) { max-width: 100%; }
