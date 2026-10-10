@@ -11,6 +11,7 @@ import type {
   AssistantChatRequest,
 } from "./types";
 import type { Reply } from "@/features/assistant/replies";
+import { billReadingInstruction, billResponseSchema, readBillReading } from "./bill-reading";
 
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 const DEFAULT_MODEL: GeminiModel = "gemini-3.5-flash-lite";
@@ -18,6 +19,11 @@ const DEFAULT_MODEL: GeminiModel = "gemini-3.5-flash-lite";
 /** The model to call: GEMINI_MODEL if set, otherwise Gemini 3.5 Flash-Lite. */
 export function geminiModel(): GeminiModel {
   return process.env.GEMINI_MODEL?.trim() || DEFAULT_MODEL;
+}
+
+/** Bill photos use a stronger reader (same API key): GEMINI_SCAN_MODEL if set, otherwise Gemini 3.5 Flash. */
+export function scanModel(): GeminiModel {
+  return process.env.GEMINI_SCAN_MODEL?.trim() || "gemini-3.5-flash";
 }
 
 export function getGeminiApiKey(): string | null {
@@ -35,7 +41,10 @@ interface CallGeminiOptions {
   systemInstruction?: string;
   parts: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }>;
   jsonMode?: boolean;
-  temperature?: number;
+  /** Fixed JSON shape for the answer (Gemini responseSchema). */
+  responseSchema?: unknown;
+  /** null leaves the model's own default, which newer models recommend. */
+  temperature?: number | null;
   maxOutputTokens?: number;
   timeoutMs?: number;
 }
@@ -92,6 +101,7 @@ export async function callGemini({
   parts,
   tools,
   jsonMode = false,
+  responseSchema,
   temperature = 0.2,
   maxOutputTokens = 2048,
   timeoutMs = 25000,
@@ -111,9 +121,10 @@ export async function callGemini({
       },
     ],
     generationConfig: {
-      temperature,
+      ...(temperature === null ? {} : { temperature }),
       maxOutputTokens,
-      ...(jsonMode ? { responseMimeType: "application/json" } : {}),
+      ...(jsonMode || responseSchema ? { responseMimeType: "application/json" } : {}),
+      ...(responseSchema ? { responseSchema } : {}),
     },
     ...(tools ? { tools } : {}),
     ...(systemInstruction
@@ -185,57 +196,31 @@ export async function extractBillWithGemini(
   mimeType = "image/jpeg",
   providerHint?: string,
 ): Promise<BillExtractionResult> {
-  const cleanData = imageBase64.replace(/^data:image\/[a-zA-Z]+;base64,/, "");
-
-  const systemInstruction = `You are an expert OCR and document analysis AI for Philippine electric bills (ANTECO, MORE Power, ILECO, Meralco, CENPELCO, etc.).
-Analyze the provided electric bill image and extract billing details strictly into a valid JSON object.
-Fields:
-- "provider": Name of the electricity utility / electric cooperative (e.g., "ANTECO", "MORE Power", "ILECO I"). Use null if unreadable.
-- "billingMonth": YYYY-MM format of the bill period or statement month (e.g., "2026-03"). Use null if unknown.
-- "periodStart": Start date of billing period in YYYY-MM-DD. Use null if unknown.
-- "periodEnd": End date of billing period in YYYY-MM-DD. Use null if unknown.
-- "billingDate": Bill date/reading date in YYYY-MM-DD. Use null if unknown.
-- "dueDate": Payment due date in YYYY-MM-DD. Use null if unknown.
-- "amountDue": The CURRENT MONTH BILL in Philippine Pesos as a number (e.g. 3072.60): the charge for this month BEFORE any subsidy or past balance. On ANTECO receipts use the "CURRENT MONTH BILL" line, not "AMOUNT DUE". Do not include currency symbols. Use null if unknown.
-- "subsidy": Any government subsidy deducted on the bill (e.g. "Provincial Electric Power Subsidy") as a positive number in pesos. Use null if none.
-- "consumptionKwh": Total kilowatt-hours (kWh) consumed as a number (e.g. 185.0). Use null if unknown.
-- "notes": Brief notes on any unreadable or ambiguous fields.
-Never invent numbers. If a field is blurred, cut off, or not printed, set it to null.`;
-
-  const promptText = `Extract the electric bill values from this document.${providerHint ? ` Known provider hint: ${providerHint}.` : ""}`;
-
-  const responseText = await callGeminiApi({
-    systemInstruction,
-    parts: [
-      { text: promptText },
-      { inlineData: { mimeType, data: cleanData } },
-    ],
-    jsonMode: true,
-    temperature: 0.1,
+  const data = imageBase64.replace(/^data:[^,]*,/, "");
+  const parts = [
+    { text: `Read this electricity bill.${providerHint ? ` The household's provider is probably ${providerHint}.` : ""}` },
+    { inlineData: { mimeType, data } },
+  ];
+  const read = (model: GeminiModel, schema: boolean, timeoutMs: number) => callGemini({
+    model, systemInstruction: billReadingInstruction, parts, responseSchema: schema ? billResponseSchema : undefined, jsonMode: true,
+    temperature: null, maxOutputTokens: 8192, timeoutMs,
   });
 
-  const parsed = parseJsonOutput<Partial<BillExtractionResult>>(responseText, {});
-  const unknownFields: string[] = [];
-
-  if (!parsed.amountDue) unknownFields.push("amountDue");
-  if (!parsed.consumptionKwh) unknownFields.push("consumptionKwh");
-  if (!parsed.billingMonth) unknownFields.push("billingMonth");
-  if (!parsed.dueDate) unknownFields.push("dueDate");
-
-  return {
-    reviewRequired: true,
-    unknownFields,
-    provider: parsed.provider ?? null,
-    billingMonth: parsed.billingMonth ?? null,
-    periodStart: parsed.periodStart ?? null,
-    periodEnd: parsed.periodEnd ?? null,
-    billingDate: parsed.billingDate ?? null,
-    amountDue: typeof parsed.amountDue === "number" && parsed.amountDue > 0 ? parsed.amountDue : null,
-    subsidy: typeof parsed.subsidy === "number" && parsed.subsidy > 0 ? Math.abs(parsed.subsidy) : null,
-    dueDate: parsed.dueDate ?? null,
-    consumptionKwh: typeof parsed.consumptionKwh === "number" ? parsed.consumptionKwh : null,
-    notes: parsed.notes ?? null,
-  };
+  const primary = scanModel(), fallback = geminiModel();
+  let result: GeminiCallResult;
+  try {
+    result = await read(primary, true, 32000);
+  } catch (error) {
+    const problem = geminiProblem(error);
+    // Schema not accepted: same model, plain JSON. Model missing or out of quota: the chat model.
+    if (problem === "request") result = await read(primary, false, 24000);
+    else if ((problem === "model" || problem === "busy") && fallback !== primary) {
+      console.error(`[wattsnap:ai] bills: ${primary} unavailable (${problem}), using ${fallback}`);
+      result = await read(fallback, true, 24000);
+    } else throw error;
+  }
+  if (!result.text) throw new GeminiError("Gemini returned no bill values.", "empty");
+  return readBillReading(parseJsonOutput<Record<string, unknown>>(result.text, {}));
 }
 
 // -------------------------------------------------------------

@@ -6,7 +6,13 @@ export interface PreviewBill {
   billingDate?: string; notes?: string;
   /** Government subsidy deducted on the receipt, e.g. Antique PEPS. `amount` stays the bill before it. */
   subsidy?: number;
+  /** Charge groups printed on the bill (read by Snap AI), e.g. Distribution ₱480.27. */
+  charges?: BillChargeLine[];
+  /** Meter readings printed on the bill. */
+  readings?: MeterReadings;
 }
+export interface BillChargeLine { label: string; amount: number; }
+export interface MeterReadings { previous: number; present: number; multiplier?: number; }
 export interface PreviewAppliance {
   id: string; name: string; watts: number; hours: number; quantity: number; kind?: ApplianceKind;
   model?: string; days?: number; source?: "manual" | "sample"; wattageBasis?: "nameplate" | "approximate";
@@ -97,6 +103,13 @@ export function validateAppliance(appliance: Omit<PreviewAppliance, "id">) {
   if (appliance.days !== undefined && (!Number.isInteger(appliance.days) || appliance.days < 1 || appliance.days > 366)) return "Days in this period must be a whole number from 1 to 366.";
   return null;
 }
+const validCharges = (charges: unknown) => Array.isArray(charges) && charges.length <= 12 && charges.every(item => item && typeof item.label === "string" && item.label.trim() && item.label.length <= 40 && Number.isFinite(item.amount) && Math.abs(item.amount) < 1_000_000);
+const validReadings = (readings: MeterReadings | undefined) => !!readings && Number.isFinite(readings.previous) && Number.isFinite(readings.present) && readings.previous >= 0 && readings.present >= readings.previous && (readings.multiplier === undefined || (Number.isFinite(readings.multiplier) && readings.multiplier > 0));
+/** Drops unreadable optional bill details instead of the whole bill. */
+export function withValidBillDetails<T extends Omit<PreviewBill, "id">>(bill: T): T {
+  const { charges, readings, ...rest } = bill;
+  return { ...rest, ...(charges !== undefined && validCharges(charges) ? { charges } : {}), ...(readings !== undefined && validReadings(readings) ? { readings } : {}) } as T;
+}
 export function validateBill(bill: Omit<PreviewBill, "id">) {
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(bill.month) || bill.month.startsWith("0000")) return "Choose a valid billing month.";
   if (!Number.isFinite(bill.amount) || bill.amount <= 0) return "Enter a bill amount greater than zero.";
@@ -105,6 +118,8 @@ export function validateBill(bill: Omit<PreviewBill, "id">) {
   if (bill.dueDate && !isCalendarDate(bill.dueDate)) return "Choose a valid due date.";
   if (bill.billingDate && !isCalendarDate(bill.billingDate)) return "Choose a valid billing date.";
   if (bill.billingDate && bill.dueDate && bill.billingDate > bill.dueDate) return "The due date cannot be before the billing date.";
+  if (bill.charges !== undefined && !validCharges(bill.charges)) return "The bill’s charges could not be read.";
+  if (bill.readings !== undefined && !validReadings(bill.readings)) return "The meter readings could not be read.";
   if (Boolean(bill.periodStart) !== Boolean(bill.periodEnd)) return "Enter both billing period dates, or leave both blank.";
   if (bill.periodStart && bill.periodEnd) {
     if (!isCalendarDate(bill.periodStart) || !isCalendarDate(bill.periodEnd)) return "Choose valid billing period dates.";
@@ -148,7 +163,7 @@ export function normalizePreview(value: unknown): PreviewHousehold {
     ...(data.locality && typeof data.locality.province === "string" && typeof data.locality.municipality === "string" && typeof data.locality.barangay === "string" ? { locality: { province: data.locality.province.trim().slice(0, 40), municipality: data.locality.municipality.trim().slice(0, 60), barangay: data.locality.barangay.trim().slice(0, 60) } } : {}),
     ...(notifications ? { notifications } : {}),
     ...(typeof data.monthlySubsidy === "number" && Number.isFinite(data.monthlySubsidy) && data.monthlySubsidy >= 0 && data.monthlySubsidy <= maxMonthlySubsidy ? { monthlySubsidy: data.monthlySubsidy } : {}),
-    bills: Array.isArray(data.bills) ? data.bills.filter(item => item && typeof item.id === "string" && typeof item.month === "string" && !validateBill(item)) : [],
+    bills: Array.isArray(data.bills) ? data.bills.filter(item => item && typeof item === "object").map(item => withValidBillDetails(item)).filter(item => typeof item.id === "string" && typeof item.month === "string" && !validateBill(item)) : [],
     appliances: Array.isArray(data.appliances) ? data.appliances.filter(item => item && typeof item.id === "string" && typeof item.name === "string" && !validateAppliance(item)) : [],
     budget: typeof data.budget === "number" && Number.isFinite(data.budget) && data.budget > 0 ? data.budget : 0,
     name: typeof data.name === "string" && data.name.trim() ? data.name.trim() : "Your home",

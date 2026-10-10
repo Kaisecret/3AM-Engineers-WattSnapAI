@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image, { getImageProps } from "next/image";
 import { ChartColumnBig, ChevronRight, House, Megaphone, PlugZap, ScanText } from "lucide-react";
+import SnapBillLink from "@/features/bill-scanner/components/SnapBillLink";
 
 const navigation = [
   { label: "Home", href: "/dashboard", icon: House },
@@ -17,11 +18,14 @@ export default function AppNavigation({ active }: { active?: string }) {
   return (
     <nav className="ws-bottom-nav" aria-label="Main navigation">
       <Link href="/dashboard" className="ws-sidebar-brand" aria-label="WattSnap home"><Image src="/assets/branding/wattsnap-logo.png" alt="WattSnap" width={420} height={132} sizes="(min-width: 900px) 240px, 1px" priority /></Link>
-      {navigation.map(({ label, href, icon: Icon }) => (
-        <Link key={label} href={href} className={`ws-nav-item${label === active ? " is-active" : ""}${label === "Snap AI" ? " ws-nav-scan" : ""}`} aria-current={label === active ? "page" : undefined}>
+      {navigation.map(({ label, href, icon: Icon }) => label === "Snap AI"
+        // On a phone, Snap AI opens the camera straight away.
+        ? <SnapBillLink key={label} className={`ws-nav-item ws-nav-scan${label === active ? " is-active" : ""}`} ariaCurrent={label === active ? "page" : undefined}>
           <span className="ws-nav-icon"><Icon aria-hidden="true" /></span><span className="ws-nav-label">{label}</span>
-        </Link>
-      ))}
+        </SnapBillLink>
+        : <Link key={label} href={href} className={`ws-nav-item${label === active ? " is-active" : ""}`} aria-current={label === active ? "page" : undefined}>
+          <span className="ws-nav-icon"><Icon aria-hidden="true" /></span><span className="ws-nav-label">{label}</span>
+        </Link>)}
       <Link href="/assistant" className={`ws-sidebar-assistant${active === "Assistant" ? " is-active" : ""}`} aria-current={active === "Assistant" ? "page" : undefined}>
         <span className="ws-sidebar-assistant-art"><picture><source media="(min-width: 900px)" srcSet={assistantArtwork.srcSet} sizes={assistantArtwork.sizes} /><img src={transparentPixel} alt="" width={120} height={120} loading="lazy" /></picture></span>
         <span className="ws-sidebar-assistant-copy"><strong>WattSnap AI</strong><small>Ask or set up by chat</small></span>

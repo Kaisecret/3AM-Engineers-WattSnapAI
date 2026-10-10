@@ -8,18 +8,32 @@ interface ReviewableExtraction {
   sourceReference?: string;
 }
 
+/** One charge group on a bill, e.g. "Distribution" ₱480.27. Refunds can be negative. */
+export interface BillCharge { label: string; amount: number; }
+
 export interface BillExtractionResult extends ReviewableExtraction {
+  /** Utility name as printed, and WattSnap's provider id when it is a listed one. */
   provider?: string | null;
+  providerId?: string | null;
   billingMonth?: string | null;
   periodStart?: string | null;
   periodEnd?: string | null;
+  /** Statement date. */
   billingDate?: string | null;
   /** Current month bill before any subsidy or past balance (what WattSnap saves as the bill amount). */
   amountDue?: number | null;
   /** Government subsidy deducted on the bill, e.g. Antique PEPS. */
   subsidy?: number | null;
+  /** The printed amount left to pay after the subsidy. */
+  amountPayable?: number | null;
   dueDate?: string | null;
   consumptionKwh?: number | null;
+  previousReading?: number | null;
+  presentReading?: number | null;
+  multiplier?: number | null;
+  charges?: BillCharge[];
+  /** Values that disagree with each other, for the person to check. */
+  checks?: string[];
   notes?: string | null;
 }
 

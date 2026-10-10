@@ -9,7 +9,7 @@ const fail = (status: number, error: string): ParsedImageRequest => ({ ok: false
 const text = (value: unknown) => typeof value === "string" ? value.trim().slice(0, 80) : "";
 
 /** Reads a photo sent as JSON ({ imageBase64, mimeType }) or as form data (image). */
-export async function readImageRequest(request: Request, hintField: string, missing: string): Promise<ParsedImageRequest> {
+export async function readImageRequest(request: Request, hintField: string, missing: string, types: string[] = imageTypes): Promise<ParsedImageRequest> {
   const declared = Number(request.headers.get("content-length") || 0);
   if (declared > maxImageBytes * 1.4) return fail(413, "That photo is too large. Please use one under 4 MB.");
   const contentType = request.headers.get("content-type") || "";
@@ -33,6 +33,6 @@ export async function readImageRequest(request: Request, hintField: string, miss
 
   if (!imageBase64) return fail(400, missing);
   if (imageBase64.length > Math.ceil(maxImageBytes / 3) * 4) return fail(413, "That photo is too large. Please use one under 4 MB.");
-  if (!imageTypes.includes(mimeType)) return fail(415, "Please use a JPG, PNG, WebP or HEIC photo.");
+  if (!types.includes(mimeType)) return fail(415, types.includes("application/pdf") ? "Please use a JPG, PNG, WebP or HEIC photo, or a PDF." : "Please use a JPG, PNG, WebP or HEIC photo.");
   return { ok: true, value: { imageBase64, mimeType, hint } };
 }

@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Check, ChevronRight, CircleCheck, Eye, EyeOff, Lightbulb, ReceiptText, Sparkles, TrendingDown, TriangleAlert, Wallet } from "lucide-react";
+import SnapBillLink from "@/features/bill-scanner/components/SnapBillLink";
 import PageShell from "./PageShell";
 import { usePreviewHousehold } from "../use-preview-household";
 import { amountPaid, averageKwh, billMonth, budgetPresets, budgetStatus, effectiveRate, latestBill, monthlySeries, parseAmount, pesos, shortMonth, suggestedBudget, validateBudget, type BudgetStatus } from "../preview-data";
@@ -105,7 +106,7 @@ export default function BudgetScreen() {
               <small>{bill.kwh} kWh · {budget <= 0 ? "Set a budget to compare" : state === "over" ? "over budget" : `${whole(budget - paid)} under`}</small>
             </div>
           </li>; })}
-        </ul> : <div className="bg-empty"><ReceiptText aria-hidden="true" /><p>Scan your bills to compare them with your budget.</p><Link href="/bills/new" className="ui-primary">Scan a bill</Link></div>}
+        </ul> : <div className="bg-empty"><ReceiptText aria-hidden="true" /><p>Scan your bills to compare them with your budget.</p><SnapBillLink className="ui-primary">Scan a bill</SnapBillLink></div>}
       </section>
 
       <section className="bg-tips" aria-labelledby="bg-tips-title">

@@ -259,3 +259,12 @@
   .phase-review .scan-panel, .phase-saved .scan-panel { animation: ws-arrive .3s ease-out both; }
 }
 @media (min-width: 900px) { .scan-app .scan-steps li { font-size: 11px; white-space: normal; } }
+
+/* Snap AI reading the photo */
+.phase-scanning .scan-photo { filter: saturate(.9) brightness(.92); }
+.scan-progress-top .scan-cancel { flex: 0 0 auto; padding: 6px 10px; border-radius: 999px; color: #fff; background: #ffffff24; font-size: 12px; font-weight: 800; }
+.scan-progress-bar.is-indeterminate span { width: 40%; animation: scan-indeterminate 1.4s ease-in-out infinite; }
+@keyframes scan-indeterminate { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+.phase-scanning .scan-progress { margin-top: auto; }
+@media (min-width: 900px) { .phase-scanning .scan-progress { display: none; } }
+@media (prefers-reduced-motion: reduce) { .scan-progress-bar.is-indeterminate span { width: 100%; animation: none; } }

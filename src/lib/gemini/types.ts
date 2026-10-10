@@ -25,6 +25,7 @@ export interface GeminiGenerationConfig {
   topP?: number;
   maxOutputTokens?: number;
   responseMimeType?: string;
+  responseSchema?: unknown;
 }
 
 export interface GeminiRequestBody {
