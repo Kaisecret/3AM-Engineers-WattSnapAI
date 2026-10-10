@@ -13,7 +13,7 @@ An ANTECO receipt shows the total kWh and the amount, for example **192 kWh and 
 | # | Feature | Problem it solves | In the app | Status | What is missing |
 |---|---|---|---|---|---|
 | 1 | Household profile and provider | Not sure which cooperative serves you | Home setup → Household profile | ✅ | – Location button suggests province and town, then matching providers. Manual and custom providers work. |
-| 2 | Bill scanner | Typing and keeping fading paper receipts | Snap AI | 🟡 | Gemini is not connected. The photo is kept as a reference and the user types the values. |
+| 2 | Bill scanner | Typing and keeping fading paper receipts | Snap AI | 🟡 | The screen does not use Gemini yet (the server route exists). The photo is kept as a reference and the user types the values. |
 | 3 | Bill history and dashboard | Old receipts get lost, months are hard to compare | Home, Energy | ✅ | – |
 | 4 | Appliance registration | The bill does not say which device costs the most | Appliances → Add device | 🟡 | Icon types and manual entry work, with typical-watts guidance. AI does not read the nameplate photo. |
 | 5 | Appliance estimate | Manual calculation is hard | Appliances | ✅ | – Shows kWh and pesos per device, and how much of the latest bill the devices explain. |
@@ -25,9 +25,9 @@ An ANTECO receipt shows the total kWh and the amount, for example **192 kWh and 
 | 11 | Smart budget | Overspending is noticed only when the bill arrives | Budget | 🟡 | Peso budget with On track / near limit / Over budget works. No kWh target, no "days left / at risk" forecast, and device estimates are not used. |
 | 12 | Brownout Ready | Families are unprepared when an interruption starts | Brownout Ready | ✅ | – Summary from a saved advisory, countdown and preparation checklist. |
 
-The four AI routes in `src/app/api/ai/` (`bills`, `appliances`, `advisories`, `tips`) are placeholders that only return `{ status: "ok" }`, and no screen calls them. No code calls Gemini yet.
+Gemini 2.5 Flash is wired into the server (`src/lib/gemini/`, needs `GEMINI_API_KEY`). The **assistant** page uses it. The `bills`, `appliances` and `tips` routes in `src/app/api/ai/` can read images and write tips, but **no screen calls them yet**, so the bill form, Add device and Tips still work as described above. The `advisories` route is still a placeholder.
 
-Also in the app but not in the proposal: accounts (email, username or Google, with a 6-digit email code), intro slides after sign-up, the Home setup checklist and completion celebration, the WattSnap AI assistant page (local rules, not Gemini), settings and dark mode.
+Also in the app but not in the proposal: accounts (email, username or Google, with a 6-digit email code), intro slides after sign-up, the Home setup checklist and completion celebration, the WattSnap AI assistant page (answers with Gemini), settings and dark mode.
 
 ## Entering an ANTECO receipt
 
@@ -116,7 +116,7 @@ These are estimates, not meter readings. Fridges and air conditioners switch on 
 
 ## Remaining work
 
-1. **Connect Gemini** to the four existing `src/app/api/ai/` routes. This covers features 2, 4, 7 and 8 together: read bills and nameplates, simplify advisories and write tips.
+1. **Use Gemini in the screens.** The `bills`, `appliances` and `tips` routes already call Gemini; the Snap AI form, Add device and Tips still need to call them and put the results into the review fields. The `advisories` route still needs a Gemini implementation. This covers features 2, 4, 7 and 8.
 2. **Budget (feature 11):** add a kWh target, a "days left / at risk" forecast, and use device estimates as the proposal describes.
 3. **Offline pages (feature 9):** decide whether signed-in pages should open offline again. The current service worker never caches them, for security after logout.
 4. **Share to WattSnap (feature 8):** accept advisory screenshots shared from Facebook or Messenger (needs a web app share target).
