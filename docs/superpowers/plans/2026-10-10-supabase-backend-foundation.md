@@ -2532,7 +2532,7 @@ git add docs/11-database-operations.md
 git commit -m "docs: add database operations guide"
 ```
 
-- [ ] **Step 5: Offer to push the branch**
+- [x] **Step 5: Offer to push the branch**
 
 Part 1 is complete and exists only on this machine. Ask the owner whether to push it now with `git push -u origin feat/supabase-auth`. Push only on a yes. Do not open a pull request.
 
