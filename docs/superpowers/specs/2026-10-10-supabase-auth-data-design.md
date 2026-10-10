@@ -77,7 +77,7 @@ Nothing is added to Vercel in Phase A. No deployed code reads these values yet, 
 
 ## Database schema
 
-All tables live in the `public` schema. Every table has `created_at` and `updated_at` (`timestamptz`, default `now()`); a trigger keeps `updated_at` current. Money is stored as integer centavos and energy as kWh, as the shared contracts require.
+All tables live in the `public` schema. Every table except `auth_login_attempts` has `created_at` and `updated_at` (`timestamptz`, default `now()`); a trigger keeps `updated_at` current. Money is stored as integer centavos and energy as kWh, as the shared contracts require.
 
 Records the browser creates already carry a UUID from `crypto.randomUUID()`. The database keeps that id, so a record has the same identity on the device and in the cloud. Household-owned collections use a composite primary key of (`household_id`, `id`), which means one household can never collide with or probe another household's ids.
 
@@ -202,7 +202,7 @@ Checklist progress for one advisory, at one revision, for one set of household d
 | `household_signature` | `text` | Required, at most 2,000 characters. |
 | `checked` | `text[]` | Subset of `charge`, `lights`, `unplug`, `fridge`, `water`, with no repeats. |
 
-Unique on (`household_id`, `advisory_id`, `revision`, `household_signature`), which is exactly how the interface keys this progress today.
+Unique on (`household_id`, `advisory_id`, `revision`, `household_signature`), which is exactly how the interface keys this progress today. Because the signature can be long, the uniqueness rule is enforced through a stored hash of it, `signature_hash`.
 
 ### `brownout_plans`
 
@@ -302,7 +302,7 @@ The browser talks to the database directly, so the database itself has to stop o
 
 | Bucket | Visibility | Limits | Accepted object path |
 | --- | --- | --- | --- |
-| `avatars` | Private | 1 MB; JPEG, PNG, WebP | Exactly `<user id>/avatar.jpg`. One file per account. |
+| `avatars` | Private | 1 MB; JPEG, the format the photo editor produces | Exactly `<user id>/avatar.jpg`. One file per account. |
 | `advisory-originals` | Private | 2 MB, the interface's own limit; JPEG, PNG, WebP | `<user id>/<advisory id>/r<revision>.<ext>`. At most 60 files per account. |
 
 The policies check the full path, not just the folder, so an account cannot store arbitrary files. Files are shown through signed URLs that expire after one hour.
@@ -392,6 +392,7 @@ New files:
 | File | Purpose |
 | --- | --- |
 | `supabase/migrations/20261010000000_initial_schema.sql` | Everything under "Database schema" and "Row-level security". |
+| `supabase/tests/migration.test.mjs` | Runs every migration in an embedded Postgres and checks the rules locally, before anything touches the hosted project. |
 | `supabase/tests/isolation.test.mjs` | Isolation test against the hosted project. |
 | `src/generated/database.types.ts` | Types generated from the schema. Never edited by hand. |
 | `docs/11-database-operations.md` | How to apply a migration, back up and restore the database, keep a free-plan project active, and run the isolation test. |
@@ -403,7 +404,7 @@ Existing empty placeholders that receive their implementation:
 
 Other files that change: `.env.example`, `package.json`, `package-lock.json`.
 
-New dependency: `@supabase/supabase-js`.
+New dependency: `@supabase/supabase-js`. New development dependency: `@electric-sql/pglite`, the embedded Postgres used by the migration test.
 
 No other file changes.
 
@@ -417,6 +418,8 @@ No other file changes.
 - Failure mapping, using a stand-in client: each Supabase error code maps to the intended category and message, and no raw error text reaches the message.
 - `signUpWithEmail` returns the same result for a new and an already registered email.
 - Limiter arithmetic with a fixed clock: the fifth failure is allowed, the sixth is refused, and attempts older than 15 minutes do not count.
+
+**Migration test**, `supabase/tests/migration.test.mjs`, run with `node --test`. This machine has no Docker and no Postgres, so the migration cannot otherwise be run before it reaches the real database. The test starts an embedded Postgres, creates stand-ins for the `auth` and `storage` schemas and the Supabase roles, applies every migration file in order, and checks the same rules as the isolation test below at the SQL level: ownership, grants, constraints, row limits, file path rules and the sign-up trigger. It needs no network and no project.
 
 **Isolation test**, `supabase/tests/isolation.test.mjs`, run with `node --test` against the hosted project using the variables in `.env.local`. It first deletes any test accounts left by an earlier interrupted run, creates two new ones through the administrative API, signs in as each with the publishable key, and asserts through the real API that:
 
@@ -443,7 +446,7 @@ It deletes both accounts at the end, including when an assertion fails, and remo
 - [ ] The isolation test passes against that project.
 - [ ] All unit tests pass, and the 76 existing tests still pass.
 - [ ] `npm run build` succeeds without the environment variables set.
-- [ ] `git diff main --stat` shows changes only in the files listed under "File map".
+- [ ] `git diff main --stat` shows changes only in the files listed under "File map", plus this specification and its implementation plan.
 - [ ] The backup command in the operations document has been run once and its output restored into a scratch schema or inspected.
 - [ ] The deployed application behaves exactly as it does on `main`.
 
@@ -456,7 +459,7 @@ It deletes both accounts at the end, including when an assertion fails, and remo
 5. `feat/supabase-auth` is pushed to GitHub as its own branch. Vercel builds a preview for it; production is untouched.
 6. The branch is merged to `main` only after the frontend branch has merged, or when its author agrees. Their guard script compares the backend-reserved files against commit `9c34526`, and merging first would make it fail.
 
-Once the migration has been applied to the real project it is never edited. Every later schema change is a new migration file.
+Once the migration has been applied to the real project it is never edited. Every later schema change is a new migration file, including any correction found while bringing Phase A up.
 
 ## Phase B outline
 
