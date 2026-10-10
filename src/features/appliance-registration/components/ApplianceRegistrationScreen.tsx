@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Camera, Check, CircleCheck, Keyboard, ScanText, Upload, WifiOff } from "lucide-react";
 import PageShell from "@/features/dashboard/components/PageShell";
@@ -67,7 +66,6 @@ export default function ApplianceRegistrationScreen() {
     <ol className="np-steps" aria-label="Appliance registration progress">{["Choose input", "Review details", "Saved"].map((label, index) => <li key={label} aria-current={index === stage ? "step" : undefined} className={index < stage ? "is-done" : index === stage ? "is-current" : ""}><span>{index < stage ? <Check aria-hidden="true" /> : index + 1}</span>{label}</li>)}</ol>
     {phase !== "input" && <h2 className="ws-sr-only" ref={stageHeading} tabIndex={-1}>{phase === "review" ? "Review appliance details" : "Appliance saved"}</h2>}
     {phase === "input" && <>
-      <section className="np-hero"><div><span className="np-eyebrow">GET TO KNOW YOUR ENERGY USE</span><h2>A small label.<br />A clearer estimate.</h2><p>Use the power rating on your appliance, then review how many hours and days you use it.</p></div><Image src="/assets/branding/actions-5.png" alt="" width={260} height={260} sizes="(min-width: 900px) 180px, 112px" priority /></section>
       {offline && <div className="np-note is-offline" role="status"><WifiOff aria-hidden="true" /><p><strong>You’re offline.</strong>Photo review, manual entry, and saved calculations work locally.</p></div>}
       <div className="np-input-grid">
         <section className="ui-panel np-upload-panel" aria-labelledby="np-upload-heading"><span className="np-input-icon"><ScanText aria-hidden="true" /></span><h2 id="np-upload-heading">Start with a nameplate photo</h2><p>Upload a clear image with the model and power rating visible. Copy its values into the review form.</p><div className="np-input-actions"><button type="button" className="ui-primary" disabled={!ready || loading} onClick={() => upload.current?.click()}><Upload size={18} aria-hidden="true" />Upload photo</button><button type="button" className="ui-secondary" disabled={!ready || loading} onClick={() => capture.current?.click()}><Camera size={18} aria-hidden="true" />Take photo</button></div><small>JPG, PNG or WebP · up to 10 MB. Taking a photo uses your device’s photo picker.</small><p className="np-preview-hint">Keep the photo beside the form and copy its printed values.</p></section>
