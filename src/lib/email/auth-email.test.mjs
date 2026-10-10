@@ -25,12 +25,16 @@ test("secure email change sends each code to the address it confirms", () => {
   const data = payload("email_change");
   data.user.new_email = "new@example.com";
   Object.assign(data.email_data, { token_new: "987654", token_hash_new: "second-hash" });
-  const mails = authEmails(data);
+  const mails = authEmails(data, { siteUrl: "https://www.wattsnapai.dev" });
   assert.equal(mails.length, 2);
   assert.equal(mails[0].to, "person@example.com");
   assert.match(mails[0].text, /123456/);
+  assert.match(mails[0].text, /token_hash=second-hash/);
+  assert.doesNotMatch(mails[0].text, /token_hash=hash(?:&|\n)/);
   assert.equal(mails[1].to, "new@example.com");
   assert.match(mails[1].text, /987654/);
+  assert.match(mails[1].text, /token_hash=hash/);
+  assert.doesNotMatch(mails[1].text, /second-hash/);
 });
 test("single-code email change goes only to the new email", () => {
   const data = payload("email_change");

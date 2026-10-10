@@ -1,8 +1,8 @@
 // Run with Node 24+: node --env-file=.env.local scripts/configure-supabase-auth.mjs
 // Add --enable-email only after Gmail SMTP is configured and the hook is deployed.
-import { readFileSync, writeFileSync, mkdirSync, mkdtempSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve, dirname, basename } from "node:path";
 import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { Webhook } from "standardwebhooks";
@@ -13,6 +13,12 @@ if (!/^[a-z]{20}$/.test(ref)) throw new Error("Expected a hosted Supabase projec
 const site = new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.wattsnapai.dev").origin;
 if (!site.startsWith("https://")) throw new Error("The live site must use HTTPS.");
 const directory = mkdtempSync(join(tmpdir(), "wattsnap-auth-config-"));
+function cleanup() {
+  const target = resolve(directory);
+  if (dirname(target) !== resolve(tmpdir()) || !basename(target).startsWith("wattsnap-auth-config-")) throw new Error("Refusing to remove an unexpected configuration directory.");
+  rmSync(target, { recursive: true, force: true });
+}
+process.on("exit", cleanup);
 mkdirSync(join(directory, "supabase"));
 const configPath = join(directory, "supabase", "config.toml");
 writeFileSync(configPath, 'project_id = "wattsnap"\n');
