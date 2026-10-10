@@ -56,6 +56,8 @@ Checks: empty-state/manual-entry browser flow, actual-only chart tests, fixture-
 
 ## 5. Local household and provider
 
+> **Superseded (2026-10):** `/login`, `/signup`, `/forgot-password` and `/reset-password` use the Supabase account forms again (`LoginForm`, `SignupFlow`, `ForgotPasswordFlow`, `ResetPasswordForm`). The password-free local household entry was removed because signed-in pages require a real session, so it sent people in a loop back to `/login`. Skipping or finishing the introduction now opens `/login`.
+
 Public account routes now reuse the existing illustrated shell for honest local household access. They request no password, OTP or simulated Google verification. Original auth implementation files and service/repository infrastructure remain retained and unchanged. A versioned installation pointer resumes the active legacy scope (or the latest legacy identity when no unscoped home exists), without copying or deleting any previous records. One household is presented; no account chooser or multi-household management is added. Closing the household returns to the homepage without deleting storage.
 
 Location lookup remains optional, explicitly explained and user-triggered. The fabricated example location and province-based utility suggestions are removed. Provider selection is manual and reviewed before save; ANTECO and the existing list remain, with an Other provider name for wider use. GPS never confirms a provider. Browser checks cover real household saves, a custom provider, refresh and returning access. Rule tests verify legacy scope preservation and unreadable-pointer protection.

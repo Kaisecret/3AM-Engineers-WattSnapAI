@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import LocalHouseholdEntry from "@/features/household-profile/components/LocalHouseholdEntry";
+import { ResetPasswordForm } from "@/features/auth/components/ResetPasswordForm";
 
 export const metadata: Metadata = {
-  title: "Open household",
-  description: "Local households do not require a password.",
+  title: "Create new password",
+  description: "Create a new password for your WattSnap account.",
 };
 
 export default function ResetPasswordPage() {
-  return <LocalHouseholdEntry />;
+  return <ResetPasswordForm />;
 }

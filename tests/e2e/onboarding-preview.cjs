@@ -29,12 +29,12 @@ async function introduction(browser, width, height) {
     assert(buttons.every(item => item.width >= 44 && item.height >= 48), `navigation touch targets: ${JSON.stringify(buttons)}`);
     await page.screenshot({ path: path.join(screenshots, `intro-${index + 1}-${width}.png`), fullPage: true });
   }
-  await page.getByRole('button', { name: 'Finish introduction and create account' }).click();
-  await page.waitForURL('**/signup');
+  await page.getByRole('button', { name: 'Finish introduction and sign in' }).click();
+  await page.waitForURL('**/login');
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-intro-v1')).status), 'completed');
   await page.goto(`${baseURL}/intro`);
   await page.getByRole('button', { name: 'Skip', exact: true }).first().click();
-  await page.waitForURL('**/signup');
+  await page.waitForURL('**/login');
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-intro-v1')).status), 'skipped');
   assert.deepEqual(errors, []);
   await context.close();
@@ -47,8 +47,8 @@ async function returningUserFlow(browser) {
   page.setDefaultNavigationTimeout(60000);
   await page.goto(`${baseURL}/welcome`);
   await page.waitForURL('**/intro');
-  await page.getByRole('button', { name: 'Skip introduction' }).click();
-  await page.waitForURL('**/signup');
+  await page.getByRole('button', { name: 'Skip', exact: true }).first().click();
+  await page.waitForURL('**/login');
   await page.goto(`${baseURL}/welcome`);
   await page.waitForURL('**/login');
   await page.getByLabel('Email or Username', { exact: true }).fill('onboarding-test@example.com');

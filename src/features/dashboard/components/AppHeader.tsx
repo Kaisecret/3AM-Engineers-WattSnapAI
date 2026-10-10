@@ -42,7 +42,7 @@ export default function AppHeader({ title, subtitle }: { title?: string; subtitl
           <div className="ws-panel-user"><span className="ws-avatar"><UserAvatar photo={household.photo} /></span><div><strong>{household.name}</strong><p>{household.email ?? `${household.name.split(/\s+/)[0]}'s home`}</p></div></div>
           <Link href="/settings" onClick={() => setPanel(null)}><Settings size={17} /> Household settings</Link>
           <Link href="/onboarding" onClick={() => setPanel(null)}><MapPin size={17} /> Household setup</Link>
-          <button type="button" className="ws-panel-logout" onClick={() => { setPanel(null); setLogout(true); }}><LogOut size={17} /> Close household</button>
+          <button type="button" className="ws-panel-logout" onClick={() => { setPanel(null); setLogout(true); }}><LogOut size={17} /> Log out</button>
         </> : <><strong>Household advisories</strong><p>Review saved notices and their original sources. No live outage status or automatic provider updates are provided.</p><Link href="/advisories" onClick={() => setPanel(null)}>View advisories <ChevronRight size={16} /></Link></>}
       </div>}
     </header>

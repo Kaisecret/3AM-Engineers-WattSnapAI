@@ -113,7 +113,7 @@ export function householdReply(message: string, context: ChatContext = {}): Repl
 
 export function landingReply(message: string): Reply {
   const text = message.toLowerCase().trim();
-  const join = { label: "Set up household", href: "/signup" };
+  const join = { label: "Create free account", href: "/signup" };
 
   if (has(text, patterns.thanks)) return { text: "You're welcome! Anything else you'd like to know about WattSnap?", suggestions: landingSuggestions.slice(1, 3) };
   if (has(text, patterns.greeting) && text.split(/\s+/).length <= 4) return { text: "Hi there! I'm WattSnap AI. Ask me anything about the app, like how bill scanning works or which areas are covered.", suggestions: landingSuggestions };

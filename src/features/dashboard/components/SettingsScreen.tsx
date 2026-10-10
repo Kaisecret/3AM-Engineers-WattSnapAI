@@ -139,8 +139,8 @@ export default function SettingsScreen() {
 
         <section className="ui-panel st-card st-logout" aria-labelledby="st-logout-title">
           <span className="st-card-icon is-red"><LogOut aria-hidden="true" /></span>
-          <div><h2 id="st-logout-title">Close household</h2><p>Return to the homepage. Your saved records stay on this device.</p></div>
-          <button type="button" className="st-logout-button" disabled={!ready} onClick={() => setLogout(true)}><LogOut size={18} aria-hidden="true" /> Close household</button>
+          <div><h2 id="st-logout-title">Log out</h2><p>Sign out of WattSnap on this device.</p></div>
+          <button type="button" className="st-logout-button" disabled={!ready} onClick={() => setLogout(true)}><LogOut size={18} aria-hidden="true" /> Log out</button>
         </section>
         <p className="st-version">WattSnap AI · Saved on this device</p>
       </div>

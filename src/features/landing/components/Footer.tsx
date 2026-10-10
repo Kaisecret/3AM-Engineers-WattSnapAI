@@ -4,8 +4,8 @@ import Link from "next/link";
 const productLinks = [
   { label: "Features", href: "#features" },
   { label: "How It Works", href: "#how-it-works" },
-  { label: "Set up household", href: "/welcome" },
-  { label: "Open household", href: "/login" },
+  { label: "Get started", href: "/welcome" },
+  { label: "Log in", href: "/login" },
 ];
 
 const capabilities = ["Bill Photo & Review", "Watt-If Simulator", "Tipid Tips & Budget", "Brownout Ready Mode"];
