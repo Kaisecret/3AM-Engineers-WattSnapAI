@@ -37,7 +37,7 @@ export const agentTools = [{ functionDeclarations: [
   { name: "set_monthly_subsidy", description: "Set the monthly bill subsidy in pesos, e.g. Antique's PEPS of 500. Use 0 to turn it off.", parameters: { type: "object", properties: { amount: number("Monthly subsidy in pesos") }, required: ["amount"] } },
   { name: "add_appliance", description: "Add an appliance the household uses, to estimate its electricity use.", parameters: { type: "object", properties: {
     name: text("Name, e.g. Bedroom fan"), kind: { type: "string", enum: kinds, description: "Appliance type" },
-    watts: number("Rated power in watts. If the person did not say, use a typical Philippine value and say it is an estimate."),
+    watts: number("Rated power in watts supplied by the person. Ask for it if missing; do not invent a rating."),
     hours: number("Hours it is on per day, 0 to 24"), quantity: integer("How many of the same appliance, default 1"), days: integer("Days used in a month, default 30"),
   }, required: ["name", "watts", "hours"] } },
   { name: "update_appliance", description: "Change the watts, hours per day, quantity or days of an appliance already in the list.", parameters: { type: "object", properties: {

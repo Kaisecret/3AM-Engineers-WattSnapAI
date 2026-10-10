@@ -1,0 +1,117 @@
+import { parseAgentCall, type AgentAction } from './agent-actions';
+import { householdReply, type ChatContext, type Reply } from './replies';
+import { validateAppliance } from '../dashboard/preview-data';
+
+export type LocalPending = { message: string; field: 'watts' | 'hours' | 'month' | 'kwh' | 'amount' };
+export type LocalAgentResult = { reply: Reply; actions: AgentAction[]; pending?: LocalPending };
+const numeric = '-?(?:(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d+)?|\\.\\d+)';
+const numberToken = `(?<![\\w.,+-])(${numeric})(?![\\d.,+-])`;
+const amountToken = `(?<![\\w.,+-])(${numeric})(?![\\w.,+-])`;
+const value = (text: string, pattern: RegExp) => {
+  const match = text.match(pattern);
+  return match ? Number(match[1].replace(/,/g, '')) : undefined;
+};
+const months = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+function monthOf(text: string) {
+  const iso = text.match(/\b(20\d{2}-(?:0[1-9]|1[012]))\b(?!-\d)/);
+  if (iso) return iso[1];
+  const named = text.toLowerCase().match(/\b([a-z]+)\s+(20\d{2})\b/);
+  const index = named ? months.findIndex(month => month === named[1] || month.slice(0,3) === named[1]) : -1;
+  return index >= 0 ? `${named![2]}-${String(index+1).padStart(2,'0')}` : undefined;
+}
+const response = (text: string): LocalAgentResult => ({reply:{text},actions:[]});
+const ask = (message: string, field: LocalPending['field'], text: string): LocalAgentResult => ({...response(text),pending:{message,field}});
+function checked(type: string, args: Record<string, unknown>): LocalAgentResult {
+  const parsed = parseAgentCall(type,args);
+  return parsed.kind === 'action' ? {reply:{text:'I prepared this change. Review the values, then tap Confirm to save.'},actions:[parsed.action]}
+    : parsed.kind === 'link' ? {reply:{text:'Here you go.',links:[parsed.link]},actions:[]}
+    : response(parsed.reason);
+}
+function usage(text: string) {
+  const power = text.match(new RegExp(`${numberToken}\\s*(k?w)(?:atts?)?\\b`,'i'));
+  const watts = power ? Number(power[1].replace(/,/g,'')) * (power[2].toLowerCase()==='kw'?1000:1) : undefined;
+  const hours = value(text,new RegExp(`${numberToken}\\s*(?:hours?|hrs?|oras|h)\\b`,'i'));
+  const days = value(text,new RegExp(`${numberToken}\\s*(?:days?|araw|adlaw)\\b`,'i'));
+  const quantity = value(text,new RegExp(`${numberToken}\\s*(?:units?|pieces?|pcs)\\b`,'i'))
+    ?? value(text,new RegExp(`\\bquantity\\s*(?:to|is|=)?\\s*${amountToken}`,'i'));
+  return { ...(watts !== undefined ? {watts}:{}), ...(hours !== undefined ? {hours}:{}), ...(days !== undefined ? {days}:{}), ...(quantity !== undefined ? {quantity}: {}) };
+}
+function applianceName(text: string) {
+  return text.replace(/^(?:an?|my|the|ang)\s+/i,'').replace(/^\d+\s+/,'')
+    .split(new RegExp(`,|\\s+(?:for|to|at|rated|using|gamit)\\b|\\s+${numeric}\\s*(?:k?w(?:atts?)?|hours?|hrs?|oras|h|days?|units?|pcs)\\b`,'i'))[0].trim();
+}
+
+/** Small offline grammar. Values remain proposed actions; this function never writes records. */
+export function localAgentReply(raw: string, context: ChatContext = {}, pending?: LocalPending): LocalAgentResult {
+  let message = raw.trim().slice(0,500);
+  let continuing = false;
+  if (/^(?:cancel|never mind|nevermind|stop|huwag|wag)$/i.test(message)) return response('Okay, I cancelled that request. Your saved records are unchanged.');
+  if (pending && (/^(?:[₱\d.-]|php\b)/i.test(message) || (pending.field === 'month' && monthOf(message))) && !/[?;]/.test(message)) {
+    continuing = true;
+    const bare = new RegExp(`^${numeric}$`).test(message);
+    const unit = {watts:' W',hours:' hours',month:'',kwh:' kWh',amount:' pesos'}[pending.field];
+    message = `${pending.message}, ${message}${bare ? unit : ''}`.slice(0,1000);
+  }
+  const preserve = (result: LocalAgentResult): LocalAgentResult => continuing && !result.actions.length && !result.pending ? {...result,pending} : result;
+  if (/^(?:what|why|how|can|could|should|is|does|if|ano|paano|bakit)\b/i.test(message)) return {reply:householdReply(message,context),actions:[]};
+  const commands = message.split(/;|\n|\s+and\s+(?=(?:add|set|change|remove)\b)/i).map(part=>part.trim()).filter(Boolean);
+  if (commands.length > 1) {
+    if (commands.length > 8) return response('Please send up to 8 changes at a time.');
+    const results = commands.map(command=>localAgentReply(command,context));
+    if (results.some(result=>!result.actions.length)) return response('Let’s finish one change at a time. Include each appliance’s watts and hours, or the exact budget amount.');
+    return {reply:{text:'I prepared these changes. Review each one before confirming.'},actions:results.flatMap(result=>result.actions)};
+  }
+  const text = message.toLowerCase();
+  if (/^(?:set|change|update|itakda|gawin|ibutang)\b/.test(text) && /\b(?:budget|subsidy|peps)\b/.test(text)) {
+    if (/\bbudget\b/.test(text) && /\b(?:subsidy|peps)\b/.test(text)) return response('Please send budget and subsidy as separate requests, each with its own amount.');
+    const amount = value(message,new RegExp(`\\b(?:budget|subsidy|peps)\\b\\s*(?:to|at|is|sa|=|:|,)?\\s*(?:₱|php\\s*)?${amountToken}`,'i'));
+    if (amount === undefined) return ask(message,'amount','What amount in pesos would you like to set?');
+    return preserve(checked(/subsidy|peps/.test(text)?'set_monthly_subsidy':'set_budget',{amount}));
+  }
+  const adding = message.match(/^(?:add|save|record|dagdag|idagdag|ilagay|dugang)\s+(.+)$/i);
+  if (adding && /\b(?:bill|billing)\b/.test(text)) {
+    const month = monthOf(message);
+    if (!month) return ask(message,'month','Which billing month and year? For example, September 2026.');
+    const kwh = value(message,new RegExp(`${numberToken}\\s*kwh\\b`,'i'));
+    if (kwh === undefined) return ask(message,'kwh','How many kWh are printed on that bill?');
+    if (kwh <= 0) return preserve(response('Bill usage must be greater than zero kWh.'));
+    const subsidyMatch = message.match(new RegExp(`\\bsubsidy\\s*(?:of|is|:|=)?\\s*(?:₱|php)?\\s*${amountToken}`,'i'));
+    const amountText = subsidyMatch ? message.replace(subsidyMatch[0],'') : message;
+    const amount = value(amountText,new RegExp(`(?:₱|php\\s*|amount\\s*(?:of|is|:|=)?\\s*)${amountToken}`,'i'))
+      ?? value(amountText,new RegExp(`${numberToken}\\s*pesos\\b`,'i'));
+    if (amount === undefined) return ask(message,'amount','What is the current month bill in pesos, before any subsidy?');
+    const dueDate = message.match(/\bdue(?:\s+date)?\s*(?:on|is|:)?\s*(20\d{2}-\d{2}-\d{2})\b/i)?.[1];
+    return preserve(checked('add_bill',{month,kwh,amount,...(subsidyMatch?{subsidy:Number(subsidyMatch[1].replace(/,/g,''))}:{}),...(dueDate?{dueDate}:{})}));
+  }
+  if (adding) {
+    const name = applianceName(adding[1]);
+    if (!name || /^(?:my )?appliances?$/i.test(name)) return response('Tell me the appliance name, its watts and hours a day. For example: Add Bedroom fan, 60 W, 8 hours a day.');
+    const fields = usage(message);
+    const quantity = fields.quantity ?? value(adding[1],/^\s*(\d+)\s+/) ?? 1;
+    const issue = validateAppliance({name,...fields,watts:fields.watts ?? 1,hours:fields.hours ?? 0,quantity});
+    if (issue) return preserve(response(issue));
+    if (fields.watts === undefined) return ask(message,'watts',`How many watts does ${name} use? Check the W or kW on its label.`);
+    if (fields.hours === undefined) return ask(message,'hours',`How many hours a day do you use ${name}?`);
+    return preserve(checked('add_appliance',{name,...fields,quantity}));
+  }
+  const editing = message.match(/^(remove|delete|change|update|alisin|tanggalin|baguhin)\s+(?:my\s+|the\s+)?(.+)$/i);
+  if (editing) {
+    const name = applianceName(editing[2]);
+    const exact = context.appliances?.filter(item=>item.name.toLowerCase()===name.toLowerCase()) ?? [];
+    const matches = exact.length ? exact : context.appliances?.filter(item=>name && item.name.toLowerCase().includes(name.toLowerCase())) ?? [];
+    if (matches.length !== 1) return response(matches.length ? `Which appliance do you mean: ${matches.map(item=>item.name).join(', ')}? Use its full name.` : `I couldn’t find ${name} in your saved appliances. Check the name in your list.`);
+    if (/remove|delete|alisin|tanggalin/i.test(editing[1])) return checked('remove_appliance',{name:matches[0].name});
+    const fields = usage(message);
+    if (!Object.keys(fields).length) return response('Tell me the new watts, hours a day, quantity or days.');
+    const issue = validateAppliance({...matches[0],...fields});
+    if (issue) return response(issue);
+    return checked('update_appliance',{name:matches[0].name,...fields});
+  }
+  const page = text.match(/^(?:open|go to|show|buksan)\s+(?:my\s+|the\s+)?(.+)$/)?.[1];
+  if (page) {
+    const aliases: Record<string,string> = {home:'dashboard',energy:'bills','snap ai':'add-bill','scan bill':'add-bill','add appliance':'add-appliance','tipid tips':'tips','watt-if':'simulator','home setup':'setup'};
+    const parsed = parseAgentCall('open_page',{page:aliases[page] ?? page});
+    if (parsed.kind === 'link') return {reply:{text:'Here you go.',links:[parsed.link]},actions:[]};
+  }
+  return {reply:householdReply(message,context),actions:[]};
+}

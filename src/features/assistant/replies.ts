@@ -58,9 +58,11 @@ export function householdReply(message: string, context: ChatContext = {}): Repl
   if (has(text, patterns.greeting) && text.split(/\s+/).length <= 4) return { text: `Hi${first ? ` ${first}` : ""}! I'm WattSnap AI. I can explain your bill, compare months, spot your biggest appliances, and help you get ready for brownouts.`, suggestions: householdSuggestions };
 
   if (has(text, patterns.scan)) return {
-    text: "Open Snap AI to upload or photograph a bill as a reference. Enter its printed values, check the billing period, kWh, amount and available dates, then confirm the record before saving. Values are entered manually.",
+    text: "Open Snap AI to photograph or upload your bill. Online, Gemini reads the printed values; check the billing period, kWh, amount and dates before saving. If you are offline, enter the printed values manually. Unreadable fields stay empty for review.",
     links: [{ label: "Open Snap AI", href: "/bills/new" }],
   };
+
+  if (has(text, patterns.offline)) return { text: "While this app is available offline, I can answer from your saved records and prepare typed budget, bill and appliance changes. You confirm each change before it is saved on this device. Photo reading and new provider information need an internet connection.", suggestions: ["Set my budget to ₱2,000", "Add a fan, 60 W, 8 hours a day"] };
 
   if (has(text, patterns.brownout)) {
     if (!context.advisory) return { text: `Review saved provider announcements for ${context.location ?? "your area"} in Advisories. Each saved review keeps its original and explains Affected, Possibly Affected, or Not Listed. Saved reviews do not confirm live power status; automatic collection is not connected.`, links: [{ label: "View advisories", href: "/advisories" }] };
@@ -122,7 +124,7 @@ export function landingReply(message: string): Reply {
 
   if (has(text, patterns.thanks)) return { text: "You're welcome! Anything else you'd like to know about WattSnap?", suggestions: landingSuggestions.slice(1, 3) };
   if (has(text, patterns.greeting) && text.split(/\s+/).length <= 4) return { text: "Hi there! I'm WattSnap AI. Ask me anything about the app, like how bill scanning works or which areas are covered.", suggestions: landingSuggestions };
-  if (has(text, patterns.scan)) return { text: "Upload a bill photo as a reference, copy the printed fields, and review them before saving. Automatic AI extraction is not available. Your values remain editable.", links: [join] };
+  if (has(text, patterns.scan)) return { text: "Snap AI reads a bill photo with Gemini while online. Review the extracted values and correct anything unclear before saving. Offline, you can enter the bill’s printed values manually.", links: [join] };
   if (has(text, patterns.offline)) return { text: "Saved records and local calculations work offline after a successful online visit prepares the app shell. Tips can refresh locally. Provider updates and optional location lookup need connectivity.", links: [join] };
   if (has(text, patterns.coverage)) return { text: "Initial validation focuses on Antique with ANTECO. Select your provider manually, including another utility. GPS may help fill locality fields; it does not establish utility coverage.", links: [join] };
   if (has(text, patterns.brownout)) return { text: "Paste or upload an advisory, keep the original, and review its fields. The UI compares entered provider and locality labels to show Affected, Possibly Affected, or Not Listed. Save a Brownout Ready plan for its published schedule and checklist; uncertain relevance needs confirmation. This does not confirm live power status.", links: [join] };

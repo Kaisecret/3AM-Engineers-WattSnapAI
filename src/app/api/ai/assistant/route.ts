@@ -4,7 +4,7 @@ import { checkGemini, runHouseholdAgent } from "@/lib/gemini/agent";
 import { parseChatRequest } from "@/lib/ai/chat-request";
 import { createRateLimiter } from "@/lib/ai/rate-limit";
 import { signedInUserId, signInRequired, slowDown } from "@/lib/ai/session";
-import { householdReply } from "@/features/assistant/replies";
+import { localAgentReply } from "@/features/assistant/local-agent";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: parsed.status });
   const { message, history, context } = parsed.value;
 
-  if (!hasGeminiKey()) return NextResponse.json({ ok: true, source: "local-rules", problem: "no-key", reply: householdReply(message, context), actions: [] });
+  if (!hasGeminiKey()) return NextResponse.json({ ok: true, source: "local-rules", problem: "no-key", ...localAgentReply(message, context) });
   if (!perAccount(userId)) return slowDown();
 
   try {
@@ -43,6 +43,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, source: "gemini", reply, actions });
   } catch (error) {
     console.error("[wattsnap:ai] assistant", error instanceof Error ? error.message : error);
-    return NextResponse.json({ ok: true, source: "local-fallback", problem: geminiProblem(error), reply: householdReply(message, context), actions: [] });
+    return NextResponse.json({ ok: true, source: "local-fallback", problem: geminiProblem(error), ...localAgentReply(message, context) });
   }
 }

@@ -82,7 +82,7 @@ export default function ApplianceDialog({ open, item, photo, appliances, rate, r
     <form className="ap-dialog-body" onSubmit={submit} noValidate>
       <div className="ap-dialog-head">
         <span className={`ap-icon is-${draft.kind}`}><Icon aria-hidden="true" /></span>
-        <div><h2 id="ad-title">{editing ? "Edit appliance" : "Add appliance"}</h2></div>
+        <div><h2 id="ad-title">{editing ? "Edit appliance" : "Add appliance"}</h2><p>Check the power and your usual usage.</p></div>
         <button type="button" className="ap-close" aria-label="Close" onClick={() => dialog.current?.close()}><X aria-hidden="true" /></button>
       </div>
 

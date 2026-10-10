@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AgentAction } from "./agent-actions";
 import type { ChatContext, Reply } from "./replies";
+import type { LocalAgentResult, LocalPending } from "./local-agent";
 
 export type ActionState = "pending" | "done" | "cancelled" | "failed";
 /** A change WattSnap AI proposed, waiting for the person to confirm or cancel it. */
@@ -17,20 +18,10 @@ interface ChatOptions {
   describe?: (action: AgentAction) => string;
   /** Say under an answer when it is a built-in answer and why. */
   explainFallback?: boolean;
+  localAgent?: (text: string, context: ChatContext, pending?: LocalPending) => LocalAgentResult;
 }
 
-const problemWords: Record<string, string> = {
-  "no-key": "AI is off: no Gemini API key on the server",
-  key: "Gemini did not accept the API key",
-  model: "the Gemini model was not found",
-  busy: "Gemini limit reached, try again in a minute",
-  request: "Gemini could not read the request",
-  unavailable: "Gemini did not respond",
-  empty: "Gemini gave an empty answer",
-  offline: "you are offline",
-  server: "WattSnap AI could not be reached",
-};
-const noticeFor = (problem: string) => `Basic answer · ${problemWords[problem] ?? problemWords.unavailable}`;
+const noticeFor = (problem: string) => problem === "offline" ? "Offline · using saved data" : problem === "busy" ? "Local reply · AI is busy right now" : "Local reply · AI is unavailable right now";
 
 const stateWords: Record<ActionState, string> = { pending: "waiting for confirmation", done: "confirmed and saved", cancelled: "cancelled", failed: "could not be saved" };
 // Earlier turns as plain text, including what happened to each proposed change.
@@ -39,7 +30,7 @@ const toTurn = (message: ChatMessage) => ({
   text: message.actions?.length ? `${message.text}\n(${message.actions.map(item => `${item.label}: ${stateWords[item.state]}`).join("; ")})` : message.text,
 });
 
-export function useChat(respond: (text: string) => Reply, { endpoint, context, describe, explainFallback = false }: ChatOptions) {
+export function useChat(respond: (text: string) => Reply, { endpoint, context, describe, explainFallback = false, localAgent }: ChatOptions) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [typing, setTyping] = useState(false);
   const nextId = useRef(0);
@@ -49,11 +40,16 @@ export function useChat(respond: (text: string) => Reply, { endpoint, context, d
   const contextRef = useRef(context);
   const describeRef = useRef(describe);
   const messagesRef = useRef(messages);
+  const localAgentRef = useRef(localAgent);
+  const pending = useRef<LocalPending | undefined>(undefined);
+  const request = useRef<AbortController | null>(null);
 
   useEffect(() => { respondRef.current = respond; }, [respond]);
   useEffect(() => { contextRef.current = context; }, [context]);
   useEffect(() => { describeRef.current = describe; }, [describe]);
   useEffect(() => { messagesRef.current = messages; }, [messages]);
+  useEffect(() => { localAgentRef.current = localAgent; }, [localAgent]);
+  useEffect(() => () => { session.current++; request.current?.abort(); }, []);
 
   const send = useCallback((raw: string): boolean => {
     const text = raw.trim();
@@ -69,26 +65,46 @@ export function useChat(respond: (text: string) => Reply, { endpoint, context, d
       const notice = explainFallback && problem ? noticeFor(problem) : undefined;
       setMessages(current => [...current, { id: nextId.current++, role: "bot", text: reply.text, reply, ...(proposed.length ? { actions: proposed } : {}), ...(notice ? { notice } : {}) }]);
     };
-    const local = (problem: string) => answer(respondRef.current(text), [], problem);
+    const local = (problem: string) => {
+      if (chat !== session.current) return;
+      const result = localAgentRef.current?.(text, contextRef.current ?? {}, pending.current);
+      pending.current = result?.pending;
+      answer(result?.reply ?? respondRef.current(text), result?.actions ?? [], problem);
+    };
+
+    const parsed = localAgentRef.current?.(text, contextRef.current ?? {}, pending.current);
+    if (parsed?.pending || (pending.current && parsed?.actions.length)) {
+      pending.current = parsed.pending;
+      answer(parsed.reply, parsed.actions, typeof navigator !== "undefined" && !navigator.onLine ? "offline" : undefined);
+      return true;
+    }
+    pending.current = undefined;
 
     if (typeof navigator !== "undefined" && !navigator.onLine) { local("offline"); return true; }
 
     busy.current = true;
     setTyping(true);
+    const controller = new AbortController();
+    request.current = controller;
+    const timer = setTimeout(() => controller.abort(), 28000);
     fetch(endpoint, {
-      method: "POST",
+      method: "POST", signal: controller.signal,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: text, context: contextRef.current, history }),
     })
       .then(async response => {
         const data = await response.json().catch(() => null);
+        if (chat !== session.current) return;
         if (response.status === 401) return answer({ text: "Your session ended. Please log in again.", links: [{ label: "Log in", href: "/login" }] });
-        if ((response.status === 429 || response.status === 413) && typeof data?.error === "string") return answer({ text: data.error });
+        if (response.status === 429) return local("busy");
+        if (response.status === 413 && typeof data?.error === "string") return answer({ text: data.error });
         if (!response.ok || typeof data?.reply?.text !== "string") throw new Error("No reply");
+        if (data.source !== "gemini" && localAgentRef.current) return local(typeof data.problem === "string" ? data.problem : "unavailable");
+        pending.current = undefined;
         answer(data.reply, Array.isArray(data.actions) ? data.actions : [], data.source === "gemini" ? undefined : typeof data.problem === "string" ? data.problem : "unavailable");
       })
       .catch(() => local("server"))
-      .finally(() => { if (chat === session.current) { busy.current = false; setTyping(false); } });
+      .finally(() => { clearTimeout(timer); if (chat === session.current) { request.current = null; busy.current = false; setTyping(false); } });
 
     return true;
   }, [endpoint, explainFallback]);
@@ -99,7 +115,7 @@ export function useChat(respond: (text: string) => Reply, { endpoint, context, d
     }));
   }, []);
 
-  const reset = useCallback(() => { session.current++; busy.current = false; setTyping(false); setMessages([]); }, []);
+  const reset = useCallback(() => { session.current++; request.current?.abort(); request.current = null; pending.current = undefined; busy.current = false; setTyping(false); messagesRef.current = []; setMessages([]); }, []);
 
   return { messages, typing, send, reset, setActionState };
 }

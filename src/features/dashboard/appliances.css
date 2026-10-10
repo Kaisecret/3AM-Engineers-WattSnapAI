@@ -184,11 +184,19 @@ html[data-theme="dark"] .ap-coverage-bar { background: #24475a; }
 
 /* Add / Edit appliance popup form */
 .ad-dialog .ap-dialog-head h2 { font-size: 21px; }
-.ws-home .ad-dialog .ap-presets { display: flex; gap: 8px; overflow-x: auto; margin: 16px -18px 0; padding: 2px 18px 6px; scroll-snap-type: x proximity; scrollbar-width: none; }
+.ws-home .ad-dialog .ap-presets { display: flex; min-inline-size: 0; max-width: calc(100% + 36px); gap: 8px; overflow-x: auto; margin: 16px -18px 0; padding: 2px 18px 6px; scroll-snap-type: x proximity; scrollbar-width: thin; }
 .ad-dialog .ap-presets::-webkit-scrollbar { display: none; }
 .ad-dialog .ap-presets legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .ws-home .ad-dialog .ap-presets label { flex: 0 0 auto; width: 84px; min-height: 74px; align-content: center; scroll-snap-align: start; font-size: 11.5px; }
 .ad-dialog .ap-fields { margin-top: 14px; }
+.ad-dialog { overflow-x: hidden; overscroll-behavior: contain; }
+.ad-dialog .ap-dialog-body { min-width: 0; }
+.ad-dialog .ap-dialog-head { position: sticky; top: -10px; z-index: 2; padding: 10px 0; background: #f8fcff; }
+.ad-dialog .ap-dialog-head p { margin-top: 4px; color: #587386; line-height: 1.5; }
+.ad-dialog .ap-dialog-actions { position: sticky; bottom: -20px; z-index: 2; margin: 18px -18px -20px; padding: 14px 18px max(20px, env(safe-area-inset-bottom)); border-top: 1px solid #dcecf4; background: #f8fcff; }
+.ad-dialog .ap-fields input { font-size: 16px; }
+.ad-dialog .ap-estimate > div { min-width: 0; }
+.ad-dialog .ap-estimate strong { white-space: normal; overflow-wrap: anywhere; }
 .ad-dialog .ap-fields small { color: #8aa0b2; font-weight: 600; }
 .ad-dialog .ap-stepper.is-qty { max-width: none; }
 .ad-power { display: flex; height: 48px; overflow: hidden; border: 1.5px solid #cfe5f0; border-radius: 12px; background: #fff; }
@@ -215,11 +223,11 @@ html[data-theme="dark"] .ap-coverage-bar { background: #24475a; }
 .ap-list li.is-new { border-radius: 14px; animation: ap-new 2.4s ease-out; }
 @keyframes ap-new { 0%, 40% { background: #e3f6fd; box-shadow: 0 0 0 8px #e3f6fd; } 100% { background: transparent; box-shadow: 0 0 0 8px transparent; } }
 @media (min-width: 600px) {
-  .ws-home .ad-dialog .ap-presets { flex-wrap: wrap; overflow: visible; margin: 16px 0 0; padding: 0; }
+  .ws-home .ad-dialog .ap-presets { flex-wrap: wrap; max-width: 100%; overflow: visible; margin: 16px 0 0; padding: 0; }
   .ws-home .ad-dialog .ap-presets label { width: calc((100% - 40px) / 6); }
 }
 @media (min-width: 900px) { .ad-dialog { width: min(640px, calc(100% - 48px)); }.ws-home .ad-dialog .ap-presets { margin-top: 18px; } }
-.ws-home .ad-dialog .ap-presets label span { overflow-wrap: normal; word-break: normal; hyphens: none; }
+.ws-home .ad-dialog .ap-presets label span { white-space: normal; line-height: 1.3; overflow-wrap: normal; word-break: normal; hyphens: none; }
 @media (hover: hover) {
   .ad-photo-change:hover, .ad-photo-remove:hover { filter: brightness(.96); }
   .ad-segment button:not(.is-on):hover { color: #0a6fa8; }
@@ -239,5 +247,27 @@ html[data-theme="dark"] .ap-dialog .ap-estimate { border-color: #2f5566; backgro
 html[data-theme="dark"] .ap-dialog .ap-edit-confirm { color: #c2d4df; background: #1d3a4a; }
 html[data-theme="dark"] .ad-photo-change { color: #89dfef; background: #203e4c; }
 html[data-theme="dark"] .ad-hint { color: #89dfef; }
+html[data-theme="dark"] .ad-dialog :is(.ap-dialog-head, .ap-dialog-actions) { background: #142734; border-color: #3b5968; }
+html[data-theme="dark"] .ad-dialog .ap-dialog-head p { color: #a9c0cc; }
+.ap-saved-dialog { width: min(420px, calc(100% - 32px)); max-height: calc(100dvh - 32px); margin: auto; padding: 28px; overflow: auto; border: 1px solid #dcecf4; border-radius: 24px; color: #244967; background: white; box-shadow: 0 24px 70px #0b2a4a40; }
+.ap-saved-dialog::backdrop { background: #0b2a4a66; backdrop-filter: blur(4px); }
+.ap-saved-mark { display: grid; place-items: center; width: 52px; height: 52px; margin-bottom: 18px; border-radius: 16px; color: #16774d; background: #eaf8f1; }
+.ap-saved-mark svg { width: 28px; height: 28px; }
+.ap-saved-dialog h2 { font-size: 22px; font-weight: 800; letter-spacing: -.5px; }
+.ap-saved-dialog p { margin-top: 10px; color: #587386; font-size: 14px; line-height: 1.65; overflow-wrap: anywhere; }
+.ap-saved-estimate { display: grid; gap: 4px; margin-top: 20px; padding: 16px; border-radius: 14px; background: #f0faff; }
+.ap-saved-estimate strong { font-size: 25px; color: #087ca7; }
+.ap-saved-estimate span { color: #587386; font-size: 13px; }
+.ap-saved-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 24px; }
+.ap-saved-actions button { min-height: 48px; padding: 10px; border-radius: 12px; font-size: 14px; }
+.ws-home :is(.ap-saved-actions, .ad-dialog .ap-dialog-actions) .ui-primary { color: white; background: #076fbd; }
+.ws-home :is(.ap-saved-actions, .ad-dialog .ap-dialog-actions) .ui-secondary { color: #076c93; border-color: #b9deee; background: #f0faff; }
+.ap-saved-dialog :focus-visible { outline: 2px solid #008acb; outline-offset: 3px; }
+html[data-theme="dark"] .ap-saved-dialog { color: #edf6fa; background: #142734; border-color: #3b5968; }
+html[data-theme="dark"] .ap-saved-dialog :is(p, .ap-saved-estimate span) { color: #b4c8d5; }
+html[data-theme="dark"] .ap-saved-estimate { background: #203e4c; }
+html[data-theme="dark"] .ap-saved-estimate strong { color: #89dfef; }
+html[data-theme="dark"] .ws-home :is(.ap-saved-actions, .ad-dialog .ap-dialog-actions) .ui-secondary { color: #89dfef; background: #203e4c; border-color: #3b5968; }
+@media (min-width: 900px) { .ad-dialog .ap-dialog-head { top: -26px; padding-block: 14px; } .ad-dialog .ap-dialog-actions { bottom: -28px; margin: 18px -28px -28px; padding: 16px 28px 28px; } }
 html[data-theme="dark"] .ap-list li.is-new { animation-name: ap-new-dark; }
 @keyframes ap-new-dark { 0%, 40% { background: #1d3a4a; box-shadow: 0 0 0 8px #1d3a4a; } 100% { background: transparent; box-shadow: 0 0 0 8px transparent; } }

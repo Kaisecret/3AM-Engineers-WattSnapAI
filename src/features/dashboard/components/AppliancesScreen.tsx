@@ -2,13 +2,14 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronRight, Pencil, Plus, SlidersHorizontal, Trash2 } from "lucide-react";
+import { ChevronRight, CircleCheck, Pencil, Plus, SlidersHorizontal, Trash2 } from "lucide-react";
 import { applianceIcons as kindIcons } from "@/features/appliance-registration/components/appliance-picker";
 import ApplianceDialog, { AddApplianceSheet, type AddChoice, type AppliancePhoto } from "@/features/appliance-registration/components/ApplianceDialog";
 import ConfirmRecordRemoval from "@/components/ui/ConfirmRecordRemoval";
 import PageShell from "./PageShell";
 import { usePreviewHousehold } from "../use-preview-household";
-import { dailyApplianceKwh, effectiveRate, guessApplianceKind, latestBill, monthName, pesos, type PreviewAppliance } from "../preview-data";
+import { previewStorageFor, usePreviewStorageKey } from "@/features/auth/use-preview-storage-key";
+import { dailyApplianceKwh, effectiveRate, guessApplianceKind, latestBill, monthName, pesos, previewStorageKey, type PreviewAppliance } from "../preview-data";
 import { billCoverage } from "../bill-coverage";
 
 const kindOf = (item: PreviewAppliance) => item.kind ?? guessApplianceKind(item.name);
@@ -24,15 +25,35 @@ export default function AppliancesScreen({ startAdding = false }: { startAdding?
   const [highlight, setHighlight] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [saved, setSaved] = useState<{ record: PreviewAppliance; editing: boolean } | null>(null);
+  const success = useRef<HTMLDialogElement>(null);
+  const done = useRef<HTMLButtonElement>(null);
   const sheet = useRef<HTMLDialogElement>(null);
   const upload = useRef<HTMLInputElement>(null);
   const capture = useRef<HTMLInputElement>(null);
   const started = useRef(false);
+  const photoAttempt = useRef(0);
+  const householdKey = usePreviewStorageKey(previewStorageKey);
   const rate = effectiveRate(household.bills);
   const items = [...household.appliances].sort((a, b) => dailyApplianceKwh(b) - dailyApplianceKwh(a));
   const totalDaily = items.reduce((sum, item) => sum + dailyApplianceKwh(item), 0);
   const latest = latestBill(household.bills);
   const coverage = latest ? billCoverage(totalDaily * 30, latest.kwh) : null;
+
+  useEffect(() => {
+    if (saved && !form && success.current && !success.current.open) {
+      success.current.showModal();
+      done.current?.focus({ preventScroll: true });
+    }
+  }, [saved, form]);
+
+  useEffect(() => {
+    photoAttempt.current++;
+    success.current?.close(); sheet.current?.close();
+    setSaved(null); setForm(null); setPhoto(undefined); setRemoving(null);
+    setHighlight(""); setMessage(""); setError(""); started.current = false;
+    return () => { photoAttempt.current++; };
+  }, [householdKey]);
 
   useEffect(() => {
     if (!startAdding || !ready || started.current) return;
@@ -54,13 +75,16 @@ export default function AppliancesScreen({ startAdding = false }: { startAdding?
   async function choosePhoto(file?: File) {
     if (upload.current) upload.current.value = ""; if (capture.current) capture.current.value = "";
     if (!file) return;
+    const attempt = ++photoAttempt.current;
+    const current = () => attempt === photoAttempt.current && previewStorageFor(previewStorageKey) === householdKey;
     if (!photoTypes.includes(file.type)) { setError("Use a JPG, PNG or WebP photo."); return; }
     if (file.size === 0 || file.size > 10 * 1024 * 1024) { setError("Use a photo up to 10 MB."); return; }
     const url = URL.createObjectURL(file);
     try {
       const image = new window.Image(); image.src = url; await image.decode();
+      if (!current()) { URL.revokeObjectURL(url); return; }
       setError(""); setPhoto({ url, name: file.name }); setForm(current => current ?? {});
-    } catch { URL.revokeObjectURL(url); setError("That photo could not be opened. Try another one or type it in."); }
+    } catch { URL.revokeObjectURL(url); if (current()) setError("That photo could not be opened. Try another one or type it in."); }
   }
   function edit(item: PreviewAppliance) { setError(""); setMessage(""); setPhoto(undefined); setForm({ item }); }
 
@@ -70,6 +94,7 @@ export default function AppliancesScreen({ startAdding = false }: { startAdding?
     const appliances = editing ? household.appliances.map(item => item.id === editing.id ? record : item) : [...household.appliances, record];
     if (!update({ appliances })) return false;
     setMessage(`${record.name} ${editing ? "updated" : "added"}.`); setHighlight(record.id);
+    setSaved({ record, editing: Boolean(editing) });
     return true;
   }
 
@@ -128,5 +153,12 @@ export default function AppliancesScreen({ startAdding = false }: { startAdding?
     <input ref={capture} type="file" capture="environment" className="ws-sr-only" tabIndex={-1} aria-hidden="true" accept={photoTypes.join(",")} onChange={event => void choosePhoto(event.target.files?.[0])} />
     <ApplianceDialog open={!!form} item={form?.item} photo={form?.item ? undefined : photo} appliances={household.appliances} rate={rate} ready={ready} storageError={storageError}
       onSave={save} onClose={() => { setForm(null); setPhoto(undefined); }} onChangePhoto={() => upload.current?.click()} onRemovePhoto={() => setPhoto(undefined)} />
+    <dialog ref={success} className="ap-saved-dialog" aria-labelledby="ap-saved-title" aria-describedby="ap-saved-description" onClose={() => setSaved(null)} onClick={event => { if (event.target === event.currentTarget) success.current?.close(); }}>
+      <span className="ap-saved-mark" aria-hidden="true"><CircleCheck /></span>
+      <h2 id="ap-saved-title">Appliance {saved?.editing ? "updated" : "added"}</h2>
+      <p id="ap-saved-description"><strong>{saved?.record.name}</strong> is saved in your appliance list.</p>
+      {saved && <div className="ap-saved-estimate"><strong>{(dailyApplianceKwh(saved.record) * 30).toFixed(1)} kWh</strong><span>Estimated use over 30 days{rate > 0 ? ` · ${pesos(dailyApplianceKwh(saved.record) * 30 * rate)}` : ""}</span></div>}
+      <div className="ap-saved-actions"><button type="button" className="ui-secondary" onClick={() => { success.current?.close(); startAdd(); }}>Add another</button><button ref={done} type="button" className="ui-primary" onClick={() => success.current?.close()}>Done</button></div>
+    </dialog>
   </PageShell>;
 }

@@ -5,8 +5,9 @@ import Link from "next/link";
 import { ArrowUp, ChevronLeft, PlugZap, Plus, ReceiptText, RotateCcw, Sparkles, Wallet } from "lucide-react";
 import AppHeader from "@/features/dashboard/components/AppHeader";
 import AppNavigation from "@/features/dashboard/components/AppNavigation";
+import { usePreviewStorageKey } from "@/features/auth/use-preview-storage-key";
 import { usePreviewHousehold } from "@/features/dashboard/use-preview-household";
-import { amountPaid, compareWithPrevious, dailyApplianceKwh, effectiveRate, monthlySubsidyFor, pesos, shortMonth, sortBillsByMonth, type PreviewHousehold } from "@/features/dashboard/preview-data";
+import { amountPaid, compareWithPrevious, dailyApplianceKwh, effectiveRate, monthlySubsidyFor, pesos, previewStorageKey, shortMonth, sortBillsByMonth, type PreviewHousehold } from "@/features/dashboard/preview-data";
 import { advisoryTypeLabels, formatAdvisoryDate } from "@/features/advisory-intelligence/advisory-preview";
 import { advisoryTab, matchIsStale, matchPreviewAdvisory, scheduleLabel } from "@/features/advisory-intelligence/review-preview";
 import { usePreviewAdvisories } from "@/features/advisory-intelligence/use-preview-advisories";
@@ -14,15 +15,16 @@ import type { ReviewedAdvisory } from "@/features/advisory-intelligence/types";
 import { householdReply, type ChatContext } from "../replies";
 import { applyAgentActions, describeAgentAction, type AgentAction } from "../agent-actions";
 import { useChat, type ChatAction, type ChatMessage } from "../use-chat";
+import { localAgentReply } from "../local-agent";
 import ChatThread, { BotAvatar } from "./ChatThread";
 
 const starters = [
   { label: "Add my appliances", text: "Help me add my appliances", icon: Plus },
-  { label: "Set my budget", text: "Suggest a monthly budget for me and set it", icon: Wallet },
+  { label: "Set my budget", text: "Set my budget", icon: Wallet },
   { label: "Why did my bill change?", text: "Why did my bill change?", icon: ReceiptText },
   { label: "What uses the most?", text: "Which appliance uses the most?", icon: PlugZap },
 ];
-const prompts = ["Set my budget to ₱2,000", "Add an electric fan, 8 hours a day", "Add my bill for this month", "Tips to save energy"];
+const prompts = ["Set my budget to ₱2,000", "Add an electric fan, 60 W, 8 hours a day", "Add my bill for this month", "Tips to save energy"];
 
 function buildContext(household: PreviewHousehold, records: ReviewedAdvisory[]): ChatContext {
   const bills = sortBillsByMonth(household.bills);
@@ -51,13 +53,22 @@ export default function ChatScreen() {
   const [draft, setDraft] = useState("");
   const input = useRef<HTMLTextAreaElement>(null);
   const asked = useRef(false);
+  const confirmed = useRef(new Set<number>());
+  const [offline, setOffline] = useState(false);
   const context = useMemo(() => buildContext(household, advisories.records), [household, advisories.records]);
   const respond = useCallback((text: string) => householdReply(text, context), [context]);
   const describe = useCallback((action: AgentAction) => describeAgentAction(action, household), [household]);
-  const { messages, typing, send, reset, setActionState } = useChat(respond, { endpoint: "/api/ai/assistant", context, describe, explainFallback: true });
+  const { messages, typing, send, reset, setActionState } = useChat(respond, { endpoint: "/api/ai/assistant", context, describe, explainFallback: true, localAgent: localAgentReply });
+  const householdKey = usePreviewStorageKey(previewStorageKey);
+  useEffect(() => { reset(); confirmed.current.clear(); }, [householdKey, reset]);
   const first = household.name.split(/\s+/)[0];
   const latest = context.latest;
   const change = latest ? compareWithPrevious(household.bills, latest.month) : null;
+  useEffect(() => {
+    const sync = () => setOffline(!navigator.onLine);
+    sync(); window.addEventListener("online", sync); window.addEventListener("offline", sync);
+    return () => { window.removeEventListener("online", sync); window.removeEventListener("offline", sync); };
+  }, []);
 
   // Questions picked on the Home card arrive as ?q=…
   useEffect(() => {
@@ -76,7 +87,7 @@ export default function ChatScreen() {
 
   function submit(event?: FormEvent) {
     event?.preventDefault();
-    if (typing) return;
+    if (typing || !ready) return;
     if (send(draft)) setDraft("");
     input.current?.focus();
   }
@@ -87,6 +98,10 @@ export default function ChatScreen() {
   // Nothing the AI proposes is saved until the person taps Confirm.
   const actions = {
     onConfirm(message: ChatMessage, items: ChatAction[]) {
+      if (!ready) return;
+      items = items.filter(item => item.state === "pending" && !confirmed.current.has(item.id));
+      if (!items.length) return;
+      items.forEach(item => confirmed.current.add(item.id));
       const { patch, results } = applyAgentActions(household, items.map(item => item.action));
       const saved = !Object.keys(patch).length || update(patch);
       items.forEach((item, index) => {
@@ -101,8 +116,8 @@ export default function ChatScreen() {
   const intro = <div className={`chat-welcome${messages.length ? " is-compact" : ""}`}>
     <div className="chat-welcome-art" aria-hidden="true"><span /><Image src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="" width={300} height={300} sizes="160px" priority /></div>
     <h2>Hi {first}!</h2>
-    <p>Ask me anything, or tell me what to change.</p>
-    {!messages.length && <div className="chat-starters">{starters.map(({ label, text, icon: Icon }) => <button type="button" key={label} onClick={() => send(text)}><span><Icon aria-hidden="true" /></span><strong>{label}</strong></button>)}</div>}
+    <p>Understand your bill or prepare a change. You review it before saving.</p>
+    {!messages.length && <div className="chat-starters">{starters.map(({ label, text, icon: Icon }) => <button type="button" key={label} disabled={!ready || typing} onClick={() => send(text)}><span><Icon aria-hidden="true" /></span><strong>{label}</strong></button>)}</div>}
   </div>;
 
   return <div className="ws-home chat-page"><div className="ws-shell">
@@ -111,17 +126,18 @@ export default function ChatScreen() {
       <section className="chat-panel" aria-label="Chat with WattSnap AI">
         <header className="chat-head">
           <Link href="/dashboard" className="chat-icon-button chat-back" aria-label="Back to home"><ChevronLeft aria-hidden="true" /></Link>
-          <span className="chat-head-avatar"><BotAvatar size="md" /><i aria-hidden="true" /></span>
-          <div className="chat-head-copy"><strong>WattSnap AI</strong><span>Your energy assistant</span></div>
+          <span className={`chat-head-avatar${offline ? " is-offline" : ""}`}><BotAvatar size="md" /><i aria-hidden="true" /></span>
+          <div className="chat-head-copy"><strong>WattSnap AI</strong><span>{offline ? "Offline · local assistant" : "Your energy assistant"}</span></div>
           <button type="button" className="chat-icon-button" onClick={() => { reset(); input.current?.focus(); }} disabled={!messages.length && !typing} aria-label="Start a new chat"><RotateCcw aria-hidden="true" /></button>
         </header>
+        {offline && <p className="chat-offline-status" role="status">You’re offline. Ask about saved records or type a budget, bill or appliance change.</p>}
         <ChatThread messages={messages} typing={typing} onSuggest={send} intro={intro} actions={actions} />
         <form className="chat-composer" onSubmit={submit}>
           <div className="chat-input">
-            <textarea ref={input} rows={1} maxLength={500} value={draft} placeholder="Message WattSnap AI…" aria-label="Message WattSnap AI" onChange={event => setDraft(event.target.value)} onKeyDown={onKey} />
-            <button type="submit" className="chat-send" disabled={!draft.trim() || typing} aria-label="Send message"><ArrowUp aria-hidden="true" /></button>
+            <textarea ref={input} rows={1} maxLength={500} disabled={!ready} value={draft} placeholder="Message WattSnap AI…" aria-label="Message WattSnap AI" onChange={event => setDraft(event.target.value)} onKeyDown={onKey} />
+            <button type="submit" className="chat-send" disabled={!ready || !draft.trim() || typing} aria-label="Send message"><ArrowUp aria-hidden="true" /></button>
           </div>
-          <p className="chat-disclaimer"><Sparkles aria-hidden="true" /> AI can make mistakes. You confirm every change.</p>
+          <p className="chat-disclaimer"><Sparkles aria-hidden="true" />{offline ? "Offline mode · confirm each change before saving" : "Review the values before confirming a change"}</p>
         </form>
       </section>
 
@@ -142,7 +158,7 @@ export default function ChatScreen() {
         </div>
         <div className="chat-side-card">
           <h3>Try saying</h3>
-          <div className="chat-side-prompts">{prompts.map(prompt => <button type="button" key={prompt} disabled={typing} onClick={() => send(prompt)}>{prompt}</button>)}</div>
+          <div className="chat-side-prompts">{prompts.map(prompt => <button type="button" key={prompt} disabled={!ready || typing} onClick={() => send(prompt)}>{prompt}</button>)}</div>
         </div>
       </aside>
     </main>
