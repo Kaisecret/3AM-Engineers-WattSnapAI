@@ -2651,7 +2651,7 @@ If production differs from `wattsnap-dev` in any row, stop and report the differ
 - `git diff main --stat` shows only planned files.
 - The branch is pushed to `origin`. `main` is unchanged.
 
-- [ ] **Step 1: Generate the types**
+- [x] **Step 1: Generate the types**
 
 This needs `npx supabase login` to have been run by the project owner in a terminal on this machine; ask them to run it once. The types are generated from `wattsnap-dev`, whose URL is the one in `.env.local`. Both projects have the same schema.
 
@@ -2667,7 +2667,7 @@ Expected: `12`.
 
 Do not edit the generated file.
 
-- [ ] **Step 2: Type the service and the repository against the schema**
+- [x] **Step 2: Type the service and the repository against the schema**
 
 In `src/features/auth/service.ts`, replace:
 
@@ -2719,14 +2719,14 @@ with:
 type Admin = SupabaseClient<Database>;
 ```
 
-- [ ] **Step 3: Check types**
+- [x] **Step 3: Check types**
 
 Run: `npx tsc --noEmit`
 Expected: no output.
 
 If the compiler reports that a column does not exist or has a different type, the code and the schema disagree. Fix the code to match the schema. Do not edit the generated file and do not add a cast.
 
-- [ ] **Step 4: Run everything**
+- [x] **Step 4: Run everything**
 
 Run: `npm test`
 Expected: `pass 124`, `fail 0`.
@@ -2737,7 +2737,7 @@ Expected: `pass 9`, `fail 0`, `skipped 0`.
 Run: `npm run build`
 Expected: the build completes with the same routes as on `main`.
 
-- [ ] **Step 5: Confirm no key reached the build output or Git**
+- [x] **Step 5: Confirm no key reached the build output or Git**
 
 In Git Bash:
 
@@ -2749,19 +2749,19 @@ git ls-files | grep -c '^\.env\.local$'
 
 Expected: `0` and `0`.
 
-- [ ] **Step 6: Confirm the scope of the change**
+- [x] **Step 6: Confirm the scope of the change**
 
 Run: `git diff main --stat -- . ":(exclude)docs/superpowers"`
 Expected: only `.env.example`, `docs/11-database-operations.md`, `package.json`, `package-lock.json`, `src/features/auth/*`, `src/generated/database.types.ts`, `src/lib/config/*`, `supabase/migrations/*`, `supabase/tests/*`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/generated/database.types.ts src/features/auth/service.ts src/features/auth/repository.ts
 git commit -m "feat: add generated database types and type the auth clients against them"
 ```
 
-- [ ] **Step 8: Push the branch**
+- [x] **Step 8: Push the branch**
 
 ```bash
 git push -u origin feat/supabase-auth

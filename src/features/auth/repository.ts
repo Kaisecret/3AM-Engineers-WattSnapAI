@@ -1,8 +1,9 @@
 import { createHmac } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "../../generated/database.types";
 
 /** Server only. Every function here takes a client created with the secret key. */
-type Admin = SupabaseClient;
+type Admin = SupabaseClient<Database>;
 
 export const MAX_USERNAME_FAILURES = 5;
 export const MAX_IP_FAILURES = 20;

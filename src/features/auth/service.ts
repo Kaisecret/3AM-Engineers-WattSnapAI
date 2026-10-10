@@ -1,8 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "../../generated/database.types";
 import { normalizeEmail, normalizeUsername, safeNextPath, validateCode, validateEmail, validateFullName, validatePassword, validateUsername } from "./schemas";
 import type { Account, AuthFailure, AuthFailureKind, AuthResult } from "./types";
 
-type Client = SupabaseClient;
+type Client = SupabaseClient<Database>;
 type ErrorLike = { code?: string; status?: number; name?: string; message?: string };
 
 export const GENERIC_LOGIN_FAILURE = "Incorrect email, username, or password.";
