@@ -296,7 +296,7 @@ async function responsive(browser) {
     await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River household', provider: 'anteco', location: 'Payao, San Jose de Buenavista, Antique', locality: { province: 'Antique', municipality: 'San Jose de Buenavista', barangay: 'Payao' }, bills: [7, 8, 9].map((month, i) => ({ id: `my-bill-${i}`, month: `2026-0${month}`, kwh: 100 + i * 30, amount: 1200 + i * 350, source: 'manual' })), budget: 2000, appliances: [{ id: 'fan', name: 'Living room electric fan', watts: 55, hours: 8, quantity: 2, days: 30 }, { id: 'fridge', name: 'Kitchen refrigerator', watts: 80, hours: 16, quantity: 1, days: 30 }] })); });
     const page = await context.newPage(); const errors = []; page.on('pageerror', error => errors.push(error.message));
     for (const route of ['/dashboard', '/bills', '/bills/new', '/appliances', '/appliances/new', '/tips', '/advisories', '/advisories/new', '/onboarding', '/settings', '/simulator', '/brownout-ready', '/assistant', '/setup']) {
-      await page.goto(`${baseURL}${route}`); await page.getByRole('navigation', { name: 'Main navigation' }).waitFor();
+      await page.goto(`${baseURL}${route}`); await page.locator('nav[aria-label="Main navigation"]').waitFor({ state: 'attached' });
       await page.waitForFunction(() => !!document.querySelector('.ws-home'));
       const fit = await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1);
       if (!fit) console.log(await page.evaluate(() => [...document.querySelectorAll('main *')].filter(el => el.getBoundingClientRect().right > innerWidth + 2).slice(0, 6).map(el => ({ tag: el.tagName, class: el.className, right: el.getBoundingClientRect().right }))));
@@ -306,6 +306,19 @@ async function responsive(browser) {
     }
     assert.deepEqual(errors, []); await context.close(); console.log(`PASS: fourteen household pages fit ${width}px without runtime errors`);
   }
+}
+
+async function chart(browser) {
+  for (const width of [320, 390, 1440]) {
+    const context = await browser.newContext({ viewport: { width, height: 900 } });
+    await context.addInitScript(() => localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River household', bills: [{ id: 'actual', month: '2026-09', kwh: 100, amount: 1200 }], appliances: [], budget: 1500 })));
+    const page = await context.newPage(); await page.goto(`${baseURL}/dashboard`); await page.locator('.ws-bar-value').waitFor();
+    assert.equal(await page.locator('.ws-bar-value').evaluate(value => { const chart = value.closest('.ws-chart').getBoundingClientRect(), rect = value.getBoundingClientRect(); return rect.top >= chart.top && rect.right <= chart.right; }), true, 'Selected chart value is fully visible');
+    assert.equal(await page.locator('.ws-chart-day').first().evaluate(button => button.getBoundingClientRect().width >= 44), true);
+    if (width !== 320) await page.screenshot({ path: `docs/frontend-review/dashboard-${width}.png`, fullPage: true });
+    await context.close();
+  }
+  console.log('PASS: chart values remain visible with usable touch targets at mobile and desktop widths');
 }
 
 async function history(browser) {
@@ -329,5 +342,5 @@ async function history(browser) {
 
 (async () => {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
-  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history', 'appliances', 'estimates', 'tips', 'advisories', 'storage', 'accessibility'])) await ({ design, records, household, bills, history, appliances, estimates, tips, advisories, storage, offline, accessibility, responsive })[check](browser); } finally { await browser.close(); }
+  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history', 'appliances', 'estimates', 'tips', 'advisories', 'storage', 'accessibility'])) await ({ design, records, household, bills, history, appliances, estimates, tips, advisories, storage, offline, accessibility, responsive, chart })[check](browser); } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

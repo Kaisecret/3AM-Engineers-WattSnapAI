@@ -32,7 +32,7 @@ Baseline evidence: 76 feature tests pass; `npx.cmd tsc --noEmit` passes. Existin
 | 11 | Manual advisory review/history | Upload/paste, custom providers, deliberate original retention and qualified matching |
 | 12 | Offline persistence/shell | Expanded cached shells, scope-bound writes and unreadable-data protection |
 | 13 | Senior accessibility | Readable labels, touch targets, focus, reduced motion and hardware feedback |
-| 14 | Responsive verification | Pending |
+| 14 | Responsive verification | Fourteen routes checked at 320, 390, 768, 1024 and 1440px |
 | 15 | Content accuracy | Pending |
 | 16 | Frontend contracts/code quality | Pending |
 | 17 | Full local verification | Pending |
@@ -93,3 +93,7 @@ The existing service worker now prepares all household routes and original publi
 ## 13. Accessible existing controls
 
 Targeted styles improve secondary-text contrast, 16px form labels, 44px controls and readable appliance choices. Smaller screens wrap full appliance names into the existing grid. Selected choices retain text and selection state as well as color. Focus remains visible and reduced-motion preferences stop decorative transitions. Unsupported camera flashlights are explicitly unavailable rather than clickable without feedback. Confirmation dialogs retain keyboard cancellation and restore focus. Local checks cover keyboard operation, readable names, reduced motion and measured touch targets.
+
+## 14. Responsive review
+
+The completion suite checks fourteen household pages at five viewport widths, preserving the existing desktop sidebar and mobile navigation. Visual review found a clipped selected chart value; added chart space and full-width touch targets fix it without changing bar values or page arrangement. The desktop budget card now shows the saved target and actual bill usage instead of always asking for setup. Existing dialog constraints and responsive form grids remain. Representative mobile dashboard, desktop dashboard and appliance-form screenshots are saved in [frontend-review](./frontend-review). Checks report no document overflow or browser runtime exceptions.
