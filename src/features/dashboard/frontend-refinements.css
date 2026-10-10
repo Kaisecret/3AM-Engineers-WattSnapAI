@@ -3,3 +3,5 @@
 .ws-home :is(.ui-primary, .ui-secondary) { min-height: 44px; font-size: 16px; }
 .ws-home :is(button, input, select, textarea):disabled { cursor: not-allowed; }
 .ws-home :is(input, select, textarea) { max-width: 100%; }
+.scan-fields select { width: 100%; min-height: 48px; border: 1px solid #d7e6ec; border-radius: 12px; padding: 10px 12px; font: inherit; color: #17394d; background: white; }
+html[data-theme="dark"] .scan-fields select { background: #192e3d; border-color: #4c6e7d; color: #edf6fa; }

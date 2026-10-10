@@ -9,6 +9,8 @@ import { usePreviewHousehold } from "../use-preview-household";
 import { billMonth, compareWithPrevious, currentMonth, dueDateLabel, latestBill, monthName, pesos, sampleScanReading, shiftMonth, sortBillsByMonth, type PreviewBill } from "../preview-data";
 import BillReview, { type BillReviewDraft, type BillPreviewSource } from "@/features/bill-scanner/components/bill-review";
 import { previewProviderName } from "@/features/household-profile/provider-preview";
+import { usePreviewStorageKey } from "@/features/auth/use-preview-storage-key";
+import { billDraftStorageKey, normalizeBillDraft } from "@/features/bill-scanner/local-draft";
 
 type Phase = "camera" | "scanning" | "review" | "saved";
 type CameraState = "idle" | "starting" | "live" | "blocked" | "unavailable";
@@ -31,6 +33,7 @@ export default function ScanScreen() {
   const [phase, setPhase] = useState<Phase>("camera");
   const [camera, setCamera] = useState<CameraState>("idle");
   const [torch, setTorch] = useState(false);
+  const [torchAvailable, setTorchAvailable] = useState(false);
   const [image, setImage] = useState<{ src: string; fit: "cover" | "contain" } | null>(null);
   const [reading, setReading] = useState<Reading | null>(null);
   const [mode, setMode] = useState<"scan" | "manual">("scan");
@@ -49,13 +52,31 @@ export default function ScanScreen() {
   const uploadRequest = useRef(0);
   const fileInput = useRef<HTMLInputElement>(null);
   const objectUrl = useRef("");
+  const draftKey = usePreviewStorageKey(billDraftStorageKey);
+  const [loadedDraftKey, setLoadedDraftKey] = useState<string | null>(null);
+  const [draftNotice, setDraftNotice] = useState("");
+  const [draftBlocked, setDraftBlocked] = useState(false);
+  const discard = useRef<HTMLDialogElement>(null);
   const preview = reading ?? sampleScanReading(household.bills, new Date(), () => 0.5);
+
+  useEffect(() => {
+    if (!ready) return;
+    try { const raw = sessionStorage.getItem(draftKey); if (raw) { setDraft(normalizeBillDraft(JSON.parse(raw))); setMode("manual"); setPhase("review"); setDraftNotice("Your unfinished bill fields were restored. Reattach the photo if you need it for comparison."); } setDraftBlocked(false); }
+    catch { setDraftBlocked(true); setDraftNotice("Your earlier draft could not be opened. It is unchanged. Choose Discard draft to start again, or keep your entered values on this page."); }
+    setLoadedDraftKey(draftKey);
+  }, [ready, draftKey]);
+  useEffect(() => {
+    if (loadedDraftKey !== draftKey || phase !== "review" || draftBlocked) return;
+    try { sessionStorage.setItem(draftKey, JSON.stringify({ version: 1, draft })); }
+    catch { setDraftNotice("Unfinished fields cannot be retained in this tab. Keep this page open until you save the reviewed bill."); }
+  }, [draft, draftKey, loadedDraftKey, phase, draftBlocked]);
 
   const releaseCamera = useCallback(() => {
     request.current += 1;
     stream.current?.getTracks().forEach(track => track.stop());
     stream.current = null;
     setTorch(false);
+    setTorchAvailable(false);
   }, []);
 
   const startCamera = useCallback(async () => {
@@ -68,6 +89,7 @@ export default function ScanScreen() {
       // A newer request or leaving the page makes this stream stale.
       if (id !== request.current) { media.getTracks().forEach(track => track.stop()); return; }
       stream.current = media;
+      setTorchAvailable(Boolean((media.getVideoTracks()[0]?.getCapabilities?.() as MediaTrackCapabilities & { torch?: boolean })?.torch));
       setCamera("live");
     } catch (reason) {
       if (id !== request.current) return;
@@ -112,7 +134,7 @@ export default function ScanScreen() {
   }, [phase]);
 
   function beginScan() {
-    setReading(null); setDraft({ month: currentMonth(), amount: "", kwh: "", dueDate: "", periodStart: "", periodEnd: "" }); setMode("manual"); setError(""); setPhase("review");
+    setReading(null); setDraft(previous => ({ ...previous, month: previous.month || currentMonth(), provider: previous.provider || household.provider || "" })); setMode("manual"); setError(""); setPhase("review");
   }
 
   function capture() {
@@ -137,6 +159,7 @@ export default function ScanScreen() {
     if (fileInput.current) fileInput.current.value = "";
     if (!acceptedTypes.includes(file.type)) { setError("Choose a JPG, PNG, WebP, or PDF bill."); return; }
     if (file.size > 10 * 1024 * 1024) { setError("Choose a file up to 10 MB."); return; }
+    if (file.size === 0 || (file.type === "application/pdf" && !/%PDF-\d\.\d/.test(await file.slice(0, 1024).text()))) { setError("That file could not be opened. Choose a valid bill image or PDF."); return; }
     const uploadId = ++uploadRequest.current;
     const nextUrl = URL.createObjectURL(file);
     setLoadingFile(true);
@@ -164,28 +187,29 @@ export default function ScanScreen() {
     uploadRequest.current += 1; setLoadingFile(false);
     stopCamera();
     const latest = latestBill(household.bills);
-    setDraft({ month: latest ? shiftMonth(latest.month, 1) : currentMonth(), kwh: "", amount: "", dueDate: "", periodStart: "", periodEnd: "" });
+    setDraft(previous => ({ ...previous, month: previous.month || (latest ? shiftMonth(latest.month, 1) : currentMonth()), provider: previous.provider || household.provider || "" }));
     setMode("manual"); setImage(null); setSource(null); setReading(null); setError(""); setPhase("review");
   }
 
-  function restart() {
+  function restart(clear = false) {
     uploadRequest.current += 1; setLoadingFile(false);
     setPhase("camera"); setImage(null); setSource(null); setSaved(null); setReading(null); setError(""); setProgress(0);
     if (objectUrl.current) { URL.revokeObjectURL(objectUrl.current); objectUrl.current = ""; }
     stopCamera();
+    if (clear) { try { sessionStorage.removeItem(draftKey); } catch { /* The reviewed record remains unchanged. */ } setDraft({ month: "", amount: "", kwh: "", dueDate: "", periodStart: "", periodEnd: "" }); setDraftBlocked(false); setDraftNotice(""); }
   }
 
   async function toggleTorch() {
+    if (!torchAvailable) return;
     const next = !torch;
-    setTorch(next);
-    try { await stream.current?.getVideoTracks()[0]?.applyConstraints({ advanced: [{ torch: next } as unknown as MediaTrackConstraintSet] }); }
-    catch { /* Torch control is optional; many cameras do not offer it. */ }
+    try { await stream.current?.getVideoTracks()[0]?.applyConstraints({ advanced: [{ torch: next } as unknown as MediaTrackConstraintSet] }); setTorch(next); }
+    catch { setTorch(false); setTorchAvailable(false); setError("This camera does not support a flashlight. You can still take a photo."); }
   }
 
   function save(bill: Omit<PreviewBill, "id">) {
     const existing = household.bills.find(item => item.month === bill.month);
-    const record: PreviewBill = { ...bill, provider: household.provider, id: existing?.id ?? crypto.randomUUID() };
-    if (update({ bills: [...household.bills.filter(item => item.month !== bill.month), record] })) { setSaved(record); setError(""); setPhase("saved"); }
+    const record: PreviewBill = { ...bill, id: existing?.id ?? crypto.randomUUID() };
+    if (update({ bills: [...household.bills.filter(item => item.month !== bill.month), record] })) { try { sessionStorage.removeItem(draftKey); } catch { /* Confirmed local record is already saved. */ } setSaved(record); setError(""); setDraftNotice(""); setPhase("saved"); }
   }
 
   function onDrop(event: DragEvent<HTMLElement>) {
@@ -299,7 +323,9 @@ export default function ScanScreen() {
             <ul>{scanSteps.map((label, index) => <li key={label} className={index < step || progress >= 100 ? "is-done" : index === step ? "is-current" : ""}><span>{index < step || progress >= 100 ? <Check aria-hidden="true" /> : <i />}</span>{label}</li>)}</ul>
           </div>}
 
-          {phase === "review" && <BillReview mode={mode} draft={draft} original={reading} source={source} provider={previewProviderName(household.provider)} duplicate={duplicate} offline={offline} ready={ready} storageError={storageError} onChange={setDraft} onRestart={restart} onSave={save} />}
+          {draftNotice && <p className="br-note" role="status">{draftNotice}</p>}
+          {(phase === "review" || draftNotice) && <button type="button" className="ui-secondary" onClick={() => discard.current?.showModal()}>Discard draft</button>}
+          {phase === "review" && <BillReview mode={mode} draft={draft} original={reading} source={source} provider={previewProviderName(household.provider)} duplicate={duplicate} offline={offline} ready={ready} storageError={storageError} onChange={setDraft} onRestart={() => restart()} onSave={save} onReplaceSource={() => fileInput.current?.click()} onRemoveSource={() => { if (objectUrl.current) URL.revokeObjectURL(objectUrl.current); objectUrl.current = ""; setSource(null); setImage(null); }} />}
 
           {phase === "saved" && saved && <div className="scan-saved" role="status">
             <Image className="scan-saved-art" src="/assets/branding/actions-3.png" alt="" width={240} height={240} sizes="150px" />
@@ -317,11 +343,12 @@ export default function ScanScreen() {
             {savedChange && <ChangeBadge percent={savedChange.kwhPercent} month={savedChange.previous.month} />}
             <div className="scan-actions">
               <Link href={`/bills?added=${saved.id}`} className="ui-primary">View monthly history <ChevronRight size={18} aria-hidden="true" /></Link>
-              <button type="button" className="ui-secondary" onClick={restart}><ScanText size={18} aria-hidden="true" /> Scan another bill</button>
+              <button type="button" className="ui-secondary" onClick={() => restart(true)}><ScanText size={18} aria-hidden="true" /> Add another bill</button>
             </div>
           </div>}
         </section>
       </div>
+      <dialog ref={discard} className="br-original-dialog" aria-labelledby="discard-bill-title"><h2 id="discard-bill-title">Discard unfinished bill?</h2><p>Your saved bills remain unchanged. Only this unfinished draft is removed.</p><button type="button" className="ui-secondary" autoFocus onClick={() => discard.current?.close()}>Keep draft</button><button type="button" className="ui-primary" onClick={() => { discard.current?.close(); restart(true); }}>Discard unfinished bill</button></dialog>
     </PageShell>
   );
 }

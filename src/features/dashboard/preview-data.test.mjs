@@ -117,3 +117,10 @@ test("budget helpers suggest, parse, validate, and classify spending", () => {
   assert.equal(budgetStatus(1400, 1600), "near");
   assert.equal(budgetStatus(1700, 1600), "over");
 });
+
+test("optional billing date must exist and cannot be after the due date", () => {
+  const bill = { month: '2026-10', amount: 1200, kwh: 100 };
+  assert.ok(validateBill({ ...bill, billingDate: '2026-02-30' }));
+  assert.ok(validateBill({ ...bill, billingDate: '2026-10-16', dueDate: '2026-10-15' }));
+  assert.equal(validateBill({ ...bill, billingDate: '2026-10-01', dueDate: '2026-10-15' }), null);
+});

@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const fs = require('node:fs/promises');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const baseURL = process.env.UI_PREVIEW_URL || 'http://127.0.0.1:3002';
 
@@ -74,7 +75,55 @@ async function household(browser) {
   await context.close(); console.log('PASS: local household setup, explicit custom provider, refresh and returning access without passwords');
 }
 
+async function bills(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River home', provider: 'anteco', bills: [], appliances: [], budget: 0 })); });
+  const page = await context.newPage(); const ai = [];
+  page.on('request', request => { if (request.url().includes('/api/ai/')) ai.push(request.url()); });
+  await page.goto(`${baseURL}/bills/new`);
+  const upload = page.locator('input[type=file]').first();
+  await upload.setInputFiles({ name: 'bad.txt', mimeType: 'text/plain', buffer: Buffer.from('bad') });
+  await page.getByRole('alert').filter({ hasText: 'Choose a JPG' }).first().waitFor();
+  const photo = await fs.readFile('public/assets/branding/wattsnap-icon-192.png');
+  await upload.setInputFiles({ name: 'my-bill.png', mimeType: 'image/png', buffer: photo });
+  await page.getByLabel('Energy used', { exact: true }).waitFor();
+  assert.equal(await page.getByLabel('Energy used', { exact: true }).inputValue(), '', 'Upload does not invent extraction');
+  await page.getByLabel('Billing month', { exact: true }).fill('2026-09');
+  await page.getByLabel('Energy used', { exact: true }).fill('100');
+  await page.getByLabel('Amount due', { exact: true }).fill('1200');
+  await page.getByLabel('Due date', { exact: true }).fill('2026-10-15');
+  await page.getByLabel('Billing date', { exact: false }).fill('2026-10-01');
+  await page.getByLabel('Bill notes', { exact: false }).fill('Actual entered fields');
+  await page.getByRole('button', { name: 'Remove file', exact: true }).click();
+  assert.equal(await page.getByLabel('Amount due', { exact: true }).inputValue(), '1200');
+  await page.reload();
+  assert.equal(await page.getByLabel('Energy used', { exact: true }).inputValue(), '100');
+  assert.equal(await page.getByRole('checkbox', { name: 'I reviewed all the values above.', exact: false }).isChecked(), false, 'Refresh does not confirm a draft');
+  await page.getByRole('button', { name: 'Save to history', exact: true }).click();
+  await page.getByRole('alert').filter({ hasText: 'Confirm that you reviewed' }).waitFor();
+  await page.getByRole('checkbox', { name: 'I reviewed all the values above.', exact: false }).check();
+  await page.getByRole('button', { name: 'Save to history', exact: true }).click();
+  await page.getByRole('heading', { name: 'Added to your history!' }).waitFor();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1')).bills);
+  assert.equal(saved.length, 1); assert.equal(saved[0].source, 'manual'); assert.equal(saved[0].billingDate, '2026-10-01'); assert.equal(saved[0].notes, 'Actual entered fields');
+  assert.equal(await page.evaluate(() => sessionStorage.getItem('wattsnap-bill-draft-v1')), null);
+  await page.goto(`${baseURL}/bills/new`); await page.getByRole('button', { name: 'Type it', exact: true }).click();
+  await page.getByLabel('Billing month', { exact: true }).fill('2026-09');
+  await page.getByLabel('Energy used', { exact: true }).fill('105');
+  await page.getByLabel('Amount due', { exact: true }).fill('1250');
+  await page.getByRole('checkbox', { name: 'I reviewed all the values above.', exact: false }).check();
+  await page.getByRole('button', { name: 'Replace bill', exact: true }).click();
+  await page.getByRole('alert').filter({ hasText: 'Confirm replacement' }).waitFor();
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1')).bills[0].amount), 1200);
+  await page.getByRole('checkbox', { name: 'Replace the saved bill', exact: false }).check();
+  await page.getByRole('button', { name: 'Replace bill', exact: true }).click();
+  await page.getByRole('heading', { name: 'Added to your history!' }).waitFor();
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1')).bills.length), 1);
+  assert.deepEqual(ai, []);
+  await context.close(); console.log('PASS: bill photo/manual review, draft recovery, optional fields, confirmation and duplicate protection without AI calls');
+}
+
 (async () => {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
-  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household'])) await ({ design, records, household })[check](browser); } finally { await browser.close(); }
+  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills'])) await ({ design, records, household, bills })[check](browser); } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

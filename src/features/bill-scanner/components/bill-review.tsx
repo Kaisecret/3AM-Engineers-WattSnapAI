@@ -5,10 +5,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { Check, ChevronDown, FileImage, FileText, Info, Keyboard, RotateCcw, ShieldCheck, Sparkles, TriangleAlert, WifiOff, X, Zap } from "lucide-react";
 import { BillArt } from "@/features/dashboard/components/DashboardArtwork";
-import { billMonth, dueDateLabel, pesos, validateBill, type PreviewBill } from "@/features/dashboard/preview-data";
+import { billMonth, dueDateLabel, isProviderChoice, pesos, validateBill, type PreviewBill } from "@/features/dashboard/preview-data";
+import { previewProviderName, previewProviders } from "@/features/household-profile/provider-preview";
+import type { LocalBillDraft } from "../local-draft";
 import "../bill-review.css";
 
-export type BillReviewDraft = { month: string; amount: string; kwh: string; dueDate: string; periodStart: string; periodEnd: string };
+export type BillReviewDraft = LocalBillDraft;
 export type BillPreviewSource = { name: string; kind: "sample" | "image" | "pdf"; url?: string };
 
 type Props = {
@@ -24,9 +26,11 @@ type Props = {
   onChange: (draft: BillReviewDraft) => void;
   onRestart: () => void;
   onSave: (bill: Omit<PreviewBill, "id">) => void;
+  onReplaceSource?: () => void;
+  onRemoveSource?: () => void;
 };
 
-export default function BillReview({ mode, draft, original, source, provider, duplicate, offline, ready, storageError, onChange, onRestart, onSave }: Props) {
+export default function BillReview({ mode, draft, original, source, provider, duplicate, offline, ready, storageError, onChange, onRestart, onSave, onReplaceSource, onRemoveSource }: Props) {
   const [reviewed, setReviewed] = useState(false);
   const [replace, setReplace] = useState(false);
   const [error, setError] = useState("");
@@ -54,9 +58,11 @@ export default function BillReview({ mode, draft, original, source, provider, du
       month: draft.month, amount: Number(draft.amount), kwh: Number(draft.kwh),
       dueDate: draft.dueDate || undefined, periodStart: draft.periodStart || undefined, periodEnd: draft.periodEnd || undefined,
       source: sample ? "sample" : "manual", sourceName: source?.name,
+      provider: draft.provider, billingDate: draft.billingDate || undefined, notes: draft.notes?.trim() || undefined,
     };
     const issue = validateBill(bill);
     if (issue) { setError(issue); if (issue.includes("period")) setPeriodOpen(true); return; }
+    if (!sample && !isProviderChoice(draft.provider)) { setError("Select the electricity provider printed on this bill."); return; }
     if (!reviewed) { setError("Confirm that you reviewed the values before saving."); confirmation.current?.focus(); return; }
     if (duplicate && !replace) { setError("Confirm replacement, or choose a different billing month."); replacement.current?.focus(); return; }
     setError("");
@@ -75,11 +81,16 @@ export default function BillReview({ mode, draft, original, source, provider, du
     <div className="br-provider"><Zap size={15} aria-hidden="true" /><span>{provider}</span><Link href="/onboarding">Change household</Link></div>
 
     <div className="scan-fields br-fields">
+      <label><span className="scan-label">Electricity provider</span><select value={draft.provider?.startsWith("custom:") ? "other" : draft.provider ?? ""} onChange={event => edit({ provider: event.target.value })}><option value="">Select provider</option>{previewProviders.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}<option value="other">Other provider</option></select></label>
+      {(draft.provider === "other" || draft.provider?.startsWith("custom:")) && <label><span className="scan-label">Other provider name</span><input maxLength={80} value={draft.provider.startsWith("custom:") ? previewProviderName(draft.provider) : ""} onChange={event => edit({ provider: `custom:${encodeURIComponent(event.target.value)}` })} /></label>}
       <label htmlFor="review-month"><span id="review-month-label" className="scan-label">Billing month</span><input id="review-month" aria-labelledby="review-month-label" type="month" required value={draft.month} onChange={event => edit({ month: event.target.value })} /></label>
       <label htmlFor="review-due"><span className="scan-label"><span id="review-due-label">Due date</span><small>optional</small></span><input id="review-due" aria-labelledby="review-due-label" aria-describedby="review-due-hint" type="date" value={draft.dueDate} onChange={event => edit({ dueDate: event.target.value })} /><small id="review-due-hint" className="br-field-hint">Leave blank if it’s unreadable.</small></label>
       <label htmlFor="review-kwh"><span id="review-kwh-label" className="scan-label">Energy used</span><span className="scan-unit"><input id="review-kwh" aria-labelledby="review-kwh-label" type="number" inputMode="decimal" min="0.01" step="0.01" placeholder="e.g. 109" required value={draft.kwh} onChange={event => edit({ kwh: event.target.value })} /><em>kWh</em></span></label>
       <label htmlFor="review-amount"><span id="review-amount-label" className="scan-label">Amount due</span><span className="scan-unit is-prefix"><em>₱</em><input id="review-amount" aria-labelledby="review-amount-label" type="number" inputMode="decimal" min="0.01" step="0.01" placeholder="e.g. 1248.50" required value={draft.amount} onChange={event => edit({ amount: event.target.value })} /></span></label>
+      <label><span className="scan-label">Billing date <small>optional</small></span><input type="date" value={draft.billingDate ?? ""} onChange={event => edit({ billingDate: event.target.value })} /></label>
+      <label><span className="scan-label">Bill notes <small>optional</small></span><input maxLength={500} value={draft.notes ?? ""} onChange={event => edit({ notes: event.target.value })} /></label>
     </div>
+    {source && <div className="br-actions">{onReplaceSource && <button type="button" className="ui-secondary" onClick={() => { setReviewed(false); onReplaceSource(); }}>Replace file</button>}{onRemoveSource && <button type="button" className="ui-secondary" onClick={() => { setReviewed(false); onRemoveSource(); }}>Remove file</button>}</div>}
     <div className="br-period">
       <button type="button" aria-expanded={periodOpen} aria-controls="review-period-fields" onClick={() => setPeriodOpen(value => !value)}><span>Exact billing period <small>optional</small></span><ChevronDown aria-hidden="true" /></button>
       {periodOpen && <div id="review-period-fields"><p>Use the dates printed on your bill. Leave both blank if they aren’t available.</p><div className="scan-fields">
@@ -97,7 +108,7 @@ export default function BillReview({ mode, draft, original, source, provider, du
     <label className={`br-check br-confirm${reviewed ? " is-checked" : ""}`}><input ref={confirmation} type="checkbox" checked={reviewed} onChange={event => { setReviewed(event.target.checked); setError(""); }} /><span><strong>I reviewed all the values above.</strong><small>{sample ? "I understand this is a sample record for the UI preview." : "They match my bill. Any missing optional fields will stay unknown."}</small></span></label>
     {(error || storageError) && <p id="bill-review-error" className="ui-error" role="alert">{error || storageError}</p>}
     <div className="scan-actions br-actions"><button type="button" className="ui-secondary" onClick={onRestart}><RotateCcw size={17} aria-hidden="true" /> {sample ? "Start over" : "Use scanner"}</button><button type="submit" className="ui-primary" disabled={!ready}><Check size={18} aria-hidden="true" /> {duplicate ? "Replace bill" : sample ? "Save sample bill" : "Save to history"}</button></div>
-    <p className="br-save-note"><ShieldCheck size={14} aria-hidden="true" /> Only reviewed values are saved in this browser.</p>
+    <p className="br-save-note"><ShieldCheck size={14} aria-hidden="true" /> Reviewed records stay on this device. Unfinished fields stay in this tab; photos are temporary and must be reattached after refresh.</p>
 
     <dialog ref={dialog} className="br-original-dialog" aria-labelledby="original-bill-heading" onClose={() => originalButton.current?.focus()} onClick={event => { if (event.target === event.currentTarget) dialog.current?.close(); }}>
       <div className="br-original-head"><div><span className="br-eyebrow">REFERENCE DOCUMENT</span><h2 id="original-bill-heading">{source?.kind === "sample" ? "Sample electricity bill" : "Your original bill"}</h2></div><button type="button" className="ui-icon-button" aria-label="Close original bill" onClick={() => dialog.current?.close()}><X aria-hidden="true" /></button></div>

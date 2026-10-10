@@ -3,6 +3,7 @@ export type ApplianceKind = "fan" | "aircon" | "fridge" | "tv" | "rice-cooker" |
 export interface PreviewBill {
   id: string; month: string; amount: number; kwh: number; dueDate?: string; source?: BillSource;
   periodStart?: string; periodEnd?: string; provider?: string; sourceName?: string;
+  billingDate?: string; notes?: string;
 }
 export interface PreviewAppliance {
   id: string; name: string; watts: number; hours: number; quantity: number; kind?: ApplianceKind;
@@ -97,6 +98,8 @@ export function validateBill(bill: Omit<PreviewBill, "id">) {
   if (!Number.isFinite(bill.amount) || bill.amount <= 0) return "Enter a bill amount greater than zero.";
   if (!Number.isFinite(bill.kwh) || bill.kwh <= 0) return "Enter consumption greater than zero.";
   if (bill.dueDate && !isCalendarDate(bill.dueDate)) return "Choose a valid due date.";
+  if (bill.billingDate && !isCalendarDate(bill.billingDate)) return "Choose a valid billing date.";
+  if (bill.billingDate && bill.dueDate && bill.billingDate > bill.dueDate) return "The due date cannot be before the billing date.";
   if (Boolean(bill.periodStart) !== Boolean(bill.periodEnd)) return "Enter both billing period dates, or leave both blank.";
   if (bill.periodStart && bill.periodEnd) {
     if (!isCalendarDate(bill.periodStart) || !isCalendarDate(bill.periodEnd)) return "Choose valid billing period dates.";

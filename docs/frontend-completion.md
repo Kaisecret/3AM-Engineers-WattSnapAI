@@ -24,7 +24,7 @@ Baseline evidence: 76 feature tests pass; `npx.cmd tsc --noEmit` passes. Existin
 | 3 | Preserve design; targeted refinement | Existing layout retained; focus and controls checked at 320–1440px |
 | 4 | Remove prototype/sample presentation | Empty states, actual-only charts, sample controls removed; legacy fixtures preserved |
 | 5 | Local household access and provider | Password-free local installation; explicit manual provider and preserved scopes |
-| 6 | Bill upload/manual review/draft | Pending |
+| 6 | Bill upload/manual review/draft | Real photo/manual entry, optional fields, confirmed saves and tab draft recovery |
 | 7 | Actual bill history/dashboard/change | Pending |
 | 8 | Appliance capture/management | Pending |
 | 9 | Appliance estimator | Pending |
@@ -59,3 +59,9 @@ Checks: empty-state/manual-entry browser flow, actual-only chart tests, fixture-
 Public account routes now reuse the existing illustrated shell for honest local household access. They request no password, OTP or simulated Google verification. Original auth implementation files and service/repository infrastructure remain retained and unchanged. A versioned installation pointer resumes the active legacy scope (or the latest legacy identity when no unscoped home exists), without copying or deleting any previous records. One household is presented; no account chooser or multi-household management is added. Closing the household returns to the homepage without deleting storage.
 
 Location lookup remains optional, explicitly explained and user-triggered. The fabricated example location and province-based utility suggestions are removed. Provider selection is manual and reviewed before save; ANTECO and the existing list remain, with an Other provider name for wider use. GPS never confirms a provider. Browser checks cover real household saves, a custom provider, refresh and returning access. Rule tests verify legacy scope preservation and unreadable-pointer protection.
+
+## 6. Bill entry and interrupted sessions
+
+Uploads and supported camera captures are reference documents for manual review. Fields include provider, month, exact period, billing date, amount, due date, kWh and optional notes. The printed provider is saved with the bill rather than overwritten by the household default. Replacement/removal retains entered values; no image generates invented values. Validation covers MIME/size/decode, PDF signatures, calendar dates, period ordering, positive numeric inputs, explicit review and confirmed duplicate replacement. Camera permission is user-triggered; unsupported hardware falls back to upload/manual entry, and flashlight state changes only after a successful supported operation.
+
+Versioned session drafts retain typed fields across refresh, without retaining photos or review confirmation. Successful saves remove the unfinished draft. Explicit discard uses a confirmation dialog; changing the input preserves values. Browser checks cover photo/manual input, refresh, optional fields, no implicit save and duplicate protection. Rule tests reject unreadable/oversized drafts and invalid billing dates. No AI requests are made.
