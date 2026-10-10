@@ -18,4 +18,6 @@ Every numbered core feature from the proposal has its own file. Each file define
 | F11 | [Smart energy budget](11-smart-energy-budget.md) | Dev 3 | F03, F05 |
 | F12 | [Brownout Ready Mode](12-brownout-ready-mode.md) | Dev 4 | F08 |
 
+For what is built today, gaps against the proposal, and how to enter ANTECO bills and devices, see [Feature status and user guide](../feature-status.md).
+
 F09 is a cross-cutting foundation, not a final feature bolted onto completed modules. All owners implement saved local views for their own records.

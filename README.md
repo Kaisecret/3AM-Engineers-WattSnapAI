@@ -58,6 +58,7 @@ The planned stack includes **Next.js**, **Supabase**, and **Google Gemini**, del
 - [Proposal overview](docs/01-proposal-overview.md)
 - [System goals](docs/02-system-goals.md)
 - [Feature specifications](docs/features/README.md)
+- [Feature status and user guide](docs/feature-status.md)
 - [Architecture](docs/03-architecture.md)
 - [Project structure](docs/04-project-structure.md)
 - [Shared contracts](docs/05-shared-contracts.md)
