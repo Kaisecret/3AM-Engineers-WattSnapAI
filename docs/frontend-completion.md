@@ -30,7 +30,7 @@ Baseline evidence: 76 feature tests pass; `npx.cmd tsc --noEmit` passes. Existin
 | 9 | Appliance estimator | Validated local formula; no invented tariff or meter matching |
 | 10 | Deterministic local tips | Actual input basis; immediate offline creation and refresh |
 | 11 | Manual advisory review/history | Upload/paste, custom providers, deliberate original retention and qualified matching |
-| 12 | Offline persistence/shell | Pending |
+| 12 | Offline persistence/shell | Expanded cached shells, scope-bound writes and unreadable-data protection |
 | 13 | Senior accessibility | Pending |
 | 14 | Responsive verification | Pending |
 | 15 | Content accuracy | Pending |
@@ -85,3 +85,7 @@ Tips now create and refresh immediately from reviewed local records, including w
 ## 11. Provider advisories
 
 Screenshot and pasted-text reviews preserve the original and provide editable provider, areas, schedule, restoration wording and reason. Custom providers now validate and persist consistently with household and bill entry. Screenshot saves require a deliberate choice to retain the original on this device; temporary uploads are not automatically persisted. Household matching remains qualified as Affected, Possibly Affected or Not Listed, with no live-status claim. Existing correction, history, source access and confirmed removal are retained. Direct incoming app sharing is unavailable; the UI supplies the screenshot-save/upload fallback without adding a backend endpoint. Browser checks cover actual uploads, consent, text saves, clear/ambiguous matching, correction and refresh.
+
+## 12. Offline and data protection
+
+The existing service worker now prepares all household routes and original public mascot art. Cache updates remove only obsolete public shell caches; household localStorage is retained. Offline links use cached document navigation instead of requiring an uncached server-component response. A clear connectivity indicator explains local availability. API, POST, third-party and household-photo requests remain outside shell caching. Household edits preserve unknown legacy fields. Feature reads/writes are bound to the installation scope; unreadable records and competing-tab changes block overwrites. Offline use requires a successful online shell installation. Browser clearing still removes locally stored records. Production-shell tests and storage-failure tests are included in local verification.

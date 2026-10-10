@@ -61,6 +61,9 @@ export default function ScanScreen() {
 
   useEffect(() => {
     if (!ready) return;
+    setDraft({ month: "", kwh: "", amount: "", dueDate: "", periodStart: "", periodEnd: "" }); setSource(null); setImage(null); setPhase("camera");
+    request.current++; stream.current?.getTracks().forEach(track => track.stop()); stream.current = null; setCamera("idle");
+    if (objectUrl.current) URL.revokeObjectURL(objectUrl.current); objectUrl.current = "";
     try { const raw = sessionStorage.getItem(draftKey); if (raw) { setDraft(normalizeBillDraft(JSON.parse(raw))); setMode("manual"); setPhase("review"); setDraftNotice("Your unfinished bill fields were restored. Reattach the photo if you need it for comparison."); } setDraftBlocked(false); }
     catch { setDraftBlocked(true); setDraftNotice("Your earlier draft could not be opened. It is unchanged. Choose Discard draft to start again, or keep your entered values on this page."); }
     setLoadedDraftKey(draftKey);

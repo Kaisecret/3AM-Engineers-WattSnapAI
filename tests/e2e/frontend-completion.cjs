@@ -234,6 +234,46 @@ async function advisories(browser) {
   await context.close(); console.log('PASS: advisory upload consent, custom provider, exact/ambiguous matches, correction, paste and refresh');
 }
 
+async function storage(browser) {
+  const context = await browser.newContext();
+  await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River home', bills: [{ id: 'sample-preserved', month: '2026-07', kwh: 100, amount: 1200, source: 'sample' }], budget: 0, appliances: [], futureField: { preserve: true } })); });
+  const page = await context.newPage(); await page.goto(`${baseURL}/budget`);
+  await page.getByLabel('Monthly budget in pesos').fill('2000');
+  await page.getByRole('button', { name: /Set budget to/ }).click(); await page.getByRole('status').filter({ hasText: 'Budget set' }).waitFor();
+  const home = await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1')));
+  assert.deepEqual(home.futureField, { preserve: true }); assert.equal(home.bills[0].id, 'sample-preserved');
+  await page.evaluate(() => { Storage.prototype.setItem = () => { throw new DOMException('Full storage', 'QuotaExceededError'); }; });
+  await page.getByLabel('Monthly budget in pesos').fill('2500'); await page.getByRole('button', { name: /Set budget to/ }).click();
+  await page.getByRole('alert').filter({ hasText: 'could not be saved' }).waitFor(); assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1')).budget), 2000);
+  await context.close();
+  const broken = await browser.newContext(); await broken.addInitScript(() => localStorage.setItem('wattsnap-ui-preview-v1', '{unreadable'));
+  const brokenPage = await broken.newPage(); await brokenPage.goto(`${baseURL}/budget`);
+  await brokenPage.getByRole('alert').filter({ hasText: 'could not be opened' }).waitFor();
+  await brokenPage.getByLabel('Monthly budget in pesos').fill('2000'); await brokenPage.getByRole('button', { name: /Set budget to/ }).click();
+  assert.equal(await brokenPage.evaluate(() => localStorage.getItem('wattsnap-ui-preview-v1')), '{unreadable'); await broken.close();
+  console.log('PASS: unknown legacy fields and fixtures retained; quota and unreadable data do not overwrite records');
+}
+
+async function offline(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River home', bills: [{ id: 'actual', month: '2026-09', kwh: 100, amount: 1200 }], budget: 1500, appliances: [{ id: 'fan', name: 'My fan', watts: 55, hours: 8, quantity: 1 }] })); });
+  const page = await context.newPage(); const errors = []; page.on('pageerror', error => errors.push(error.message));
+  await page.goto(`${baseURL}/dashboard`); await page.locator('.ws-chart-day').first().waitFor();
+  await page.waitForFunction(async () => { const registration = await navigator.serviceWorker.getRegistration(); if (registration?.active?.state !== 'activated' || !navigator.serviceWorker.controller) return false; const cache = await caches.open('wattsnap-shell-v2'); return !!await cache.match('/advisories/new') && !!await cache.match('/assistant'); }, undefined, { timeout: 60000 });
+  await page.reload(); await page.locator('.ws-chart-day').first().waitFor();
+  await page.evaluate(async () => { const resources = performance.getEntriesByType('resource').map(entry => entry.name).filter(name => new URL(name).pathname.startsWith('/_next/image')); await Promise.all(resources.map(url => fetch(url))); });
+  await context.setOffline(true);
+  for (const route of ['/bills', '/appliances', '/tips', '/advisories', '/onboarding', '/budget', '/simulator', '/brownout-ready', '/assistant', '/dashboard']) {
+    console.log(`Checking cached route ${route}`);
+    await page.goto(`${baseURL}${route}`); await page.locator('.ws-home').waitFor(); await page.locator('.ws-connectivity').waitFor();
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true, `${route} fits offline`);
+  }
+  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Energy', exact: true }).click(); await page.waitForURL('**/bills');
+  await page.locator('.en-list > li').waitFor();
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1')).bills[0].kwh), 100);
+  assert.deepEqual(errors, []); await context.close(); console.log('PASS: production cached shells, cold offline navigation, saved records and no runtime errors');
+}
+
 async function history(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River home', budget: 0, appliances: [], bills: [{ id: 'actual-1', month: '2026-07', kwh: 100, amount: 1200, source: 'manual', periodStart: '2026-07-01', periodEnd: '2026-07-31' }, { id: 'actual-2', month: '2026-09', kwh: 150, amount: 1800, source: 'manual', periodStart: '2026-09-01', periodEnd: '2026-09-30' }] })); });
@@ -255,5 +295,5 @@ async function history(browser) {
 
 (async () => {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
-  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history', 'appliances', 'estimates', 'tips', 'advisories'])) await ({ design, records, household, bills, history, appliances, estimates, tips, advisories })[check](browser); } finally { await browser.close(); }
+  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history', 'appliances', 'estimates', 'tips', 'advisories', 'storage'])) await ({ design, records, household, bills, history, appliances, estimates, tips, advisories, storage, offline })[check](browser); } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

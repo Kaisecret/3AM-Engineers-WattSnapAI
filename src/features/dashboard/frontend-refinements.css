@@ -11,3 +11,4 @@ html[data-theme="dark"] .scan-fields select { background: #192e3d; border-color:
 html[data-theme="dark"] .ui-confirm-dialog { color: #edf6fa; background: #192e3d; border-color: #4c6e7d; }
 .en-chart { overflow-x: auto; }.en-col { min-width: 44px; }.en-bar { display: block; }.ws-chart { overflow-x: auto; }.ws-chart-day { min-width: 44px; }.ws-day-label small { display: block; }
 .en-col { border: 0; padding: 0; background: transparent; }.en-plot, .en-labels { min-width: 314px; }.en-labels span { min-width: 44px; }.en-col:focus-visible { outline: 3px solid #1687b2; outline-offset: 2px; }.en-compare .ui-note { margin-top: 16px; font-size: 14px; line-height: 1.6; }
+.ws-connectivity { background: #fff5d7; color: #59420c; padding: 12px 20px; font-size: 16px; line-height: 1.5; text-align: center; }
