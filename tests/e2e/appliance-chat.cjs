@@ -124,7 +124,7 @@ async function main() {
       await page.goto(base+'/assistant');await message(page,'Set my budget to 2100');
       await page.getByRole('button',{name:/Confirm: Set your monthly budget to ₱2,100/}).waitFor();
       assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1')).budget),0);
-      await page.getByText('Gemini · online',{exact:true}).waitFor();assert.equal(calls,1);
+      await page.getByText('WattSnap AI · online',{exact:true}).waitFor();assert.equal(calls,1);
     });
     await scenario('the first online saved-data question goes to Gemini with the actual snapshot',390,async page=>{
       let calls=0;await page.route('**/api/ai/assistant',route=>{calls++;const data=route.request().postDataJSON();assert.equal(data.context.budget,2000);return route.fulfill({json:{source:'gemini',reply:{text:'Your **monthly budget** is ₱2,000.00.\n\n- August 2026: 192 kWh · ₱3,072.60.'}}});});
@@ -136,7 +136,7 @@ async function main() {
     for(const width of [320,390,768])await scenario(`conversation highlights and paragraphs fit at ${width}px`,width,async page=>{
       let calls=0;await page.route('**/api/ai/assistant',route=>{calls++;return route.fulfill({json:{source:'gemini',reply:{text:'**September 2026** used less electricity, but your saved bill total was higher.\n\n- August: 207 kWh · ₱1,491.15\n- September: 109 kWh · ₱1,738.14\n\nThe effective averages are ₱7.20/kWh and ₱15.95/kWh. Check the original bill for the charge breakdown.'}}});});
       await page.goto(base+'/assistant');await page.evaluate(()=>document.documentElement.dataset.offlineShell='true');
-      await message(page,'September is low why the cost is no?');await page.getByText('Gemini · online',{exact:true}).waitFor();assert.equal(calls,1);
+      await message(page,'September is low why the cost is no?');await page.getByText('WattSnap AI · online',{exact:true}).waitFor();assert.equal(calls,1);
       assert.equal(await page.locator('.chat-bubble strong').count(),1);assert.ok(await page.locator('.chat-value').count()>=6);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
       await page.screenshot({path:path.join(output,`conversation-${width}.png`)});
@@ -149,7 +149,7 @@ async function main() {
     await scenario('online bill clarification continues offline without losing its amount',390,async(page,context)=>{
       let calls=0;await page.route('**/api/ai/assistant',route=>{calls++;return route.fulfill({json:{source:'gemini',reply:{text:'Which billing month and year should I use?'}}});});
       await page.goto(base+'/assistant');await message(page,'Can you set up my September bill to 10000? I lost the receipt');
-      await page.getByText('Gemini · online',{exact:true}).waitFor();await context.setOffline(true);
+      await page.getByText('WattSnap AI · online',{exact:true}).waitFor();await context.setOffline(true);
       await message(page,'September 2026');await page.getByText('How many kWh are printed on that bill?',{exact:true}).waitFor();
       await message(page,'120');await page.getByRole('button',{name:/Confirm: Add your September 2026 bill: 120 kWh · ₱10,000/}).waitFor();
       assert.equal(calls,1);assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1')).bills.length),0);

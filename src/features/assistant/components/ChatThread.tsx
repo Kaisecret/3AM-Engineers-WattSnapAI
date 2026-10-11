@@ -59,7 +59,7 @@ export default function ChatThread({ messages, typing, onSuggest, intro, actions
         <BotAvatar />
         <div className={`chat-bot-body${message.actions?.length && actions ? " has-actions" : ""}`}>
           <div className="chat-bubble"><ChatMessageText value={message.text} /></div>
-          {message.notice && <p className={`chat-notice is-${message.source ?? "keywords"}`}>{message.source === "gemini" ? <Sparkles aria-hidden="true" /> : message.source === "tinybert" ? <Cpu aria-hidden="true" /> : <CircleAlert aria-hidden="true" />}{message.notice}</p>}
+          {message.notice && <p className={`chat-notice is-${message.source ?? "keywords"}`}>{message.source === "gemini" ? <Sparkles aria-hidden="true" /> : message.source === "tinybert" ? <Cpu aria-hidden="true" /> : <CircleAlert aria-hidden="true" />}{message.notice.replace(/\bGemini\b/g, "WattSnap AI")}</p>}
           {!!message.actions?.length && actions && <div className={`chat-actions${message.actions.length > 1 ? " is-multi" : ""}`}>
             {pending.length > 0 && <p className="chat-action-heading">Review {message.actions.length > 1 ? "changes" : "change"}<span>Not saved yet</span></p>}
             <ul>{message.actions.map(item => <ActionCard key={item.id} item={item} compact={message.actions!.length > 1} onConfirm={() => actions.onConfirm(message, [item])} onCancel={() => actions.onCancel(message, item)} />)}</ul>

@@ -19,8 +19,8 @@ export function mergeGeminiTips(basis: PreviewTipsSnapshot, value: unknown): Pre
 }
 export async function requestGeminiTips(household: PreviewHousehold, basis: PreviewTipsSnapshot, signal?: AbortSignal, fetcher: typeof fetch = fetch) {
   const response = await fetcher("/api/ai/tips", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(createTipsRequest(household)), signal });
-  if (!response.ok) throw new Error(response.status === 429 ? "Gemini is busy. Try again in a few minutes." : response.status === 401 ? "Sign in again to create AI tips." : "Gemini is unavailable. Try again shortly.");
+  if (!response.ok) throw new Error(response.status === 429 ? "WattSnap AI is busy. Try again in a few minutes." : response.status === 401 ? "Sign in again to create AI tips." : "WattSnap AI is unavailable. Try again shortly.");
   const result = await response.json();
-  if (!result.ok) throw new Error("Gemini couldn’t create tips. Try again.");
+  if (!result.ok) throw new Error("WattSnap AI couldn’t create tips. Try again.");
   return mergeGeminiTips(basis, result.data);
 }

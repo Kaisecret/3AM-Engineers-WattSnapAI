@@ -66,6 +66,18 @@ async function main() {
     for (const width of [1440, 390, 320]) {
       const { context, page } = await open(seed, width);
       const errors = []; page.on('pageerror', error => errors.push(error.message));
+      const comparison = page.locator('.en-compare');
+      assert.equal(await comparison.locator('details[open]').count(), 0, 'Comparison details start collapsed');
+      assert((await comparison.innerText()).length < 220, 'Comparison copy fits a quick mobile scan');
+      if (width < 600) {
+        await comparison.screenshot({ path: path.join(output, `comparison-${width}.png`) });
+        const height = (await comparison.boundingBox()).height;
+        assert(height <= 320, `Mobile comparison stays compact (${height}px at ${width}px)`);
+      }
+      await comparison.getByText('Comparison details', { exact: true }).click();
+      assert.match(await comparison.innerText(), /20%|20 percent/);
+      assert.match(await comparison.innerText(), /do not explain what caused/);
+      await comparison.getByText('Comparison details', { exact: true }).click();
       const forecast = page.getByRole('region', { name: 'Next month estimate', exact: true });
       await forecast.getByText('November 2026', { exact: true }).waitFor();
       await forecast.getByText('96', { exact: true }).waitFor();
@@ -132,6 +144,7 @@ async function main() {
     console.log('PASS: empty years, reset, limited history and no-bill state');
     const added = await open(seed, 390, '?added=2025-1');
     await added.page.locator('#bill-2025-1 .en-details').waitFor();
+    assert.match(await added.page.locator('#bill-2025-1 .en-source').innerText(), /WattSnap AI/);
     assert.equal(await added.page.getByLabel('History period', { exact: true }).inputValue(), '2025', 'A newly saved old bill is visible in its year');
     assert.equal(await added.page.locator('#bill-2025-1 .en-row').getAttribute('aria-expanded'), 'true');
     console.log('PASS: newly saved historical bills remain visible and open');

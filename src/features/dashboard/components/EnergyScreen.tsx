@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, ChartColumnBig, ChevronDown, ChevronRight, ReceiptText, ScanText, Sparkles, Trash2, TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowDown, ArrowUp, CalendarDays, ChartColumnBig, ChevronDown, ChevronRight, ReceiptText, ScanText, Sparkles, Trash2, TrendingDown, TrendingUp } from "lucide-react";
 import PageShell from "./PageShell";
 import { usePreviewHousehold } from "../use-preview-household";
 import { amountPaid, averageKwh, billMonth, compareWithPrevious, dueDateLabel, monthName, pesos, shortMonth, sortBillsByMonth, type PreviewBill } from "../preview-data";
@@ -13,7 +13,7 @@ import { previewProviderName } from "@/features/household-profile/provider-previ
 import ConfirmRecordRemoval from "@/components/ui/ConfirmRecordRemoval";
 import { consumptionChange } from "@/features/consumption-change/local-summary";
 
-const sourceLabels = { scan: "Snap AI", manual: "Typed", sample: "Sample" };
+const sourceLabels = { scan: "WattSnap AI", manual: "WattSnap AI", sample: "Sample" };
 const shortDate = (date: string) => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`));
 
 /** Everything saved for one bill, including what Snap AI read: meter, subsidy and the charge groups. */
@@ -33,7 +33,7 @@ function BillDetails({ bill, onRemove, disabled }: { bill: PreviewBill; onRemove
       {bill.dueDate && <div><dt>Due date</dt><dd>{dueDateLabel(bill.dueDate)}</dd></div>}
       {bill.billingDate && <div><dt>Bill issued</dt><dd>{dueDateLabel(bill.billingDate)}</dd></div>}
       {bill.provider && <div><dt>Provider</dt><dd>{previewProviderName(bill.provider)}</dd></div>}
-      <div><dt>Added by</dt><dd className={`en-source is-${source}`}>{source === "scan" && <Sparkles aria-hidden="true" />}{sourceLabels[source]}</dd></div>
+      <div><dt>Added by</dt><dd className={`en-source is-${source}`}>{source !== "sample" && <Sparkles aria-hidden="true" />}{sourceLabels[source]}</dd></div>
     </dl>
     {charges.length > 0 && <div className="en-charges">
       <h3>Where your money goes</h3>
@@ -123,7 +123,7 @@ export default function EnergyScreen() {
         </section>
 
         <section className="en-compare ui-panel" aria-labelledby="en-compare-title">
-          <div className="ui-panel-heading"><div><h2 id="en-compare-title">Latest vs previous saved bill</h2><p>{latestChange ? `${billMonth(latest.month)} compared with ${billMonth(latestChange.previous.month)}` : "Your comparison appears after two bills."}</p></div></div>
+          <div className="ui-panel-heading"><div><h2 id="en-compare-title">Bill comparison</h2><p>{latestChange ? `${shortMonth(latest.month)} ${latest.month.slice(0, 4)} vs ${shortMonth(latestChange.previous.month)} ${latestChange.previous.month.slice(0, 4)}` : "Add two bills to compare."}</p></div></div>
           {latestChange ? <>
             {[latestChange.previous, latest].map(bill => <div key={bill.id} className={`en-compare-row${bill === latest ? " is-latest" : ""}`}>
               <span className="en-compare-label">{shortMonth(bill.month)}</span>
@@ -131,10 +131,13 @@ export default function EnergyScreen() {
               <strong>{bill.kwh} kWh</strong>
             </div>)}
             <dl className="en-compare-diff">
-              <div><dt>Energy</dt><dd>{latestChange.kwhChange > 0 ? "+" : "−"}{Math.abs(latestChange.kwhChange)} kWh <Change percent={latestChange.kwhPercent} compact /></dd></div>
-              <div><dt>Cost</dt><dd>{latestChange.amountChange > 0 ? "+" : "−"}{pesos(Math.abs(latestChange.amountChange))} <Change percent={latestChange.amountPercent} compact /></dd></div>
+              <div><dt>Energy</dt><dd><strong>{latestChange.kwhChange > 0 ? "+" : latestChange.kwhChange < 0 ? "−" : ""}{Math.abs(latestChange.kwhChange)} kWh</strong><Change percent={latestChange.kwhPercent} compact /></dd></div>
+              <div><dt>Bill amount</dt><dd><strong>{latestChange.amountChange > 0 ? "+" : latestChange.amountChange < 0 ? "−" : ""}{pesos(Math.abs(latestChange.amountChange))}</strong><Change percent={latestChange.amountPercent} compact /></dd></div>
             </dl>
-            {changeSummary && <p className="ui-note"><strong>{changeSummary.label}.</strong> A change of 20% or more is highlighted for review. {changeSummary.note} These totals do not explain what caused a change.</p>}
+            {changeSummary && <div className="en-compare-insight">
+              <span className={`en-compare-status${latestChange.kwhPercent < 0 ? " is-lower" : latestChange.kwhPercent > 0 ? " is-higher" : ""}`}>{changeSummary.label}</span>
+              <details className="en-compare-details"><summary>Comparison details<ChevronDown size={14} aria-hidden="true" /></summary><p>A change of 20% or more is highlighted for review. {changeSummary.note} These totals do not explain what caused a change.</p></details>
+            </div>}
           </> : <div className="en-compare-empty"><ChartColumnBig aria-hidden="true" /><p>Scan last month&apos;s bill to see how your use changed.</p></div>}
         </section>
       </div>
@@ -144,22 +147,23 @@ export default function EnergyScreen() {
     <NextMonthForecast forecast={forecast} />
 
     <div className="en-history-toolbar">
-      <div className="en-history-field"><label htmlFor="en-history-period">History period</label><select id="en-history-period" value={period} onChange={event => { setPeriod(event.target.value as BillHistoryFilter); setSelected(null); setOpen(null); }}>
+      <div className="en-history-field"><label htmlFor="en-history-period">History period</label><div className="en-history-select"><CalendarDays size={17} aria-hidden="true" /><select id="en-history-period" value={period} onChange={event => { setPeriod(event.target.value as BillHistoryFilter); setSelected(null); setOpen(null); }}>
         {filters.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-      </select></div>
-      <p aria-live="polite">{periodLabel} · {series.length} saved {series.length === 1 ? "bill" : "bills"}<span>Filters the chart and history. The forecast uses all saved history.</span></p>
+      </select><ChevronDown size={16} aria-hidden="true" /></div></div>
+      <p className="en-history-count" aria-live="polite"><strong>{series.length}</strong><span>{series.length === 1 ? "bill" : "bills"} in view</span></p>
+      <p className="en-history-hint">Forecast uses all bills.</p>
     </div>
 
     {series.length > 0 ? <>
 
       <div className="ui-stats en-stats">
-        <div><span>Recorded-period average</span><strong>{Math.round(averageKwh(series))} <small>kWh</small></strong></div>
-        <div><span>Lowest month</span><strong>{lowest ? `${lowest.kwh}` : "—"} <small>kWh</small></strong>{lowest && <em>{billMonth(lowest.month)}</em>}</div>
-        <div><span>Highest month</span><strong>{highest ? `${highest.kwh}` : "—"} <small>kWh</small></strong>{highest && <em>{billMonth(highest.month)}</em>}</div>
+        <div><span>Average</span><strong>{Math.round(averageKwh(series))} <small>kWh</small></strong></div>
+        <div><span>Lowest</span><strong>{lowest ? `${lowest.kwh}` : "—"} <small>kWh</small></strong>{lowest && <em>{shortMonth(lowest.month)} {lowest.month.slice(0, 4)}</em>}</div>
+        <div><span>Highest</span><strong>{highest ? `${highest.kwh}` : "—"} <small>kWh</small></strong>{highest && <em>{shortMonth(highest.month)} {highest.month.slice(0, 4)}</em>}</div>
       </div>
 
       <section className="ui-panel en-chart-panel" aria-labelledby="en-chart-title">
-        <div className="ui-panel-heading"><div><h2 id="en-chart-title">Monthly consumption</h2><p>Only saved periods are shown. Missing months are not estimated. Tap a period to compare.</p></div><div className="ui-segment" aria-label="Chart unit"><button type="button" aria-pressed={unit === "kwh"} onClick={() => setUnit("kwh")}>kWh</button><button type="button" aria-pressed={unit === "amount"} onClick={() => setUnit("amount")}>Pesos</button></div></div>
+        <div className="ui-panel-heading"><div><h2 id="en-chart-title">Monthly use</h2><p>Saved bills only · Tap a month</p></div><div className="ui-segment" aria-label="Chart unit"><button type="button" aria-pressed={unit === "kwh"} onClick={() => setUnit("kwh")}>kWh</button><button type="button" aria-pressed={unit === "amount"} onClick={() => setUnit("amount")}>Pesos</button></div></div>
         <div className="en-chart-scroll" tabIndex={0} role="region" aria-label="Scrollable monthly consumption chart"><div className="en-chart" style={bars.length > 6 ? { minWidth: `${bars.length * 72}px` } : undefined}>
           <div className="en-plot" role="group" aria-label={`Monthly ${unit === "kwh" ? "energy use in kilowatt hours" : "bill amount in pesos"}`}>
             {series.length > 1 && <span className="en-average" style={{ bottom: `${average / max * 100}%` }}><em>Avg {format(average)}</em></span>}

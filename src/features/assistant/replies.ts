@@ -72,7 +72,7 @@ function legacyHouseholdReply(message: string, context: ChatContext = {}): Reply
   if (has(text, patterns.greeting) && text.split(/\s+/).length <= 4) return { text: `Hi${first ? ` ${first}` : ""}! I'm WattSnap AI. I can explain your bill, compare months, spot your biggest appliances, and help you get ready for brownouts.`, suggestions: householdSuggestions };
 
   if (has(text, patterns.scan)) return {
-    text: "Open Snap AI to photograph or upload your bill. Online, Gemini reads the printed values; check the billing period, kWh, amount and dates before saving. If you are offline, enter the printed values manually. Unreadable fields stay empty for review.",
+    text: "Open Snap AI to photograph or upload your bill. Online, WattSnap AI reads the printed values; check the billing period, kWh, amount and dates before saving. If you are offline, enter the printed values manually. Unreadable fields stay empty for review.",
     links: [{ label: "Open Snap AI", href: "/bills/new" }],
   };
 
@@ -138,7 +138,7 @@ export function landingReply(message: string): Reply {
 
   if (has(text, patterns.thanks)) return { text: "You're welcome! Anything else you'd like to know about WattSnap?", suggestions: landingSuggestions.slice(1, 3) };
   if (has(text, patterns.greeting) && text.split(/\s+/).length <= 4) return { text: "Hi there! I'm WattSnap AI. Ask me anything about the app, like how bill scanning works or which areas are covered.", suggestions: landingSuggestions };
-  if (has(text, patterns.scan)) return { text: "Snap AI reads a bill photo with Gemini while online. Review the extracted values and correct anything unclear before saving. Offline, you can enter the bill’s printed values manually.", links: [join] };
+  if (has(text, patterns.scan)) return { text: "WattSnap AI reads a bill photo while online. Review the extracted values and correct anything unclear before saving. Offline, you can enter the bill’s printed values manually.", links: [join] };
   if (has(text, patterns.offline)) return { text: "Saved records and local calculations work offline after a successful online visit prepares the app shell. Tips can refresh locally. Provider updates and optional location lookup need connectivity.", links: [join] };
   if (has(text, patterns.coverage)) return { text: "Initial validation focuses on Antique with ANTECO. Select your provider manually, including another utility. GPS may help fill locality fields; it does not establish utility coverage.", links: [join] };
   if (has(text, patterns.brownout)) return { text: "Paste or upload an advisory, keep the original, and review its fields. The UI compares entered provider and locality labels to show Affected, Possibly Affected, or Not Listed. Save a Brownout Ready plan for its published schedule and checklist; uncertain relevance needs confirmation. This does not confirm live power status.", links: [join] };

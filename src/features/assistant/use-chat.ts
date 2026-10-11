@@ -25,10 +25,10 @@ interface ChatOptions {
 }
 
 function noticeFor(source: ChatMessage["source"], problem?: string) {
-  if (source === "gemini") return "Gemini · online";
+  if (source === "gemini") return "WattSnap AI · online";
   const local = source === "tinybert" ? "TinyBERT" : "local reply";
   if (problem === "offline") return `${source === "tinybert" ? "TinyBERT · offline" : "Offline"} · saved data`;
-  return `Gemini ${problem === "busy" ? "is busy" : "is unavailable"} · ${local} · saved data`;
+  return `WattSnap AI ${problem === "busy" ? "is busy" : "is unavailable"} · ${local} · saved data`;
 }
 
 const stateWords: Record<ActionState, string> = { pending: "waiting for confirmation", done: "confirmed and saved", cancelled: "cancelled", failed: "could not be saved" };

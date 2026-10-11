@@ -41,7 +41,7 @@ test('the first recognized online question goes to Gemini instead of saved-data 
   const app=chat({localAgent:()=>{parses++;return {reply:{text:'Cached appliance list'},actions:[],handled:true};},fetch:async()=>{calls++;return Response.json({source:'gemini',reply:{text:'Fresh Gemini appliance answer'}});}});
   app.result.send('List my appliances and their cost');await flush();
   assert.equal(calls,1);assert.equal(parses,0);assert.equal(app.state[0].at(-1).text,'Fresh Gemini appliance answer');
-  assert.equal(app.state[0].at(-1).source,'gemini');assert.match(app.state[0].at(-1).notice,/Gemini.*online/);app.dispose();
+  assert.equal(app.state[0].at(-1).source,'gemini');assert.match(app.state[0].at(-1).notice,/WattSnap AI.*online/);app.dispose();
 });
 test('online bill edits and clarifications reach Gemini rather than the local grammar',async()=>{
   let calls=0;
@@ -64,7 +64,7 @@ test('each send checks connectivity and switches from TinyBERT to Gemini',async(
 test('Gemini unavailability is visible even when TinyBERT answers the fallback',async()=>{
   const app=chat({fetch:async()=>Response.json({source:'local-fallback',problem:'busy',reply:{text:'Server keywords'}}),asyncLocalAgent:async()=>({reply:{text:'TinyBERT fallback'},actions:[],source:'tinybert'})});
   app.result.send('question');await flush();
-  assert.equal(app.state[0].at(-1).text,'TinyBERT fallback');assert.match(app.state[0].at(-1).notice,/Gemini.*busy.*TinyBERT/);app.dispose();
+  assert.equal(app.state[0].at(-1).text,'TinyBERT fallback');assert.match(app.state[0].at(-1).notice,/WattSnap AI.*busy.*TinyBERT/);app.dispose();
 });
 test('online clarification can continue offline using validated earlier user turns',async()=>{
   const grammar=(text,_context,pending)=>text.includes('Set up')?{reply:{text:'Which month?'},actions:[],pending:{message:text,field:'month'}}:
