@@ -126,6 +126,10 @@ test("an oversized notice is shortened to what the app can save, without droppin
   assert.ok(big.originalText.length <= 12000);
   assert.ok(big.originalText.startsWith("C".repeat(3000)));
   assert.ok(big.originalText.endsWith("[cut short: open the original post]"));
+  // A long styled caption or wording is cut between characters, never through one.
+  const styled = readAdvisoryReading(answer({ areaText: "𝗣".repeat(2000), reason: "x" + "𝗥".repeat(2000), imageText: "𝗜".repeat(9000) }), { ...post, text: "𝗖".repeat(7000) });
+  for (const value of [styled.details.areaText, styled.details.reason, styled.originalText]) assert.doesNotThrow(() => encodeURIComponent(value));
+  assert.ok(styled.details.areaText.length <= 1500 && styled.details.reason.length <= 1500 && styled.originalText.length <= 12000);
   // Exactly twenty areas are kept as they are.
   assert.equal(readAdvisoryReading(answer({ areas: many.slice(0, 20) }), post).details.areas.length, 20);
   // The shortened document is still a record the app saves.
@@ -136,5 +140,8 @@ test("an oversized notice is shortened to what the app can save, without droppin
 
 test("outage words pass the gate and ordinary posts do not", () => {
   for (const text of ["SCHEDULED POWER INTERRUPTION", "Emergency brownout in Culasi", "Power restored as of 3:15 PM", "Line maintenance tomorrow", "Yellow grid alert", "Walang kuryente bukas"]) assert.equal(mentionsOutage(text), true, text);
+  // ANTECO's real headings are written in styled letters, which are not the letters A to Z.
+  for (const text of ["A𝖽𝗏𝗂𝗌𝗈𝗋𝗒 || 𝗨𝗡𝗦𝗖𝗛𝗘𝗗𝗨𝗟𝗘𝗗 𝗣𝗢𝗪𝗘𝗥 𝗜𝗡𝗧𝗘𝗥𝗥𝗨𝗣𝗧𝗜𝗢𝗡", "𝗣𝗟𝗔𝗡𝗡𝗘𝗗 𝗣𝗢𝗪𝗘𝗥 𝗜𝗡𝗧𝗘𝗥𝗥𝗨𝗣𝗧𝗜𝗢𝗡", "𝙋𝙤𝙬𝙚𝙧 𝙧𝙚𝙨𝙩𝙤𝙧𝙚𝙙"]) assert.equal(mentionsOutage(text), true, text);
+  assert.equal(mentionsOutage("𝘈𝘱𝘱𝘳𝘦𝘤𝘪𝘢𝘵𝘪𝘰𝘯 𝘗𝘰𝘴𝘵"), false);
   for (const text of ["Invitation to bid", "We are hiring linemen", "Happy fiesta!", "Pay your bill at any branch", ""]) assert.equal(mentionsOutage(text), false, text);
 });

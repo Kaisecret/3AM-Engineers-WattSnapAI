@@ -1,3 +1,4 @@
+import { clip } from "../apify/facebook-posts";
 import { isCalendarDate } from "../../features/dashboard/preview-data";
 import { getBarangaysForMunicipality, getMunicipalitiesForProvince } from "../../features/household-profile/philippine-locations";
 import type { AdvisoryArea, AdvisoryDetails } from "../../features/advisory-intelligence/types";
@@ -86,14 +87,18 @@ export function barangayFor(municipality: string, value: unknown): string | null
   return getBarangaysForMunicipality(PROVINCE, municipality).find(name => placeKey(name) === wanted) ?? null;
 }
 
-/** Words that mark a post as possibly about the power supply. A post with none of them and no image is not read. */
+/**
+ * Words that mark a post as possibly about the power supply. A post with none of them and no image
+ * is not read. ANTECO writes headings in styled letters (𝗣𝗢𝗪𝗘𝗥 𝗜𝗡𝗧𝗘𝗥𝗥𝗨𝗣𝗧𝗜𝗢𝗡), which are
+ * turned into ordinary letters first.
+ */
 export function mentionsOutage(text: string) {
-  return /interrupt|power advisory|brown\s?-?out|black\s?-?out|outage|maintenance|shut\s?-?(down|off)|restor|energiz|no power|power supply|load (dropping|shedding)|grid alert|walang kuryente/i.test(text);
+  return /interrupt|power advisory|brown\s?-?out|black\s?-?out|outage|maintenance|shut\s?-?(down|off)|restor|energiz|no power|power supply|load (dropping|shedding)|grid alert|walang kuryente/i.test(text.normalize("NFKC"));
 }
 
 function cut(value: unknown, max: number) {
   const clean = typeof value === "string" ? value.replace(/\r\n?/g, "\n").trim() : "";
-  return clean.length > max ? `${clean.slice(0, max - 1).trimEnd()}…` : clean;
+  return clean.length > max ? `${clip(clean, max - 1).trimEnd()}…` : clean;
 }
 const day = (value: unknown) => (typeof value === "string" && isCalendarDate(value.trim()) ? value.trim() : "");
 function clock(value: unknown) {
@@ -130,11 +135,11 @@ function areasFrom(value: unknown): AdvisoryArea[] {
 
 /** The caption first, then the text read from the images. The transcription is what gets cut if it is too long. */
 function originalFrom(caption: string, imageText: string) {
-  const text = caption.length > maxOriginal ? `${caption.slice(0, maxOriginal - cutNote.length - 1).trimEnd()}\n${cutNote}` : caption;
+  const text = caption.length > maxOriginal ? `${clip(caption, maxOriginal - cutNote.length - 1).trimEnd()}\n${cutNote}` : caption;
   if (!imageText) return text;
   const heading = `${text ? "\n\n" : ""}${imageHeading}\n`, room = maxOriginal - text.length - heading.length;
   if (room < cutNote.length + 20) return text;
-  return `${text}${heading}${imageText.length > room ? `${imageText.slice(0, room - cutNote.length - 1).trimEnd()}\n${cutNote}` : imageText}`;
+  return `${text}${heading}${imageText.length > room ? `${clip(imageText, room - cutNote.length - 1).trimEnd()}\n${cutNote}` : imageText}`;
 }
 
 /** Thrown when the model's answer is not an answer: the post is then retried, not treated as "not an advisory". */

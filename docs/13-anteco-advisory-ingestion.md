@@ -57,11 +57,15 @@ If a token was ever pasted somewhere, create a new one and delete the old one.
    ```
    npx --yes supabase gen types typescript --project-id "<wattsnap-dev reference>" --schema public > src/generated/database.types.ts
    ```
-3. **Confirm the Apify actor.** With `APIFY_API_TOKEN` in `.env.local`, start the app and run one
-   collection by hand (see "Run it by hand"). Check that posts are stored, that a second run a few minutes
-   later stores nothing new, and replace `src/lib/apify/facebook-posts.fixture.json` with a trimmed copy of
-   a real response. The date filters (`onlyPostsNewerThan`, `onlyPostsOlderThan`) and the newest-first order
-   were taken from the actor's documentation and must be confirmed here before relying on the feature.
+3. **Confirm the Apify actor.** Done on 11 October 2026 against ANTECO's page: the field names, the
+   newest-first order and both date filters (`onlyPostsNewerThan`, `onlyPostsOlderThan`, exact to the second)
+   behave as the code expects, and a call takes 10 to 20 seconds.
+   `src/lib/apify/facebook-posts.fixture.json` is a trimmed copy of that real answer. Things learned from it:
+   ANTECO writes headings in styled letters (𝗣𝗢𝗪𝗘𝗥 𝗜𝗡𝗧𝗘𝗥𝗥𝗨𝗣𝗧𝗜𝗢𝗡), which the keyword check turns into
+   ordinary letters first; its advisories usually carry the full details in the caption; images arrive about
+   600 pixels wide; and the actor's `ocrText` is only a description ("May be an image of text"), never the
+   printed text. Still to do with the app running: run one collection by hand (see "Run it by hand"), check
+   that posts are stored, and that a second run a few minutes later stores nothing new.
 4. **Vercel.** Add `APIFY_API_TOKEN` and `CRON_SECRET` (Production), confirm the other three exist, and
    deploy. `vercel.json` schedules the daily run; Vercel sends `Authorization: Bearer <CRON_SECRET>` by itself.
    **The route needs a 300-second function limit**, which on Vercel means Fluid Compute. Check the

@@ -24,7 +24,15 @@ export class ApifyError extends Error {
   constructor(message: string) { super(message); this.name = "ApifyError"; }
 }
 
-const text = (value: unknown, max: number) => (typeof value === "string" ? value.trim().slice(0, max) : "");
+/**
+ * The first `max` characters, never ending on half of a character. ANTECO writes headings in styled
+ * letters (𝗣𝗢𝗪𝗘𝗥) that take two code units each; half of one cannot be stored.
+ */
+export function clip(value: string, max: number) {
+  const cut = value.slice(0, max);
+  return /[\uD800-\uDBFF]$/.test(cut) ? cut.slice(0, -1) : cut;
+}
+const text = (value: unknown, max: number) => (typeof value === "string" ? clip(value.trim(), max) : "");
 
 function httpsUrl(value: unknown, host: RegExp): string | null {
   if (typeof value !== "string" || value.length > 2000) return null;
@@ -58,14 +66,15 @@ export function readFacebookPosts(items: unknown): FetchedPost[] {
     if (!id || !url || !time || posts.has(id)) continue;
     const media = Array.isArray(item.media) ? item.media.filter((part): part is Record<string, unknown> => !!part && typeof part === "object") : [];
     const imageUrls = media
-      .map(part => facebookImageUrl((part.photo_image as { uri?: unknown } | undefined)?.uri) ?? facebookImageUrl(part.thumbnail))
+      // A single photo comes as `photo_image`, a photo in an album as `image`; both also have a thumbnail.
+      .map(part => facebookImageUrl((part.photo_image as { uri?: unknown } | undefined)?.uri) ?? facebookImageUrl((part.image as { uri?: unknown } | undefined)?.uri) ?? facebookImageUrl(part.thumbnail))
       .filter((link): link is string => !!link);
     posts.set(id, {
       id, url, postedAt: time,
       text: text(item.text, 8000),
       imageUrls: [...new Set(imageUrls)].slice(0, 6),
       imageCount: media.length,
-      imageText: media.map(part => text(part.ocrText, 2000)).filter(Boolean).join("\n").slice(0, 4000),
+      imageText: clip([...new Set(media.map(part => text(part.ocrText, 2000)).filter(Boolean))].join("\n"), 4000),
     });
   }
   return [...posts.values()].sort((a, b) => b.postedAt.localeCompare(a.postedAt));

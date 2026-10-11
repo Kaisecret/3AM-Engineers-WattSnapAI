@@ -594,3 +594,14 @@ test("a notification is not served while a fetched post is still unread", async 
   assert.equal(answers.at(-1), 200, "served once the post has used its attempts");
   assert.equal(answers.filter(status => status === 202).length, 3, "three runs, no more");
 });
+
+test("an advisory written in ANTECO's styled letters, with no image, is read", async () => {
+  const w = world();
+  w.post("styled", HOUR, { text: "A𝖽𝗏𝗂𝗌𝗈𝗋𝗒 || 𝗨𝗡𝗦𝗖𝗛𝗘𝗗𝗨𝗟𝗘𝗗 𝗣𝗢𝗪𝗘𝗥 𝗜𝗡𝗧𝗘𝗥𝗥𝗨𝗣𝗧𝗜𝗢𝗡\n\nDate: October 9, 2026" });
+  w.post("thanks", 2 * HOUR, { text: "𝘈𝘱𝘱𝘳𝘦𝘤𝘪𝘢𝘵𝘪𝘰𝘯 𝘗𝘰𝘴𝘵" });
+  await w.trigger();
+  assert.equal(w.asked.length, 1, "only the advisory was sent to the model");
+  assert.equal(w.rows.get("styled").status, "published");
+  assert.match(w.rows.get("styled").originalText, /𝗨𝗡𝗦𝗖𝗛𝗘𝗗𝗨𝗟𝗘𝗗/u, "the original keeps the caption as posted");
+  assert.equal(w.rows.get("thanks").status, "ignored");
+});

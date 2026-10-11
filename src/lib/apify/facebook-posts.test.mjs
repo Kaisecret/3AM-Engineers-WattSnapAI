@@ -2,29 +2,66 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
 
-const { downloadFacebookImages, facebookImageUrl, fetchFacebookPosts, readFacebookPosts } = await import("./facebook-posts.ts");
-// Written from the actor's documented output fields, with invented values. Replace it with a
-// trimmed real response once the actor has been run with a real token (docs/13).
+const { clip, downloadFacebookImages, facebookImageUrl, fetchFacebookPosts, readFacebookPosts } = await import("./facebook-posts.ts");
+// A real answer from the actor for ANTECO's page (October 2026), trimmed to the fields the app
+// reads: three posts, captions cut to 400 characters, image links without their signed query.
+// Comments, authors and reaction counts were removed.
 const fixture = JSON.parse(await readFile(new URL("./facebook-posts.fixture.json", import.meta.url), "utf8"));
 
-test("actor items become posts, newest first, and unusable items are dropped", () => {
+test("a real answer from the actor becomes posts, newest first", () => {
   const posts = readFacebookPosts(fixture);
-  assert.deepEqual(posts.map(post => post.id), ["1000000000000001", "1000000000000002"]);
-  const [advisory, notice] = posts;
-  assert.equal(advisory.url, "https://www.facebook.com/antecoPH/posts/pfbid0example1");
-  assert.equal(advisory.postedAt, "2026-10-10T01:15:00.000Z");
-  assert.match(advisory.text, /^SCHEDULED POWER INTERRUPTION/);
-  // The full-size image is preferred over its thumbnail, and an image that is not on fbcdn.net is left out.
-  assert.deepEqual(advisory.imageUrls, ["https://scontent.fmnl1-1.fna.fbcdn.net/v/t39.30808-6/sample-full.jpg"]);
-  assert.match(advisory.imageText, /Affected: Brgy\. Sample/);
-  // Both images are counted, including the one whose link cannot be used.
-  assert.equal(advisory.imageCount, 2);
-  assert.equal(notice.imageCount, 0);
-  // A post identified by facebookId, linked by topLevelUrl and dated by a timestamp in seconds.
-  assert.equal(notice.url, "https://www.facebook.com/antecoPH/posts/pfbid0example2");
-  assert.equal(notice.postedAt, new Date(1791594000 * 1000).toISOString());
-  assert.deepEqual(notice.imageUrls, []);
-  assert.equal(notice.imageText, "");
+  assert.equal(posts.length, 3);
+  assert.deepEqual(posts.map(post => post.postedAt), ["2026-10-11T07:25:19.000Z", "2026-10-10T11:21:44.000Z", "2026-10-09T11:46:25.000Z"]);
+  const [album, reminder, advisory] = posts;
+  for (const post of posts) {
+    assert.match(post.id, /^\d{10,}$/);
+    assert.match(post.url, /^https:\/\/www\.facebook\.com\/antecoPH\/posts\//);
+    assert.ok(post.imageUrls.every(link => new URL(link).hostname.endsWith(".fbcdn.net")));
+  }
+  // An album: one wrapper entry without a picture, then five photos given as `image`.
+  assert.equal(album.imageCount, 6);
+  assert.equal(album.imageUrls.length, 5);
+  assert.deepEqual(album.imageUrls, fixture[0].media.filter(part => part.image).map(part => part.image.uri));
+  // The actor's "ocrText" is a description, not the printed text. It is kept once, as a hint only.
+  assert.equal(album.imageText, "May be an image of text");
+  // A text-only post.
+  assert.match(reminder.text, /^Reminder: NGCP Scheduled Power Interruption/);
+  assert.deepEqual([reminder.imageCount, reminder.imageUrls, reminder.imageText], [0, [], ""]);
+  // A single photo: the full picture is preferred over its thumbnail.
+  assert.deepEqual(advisory.imageUrls, [fixture[2].media[0].photo_image.uri]);
+  assert.equal(advisory.imageCount, 1);
+  // ANTECO writes the heading in styled letters; the caption is kept exactly as posted.
+  assert.match(advisory.text.normalize("NFKC"), /^Advisory \|\| UNSCHEDULED POWER INTERRUPTION/);
+  assert.doesNotMatch(advisory.text, /UNSCHEDULED/);
+});
+
+test("items in other shapes are still read, and unusable items are dropped", () => {
+  const usable = { postId: "1", url: "https://www.facebook.com/antecoPH/posts/1", time: "2026-10-10T01:15:00.000Z", text: "First" };
+  const posts = readFacebookPosts([
+    usable,
+    // Identified by facebookId, linked by topLevelUrl and dated by a timestamp in seconds.
+    { facebookId: "2", topLevelUrl: "https://www.facebook.com/antecoPH/posts/2", timestamp: 1791594000, text: "Second", media: [{ thumbnail: "https://images.example.org/not-facebook.jpg" }] },
+    { ...usable, text: "The same post returned twice." },
+    { url: "https://www.facebook.com/antecoPH/posts/3", time: "2026-10-09T01:00:00.000Z", text: "No post id." },
+    { postId: "4", url: "https://facebook.com.example.org/antecoPH/posts/4", time: "2026-10-09T02:00:00.000Z", text: "Not on facebook.com." },
+    { postId: "5", url: "https://www.facebook.com/antecoPH/posts/5", text: "No time." },
+    null, "text", 7,
+  ]);
+  assert.deepEqual(posts.map(post => [post.id, post.text]), [["1", "First"], ["2", "Second"]]);
+  assert.equal(posts[1].postedAt, new Date(1791594000 * 1000).toISOString());
+  // The image exists but its link is not on fbcdn.net: counted, never downloaded.
+  assert.deepEqual([posts[1].imageCount, posts[1].imageUrls], [1, []]);
+});
+
+test("text is never cut in the middle of a character", () => {
+  const styled = "𝗣𝗢𝗪𝗘𝗥"; // five letters, ten code units
+  assert.equal(clip(styled, 4), "𝗣𝗢");
+  assert.equal(clip(styled, 5), "𝗣𝗢", "half of the third letter is dropped");
+  assert.equal(clip("POWER", 3), "POW");
+  const [post] = readFacebookPosts([{ postId: "1", url: "https://www.facebook.com/antecoPH/posts/1", time: "2026-10-10T01:15:00.000Z", text: `x${styled.repeat(4000)}` }]);
+  assert.ok(post.text.length <= 8000);
+  // A string that ends on half a character cannot be stored as JSON text in Postgres.
+  assert.doesNotThrow(() => encodeURIComponent(post.text));
 });
 
 test("anything that is not a list of items gives no posts", () => {
