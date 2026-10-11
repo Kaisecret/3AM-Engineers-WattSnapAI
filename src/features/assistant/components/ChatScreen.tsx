@@ -13,7 +13,7 @@ import { usePreviewTips } from "@/features/tipid-tips/use-preview-tips";
 import { usePreviewPlans } from "@/features/brownout-ready/use-preview-plans";
 import { usePreviewScenarios } from "@/features/watt-if-simulator/use-preview-scenarios";
 import { buildChatContext } from "../context";
-import { isDeviceOffline } from "@/features/offline-access/connectivity";
+import { isNetworkOffline } from "@/features/offline-access/connectivity";
 import { householdReply } from "../replies";
 import { applyAgentActions, describeAgentAction, type AgentAction } from "../agent-actions";
 import { useChat, type ChatAction, type ChatMessage } from "../use-chat";
@@ -53,7 +53,7 @@ export default function ChatScreen() {
   const latest = context.latest;
   const change = latest ? compareWithPrevious(household.bills, latest.month) : null;
   useEffect(() => {
-    const sync = () => setOffline(isDeviceOffline());
+    const sync = () => setOffline(isNetworkOffline());
     sync(); window.addEventListener("online", sync); window.addEventListener("offline", sync);
     return () => { window.removeEventListener("online", sync); window.removeEventListener("offline", sync); };
   }, []);

@@ -108,3 +108,68 @@ test('compound requests retain supported update and navigation commands',()=>{
  assert.equal(result.actions[1].changes.hours,4);
  assert.ok(localAgentReply('Set budget to 2500 and open appliances',context).reply.links.some(link=>link.href==='/appliances'));
 });
+
+test('natural missing-receipt bill edits ask for details instead of reading an old bill',()=>{
+  const home={...context,today:'2026-10-12',bills:[{month:'2026-08',kwh:192,amount:3072.6}]};
+  for(const text of ['Can you set up my bill in August the receipt is vanished plss. Set up to 10000','My September bill is vanished so I cannot scan so now plss setup plss10000','I mean my bill set to 10000']){
+    const result=localAgentReply(text,home);
+    assert.equal(result.actions.length,0,text);assert.ok(result.pending,text);assert.doesNotMatch(result.reply.text,/192 kWh|3,072/);
+  }
+});
+test('offline bill entry retains the amount and named month across clarification',()=>{
+  const home={...context,today:'2026-10-12'};
+  const first=localAgentReply('Can you set up my September bill to 10000? I lost the receipt',home);
+  assert.equal(first.pending?.field,'month');
+  const second=localAgentReply('September 2026',home,first.pending);
+  assert.equal(second.pending?.field,'kwh');
+  const third=localAgentReply('120',home,second.pending);
+  assert.equal(third.actions[0]?.bill.month,'2026-09');assert.equal(third.actions[0]?.bill.amount,10000);assert.equal(third.actions[0]?.bill.kwh,120);
+});
+test('offline missing-receipt requests never invent consumption',()=>{
+  const first=localAgentReply('Set up my August 2026 bill to 10000',context);
+  assert.equal(first.pending?.field,'kwh');assert.match(first.reply.text,/kWh/);
+  const second=localAgentReply('I do not know the kWh because the receipt is lost',context,first.pending);
+  assert.equal(second.actions.length,0);assert.match(second.reply.text,/kWh|bill.*manually/i);
+});
+test('an amount survives a direct kWh follow-up after a fully named billing period',()=>{
+  const first=localAgentReply('Set up my August 2026 bill to 10000',context);
+  for(const [text,kwh] of [['120',120],['.5',.5],['1,200',1200]]){
+    const second=localAgentReply(text,context,first.pending);
+    assert.equal(second.actions[0]?.bill.amount,10000);assert.equal(second.actions[0]?.bill.kwh,kwh);
+  }
+});
+test('attached please wording keeps the supplied bill amount',()=>{
+  const first=localAgentReply('My September bill vanished so now plss setup plss10000',context);
+  const second=localAgentReply('September 2026',context,first.pending);
+  const third=localAgentReply('120',context,second.pending);
+  assert.equal(third.actions[0]?.bill.amount,10000);
+});
+test('explanations, hypothetical permission questions and negations do not prepare bill changes',()=>{
+  for(const text of ['Explain how to set up my September 2026 bill to 10000 with 120 kWh','Can I set up my September 2026 bill to 10000 with 120 kWh?','I do not want to change my September 2026 bill to 10000 with 120 kWh','Can you explain how to set up my September 2026 bill to 10000 with 120 kWh?','Please explain how to set up my September 2026 bill to 10000 with 120 kWh','Would it be possible to set up my September 2026 bill to 10000 with 120 kWh?','I have not set up my September 2026 bill to 10000 with 120 kWh','Can you tell me how to set up my September 2026 bill to 10000 with 120 kWh?','Can you show me how to set up my September 2026 bill to 10000 with 120 kWh?']){
+    const result=localAgentReply(text,context);assert.equal(result.actions.length,0,text);assert.equal(result.pending,undefined,text);
+  }
+});
+test('a contextual bill mention does not change a budget, subsidy or appliance command target',()=>{
+  assert.equal(localAgentReply('Set my budget to 2500 for my August 2026 bill, 120 kWh',context).actions[0]?.type,'set_budget');
+  assert.equal(localAgentReply('Set my monthly subsidy to 500 for my September 2026 bill, 120 kWh',context).actions[0]?.type,'set_monthly_subsidy');
+  const edit=localAgentReply('Change Bedroom fan to 4 hours because my September 2026 bill was 120 kWh',context);
+  assert.equal(edit.actions[0]?.type,'update_appliance');assert.equal(edit.actions[0]?.changes.hours,4);
+});
+test('a lost receipt does not discard explicitly supplied consumption or a new bill request',()=>{
+  const first=localAgentReply('Set up my August 2026 bill to 10000',context);
+  const value=localAgentReply('120 kWh, the receipt was lost',context,first.pending);
+  assert.equal(value.actions[0]?.bill.kwh,120);
+  const next=localAgentReply('Set up my September 2026 bill to 5000, the receipt was lost',context,first.pending);
+  const done=localAgentReply('80',context,next.pending);
+  assert.equal(done.actions[0]?.bill.month,'2026-09');assert.equal(done.actions[0]?.bill.amount,5000);
+  const iso=localAgentReply('2026-09 bill vanished, please set up to 2000',context,first.pending);
+  const isoDone=localAgentReply('80',context,iso.pending);
+  assert.equal(isoDone.actions[0]?.bill.month,'2026-09');assert.equal(isoDone.actions[0]?.bill.amount,2000);
+});
+test('ISO bill targets and repeated bill wording do not return an old bill',()=>{
+ const home={...context,bills:[{month:'2026-09',kwh:192,amount:3072.6}]};
+ for(const [text,amount] of [['Set up my 2026-09 bill to 10000, I lost the receipt',10000],['My September 2026 bill vanished, please set up my bill to 2000',2000]]){
+   const first=localAgentReply(text,home);assert.equal(first.pending?.field,'kwh');assert.doesNotMatch(first.reply.text,/192 kWh|3,072/);
+   const second=localAgentReply('120',home,first.pending);assert.equal(second.actions[0]?.bill.amount,amount);assert.equal(second.actions[0]?.bill.month,'2026-09');
+ }
+});

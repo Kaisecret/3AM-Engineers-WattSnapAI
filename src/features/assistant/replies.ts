@@ -56,7 +56,7 @@ const patterns = {
   simulator: /watt.?if|simulat|what if/,
 };
 
-/** A known local topic can be answered immediately, even while connected. */
+/** Resolve a known topic from saved records for offline or failed-cloud replies. */
 export function knownHouseholdReply(message: string, context: ChatContext = {}): Reply | undefined {
   return savedHouseholdReply(message, context) ?? (Object.entries(patterns).some(([name,pattern]) => !["about","price","privacy","signup","coverage"].includes(name) && pattern.test(message.toLowerCase().trim())) ? legacyHouseholdReply(message,context) : undefined);
 }

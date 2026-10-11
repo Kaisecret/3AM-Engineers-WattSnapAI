@@ -1,33 +1,14 @@
 "use client";
-import { Fragment, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Check, CheckCheck, ChevronRight, CircleAlert, HandCoins, PlugZap, ReceiptText, SlidersHorizontal, Trash2, Wallet, X } from "lucide-react";
+import { Check, CheckCheck, ChevronRight, CircleAlert, Cpu, HandCoins, PlugZap, ReceiptText, SlidersHorizontal, Sparkles, Trash2, Wallet, X } from "lucide-react";
 import type { AgentAction } from "../agent-actions";
 import type { ChatAction, ChatMessage } from "../use-chat";
+import ChatMessageText from "./ChatMessageText";
 
 export function BotAvatar({ size = "sm" }: { size?: "sm" | "md" | "lg" }) {
   return <span className={`chat-avatar is-${size}`} aria-hidden="true"><Image src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="" width={120} height={120} sizes="64px" /></span>;
-}
-
-function Inline({ value }: { value: string }) {
-  // **bold** from the AI becomes <strong>; everything else stays plain text.
-  return <>{value.split(/\*\*(.+?)\*\*/g).map((part, index) => index % 2 ? <strong key={index}>{part}</strong> : <Fragment key={index}>{part}</Fragment>)}</>;
-}
-
-const bullet = /^\s*(?:[•*-]|\d+[.)])\s+/;
-function Text({ value }: { value: string }) {
-  // Runs of lines that start with "• ", "- " or "1. " become a list; other lines are paragraphs.
-  const blocks: Array<{ list: boolean; lines: string[] }> = [];
-  for (const line of value.trim().split("\n")) {
-    if (!line.trim()) { blocks.push({ list: false, lines: [] }); continue; }
-    const list = bullet.test(line), last = blocks[blocks.length - 1];
-    if (last && last.list === list && last.lines.length) last.lines.push(list ? line.replace(bullet, "") : line);
-    else blocks.push({ list, lines: [list ? line.replace(bullet, "") : line] });
-  }
-  return <>{blocks.filter(block => block.lines.length).map((block, index) => block.list
-    ? <ul key={index}>{block.lines.map((line, i) => <li key={i}><Inline value={line} /></li>)}</ul>
-    : <p key={index}>{block.lines.map((line, i) => <span key={i}>{i > 0 && <br />}<Inline value={line} /></span>)}</p>)}</>;
 }
 
 const actionIcons: Record<AgentAction["type"], typeof Wallet> = {
@@ -77,8 +58,8 @@ export default function ChatThread({ messages, typing, onSuggest, intro, actions
       return <div key={message.id} className="chat-row is-bot">
         <BotAvatar />
         <div className={`chat-bot-body${message.actions?.length && actions ? " has-actions" : ""}`}>
-          <div className="chat-bubble"><Text value={message.text} /></div>
-          {message.notice && <p className="chat-notice"><CircleAlert aria-hidden="true" />{message.notice}</p>}
+          <div className="chat-bubble"><ChatMessageText value={message.text} /></div>
+          {message.notice && <p className={`chat-notice is-${message.source ?? "keywords"}`}>{message.source === "gemini" ? <Sparkles aria-hidden="true" /> : message.source === "tinybert" ? <Cpu aria-hidden="true" /> : <CircleAlert aria-hidden="true" />}{message.notice}</p>}
           {!!message.actions?.length && actions && <div className={`chat-actions${message.actions.length > 1 ? " is-multi" : ""}`}>
             {pending.length > 0 && <p className="chat-action-heading">Review {message.actions.length > 1 ? "changes" : "change"}<span>Not saved yet</span></p>}
             <ul>{message.actions.map(item => <ActionCard key={item.id} item={item} compact={message.actions!.length > 1} onConfirm={() => actions.onConfirm(message, [item])} onCancel={() => actions.onCancel(message, item)} />)}</ul>

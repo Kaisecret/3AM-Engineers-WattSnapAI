@@ -41,9 +41,10 @@ export function savedHouseholdReply(raw: string, context: ChatContext = {}): Rep
   };
   const selected = periods(text,bills,today);
   const budget = /\bbudget\b|badyet|monthly target|spending limit|natitira|remaining budget/.test(text);
-  const history = /history|kasaysayan|nakaraang mga bill|previous bills|all.*bills|list.*bills|\bbills\b/.test(text) && !/compar|difference|pagkakaiba/.test(text);
+  const reasonComparison = selected.months.length > 0 && /\b(?:why|bakit)\b/.test(text) && /higher|high|lower|low|more|less|mahal|tumaas|bumaba/.test(text);
+  const history = /history|kasaysayan|nakaraang mga bill|previous bills|all.*bills|list.*bills|\bbills\b/.test(text) && !/compar|difference|pagkakaiba/.test(text) && !reasonComparison;
   const due = /due|deadline|kailan.*(?:bayad|bill)|when.*pay/.test(text);
-  const compare = /compar|difference|pagkakaiba/.test(text) && /bill|month|buwan/.test(text);
+  const compare = reasonComparison || (/compar|difference|pagkakaiba/.test(text) && /bill|month|buwan/.test(text));
   const periodQuestion = selected.months.length>0 && /bill|kwh|usage|consumption|konsumo|gastos/.test(text);
   const simpleBill = /latest bill|current bill|last bill|bill amount|magkano.*bill|bill ko|electricity usage|konsumo ko|my usage/.test(text);
   if (budget) {
@@ -61,10 +62,12 @@ export function savedHouseholdReply(raw: string, context: ChatContext = {}): Rep
   if (compare && selected.months.length>0) {
     if (selected.ambiguous) add("household",`Which year for ${selected.ambiguous}? More than one is saved.`,link("View bills","/bills"));
     else {
-      const wanted = selected.months.length===1 ? [bills.filter(bill=>bill.month<selected.months[0]).at(-1)?.month,selected.months[0]] : selected.months.slice(0,2);
+      const earlier = bills.filter(bill=>bill.month<selected.months[0]).at(-1)?.month;
+      const later = reasonComparison && !earlier ? bills.find(bill=>bill.month>selected.months[0])?.month : undefined;
+      const wanted = selected.months.length===1 ? (later ? [selected.months[0],later] : [earlier,selected.months[0]]) : selected.months.slice(0,2);
       const pair = wanted.map(month=>bills.find(bill=>bill.month===month));
       if (!pair[0] || !pair[1]) add("household",`Both billing periods need saved records. ${wanted.filter(month=>month&&!bills.some(bill=>bill.month===month)).map(month=>`No saved bill for ${monthLabel(month!)}.`).join(" ")}`,link("View bills","/bills"));
-      else { const [a,b]=pair; add("household",`${line(a!)}\n${line(b!)}\nDifference (${monthLabel(b!.month)} minus ${monthLabel(a!.month)}): ${number(b!.kwh-a!.kwh)} kWh · ${peso(b!.amount-a!.amount)} before subsidies. Recorded totals do not establish a cause; check the billing-period lengths.`,link("Compare bills","/bills")); }
+      else { const [a,b]=pair; add("household",`${line(a!)}\n${line(b!)}\nDifference (${monthLabel(b!.month)} minus ${monthLabel(a!.month)}): ${number(b!.kwh-a!.kwh)} kWh · ${peso(b!.amount-a!.amount)} before subsidies.${reasonComparison ? `\nEffective average cost before subsidy: ${monthLabel(a!.month)} ${peso(a!.amount/a!.kwh)}/kWh; ${monthLabel(b!.month)} ${peso(b!.amount/b!.kwh)}/kWh. These averages include the saved bill total, rather than a live electricity tariff. Check the original charges and billing-period lengths for the breakdown.` : " Recorded totals do not establish a cause; check the billing-period lengths."}`,link("Compare bills","/bills")); }
     }
   } else if ((periodQuestion || simpleBill || due || selected.ambiguous) && !history) {
     if (selected.ambiguous) add("household",`Which year for ${selected.ambiguous}? More than one is saved.`,link("View bills","/bills"));

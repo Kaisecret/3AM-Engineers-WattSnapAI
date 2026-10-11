@@ -41,12 +41,43 @@ function applianceName(text: string) {
     .split(new RegExp(`,|\\s+(?:for|to|at|rated|using|gamit)\\b|\\s+${numeric}\\s*(?:k?w(?:atts?)?|hours?|hrs?|oras|h|days?|units?|pcs)\\b`,'i'))[0].trim();
 }
 
+function requestsBillEntry(message: string) {
+  const explanatory = /^(?:what|why|how|should|is|does|if|tell me how|show me how|would it|(?:can|could|may) (?:i|we)|ano|paano|bakit|magkano|kailan)\b/i.test(message)
+    || /\b(?:explain|describe|teach|tell me how|show me how)\b/i.test(message)
+    || /\b(?:do not|don't|have not|haven't|never|huwag|wag)\b.*\b(?:set|add|save|record|change|update|create|enter)\b/i.test(message);
+  if (explanatory) return false;
+  const command = /\b(?:set(?:\s+up)?|setup|add|save|record|change|update|create|enter|idagdag|ilagay)\b/i.exec(message);
+  if (!command) return false;
+  const mentions = [...message.matchAll(/\bbills?\b/gi)];
+  const bill = mentions.find(item=>item.index>command.index) ?? mentions[0];
+  if (!bill) return false;
+  if (command.index < bill.index) {
+    // Only a bill may be the command target. A bill mentioned later as context
+    // must not turn a budget, subsidy or appliance command into bill entry.
+    const target = message.slice(command.index+command[0].length,bill.index)
+      .replace(/\b20\d{2}-(?:0[1-9]|1[012])\b/g,'')
+      .replace(new RegExp(`\\b(?:${months.flatMap(month=>[month,month.slice(0,3)]).join('|')}|20\\d{2})\\b`,'gi'),'')
+      .replace(/\b(?:up|my|the|a|an|monthly|electricity|electric|billing|amount|of|ng|ang|please|pls|plss*)\b/gi,'')
+      .replace(/[\s,]/g,'');
+    return !target;
+  }
+  const rest = message.slice(command.index+command[0].length).trim();
+  return !rest || /^(?:(?:up|please|pls|plss*|to|at|is)\s*)*(?:[=:]\s*)?(?:₱|php\s*)?[\d.-]/i.test(rest);
+}
+const billFields = (message: string) => message.replace(new RegExp(`,(?=\\s+(?:[a-z]|${numeric}\\s+kwh\\b))`,'gi'),' ');
+
 /** Small offline grammar. Values remain proposed actions; this function never writes records. */
 export function localAgentReply(raw: string, context: ChatContext = {}, pending?: LocalPending): LocalAgentResult {
   let message = raw.trim().slice(0,500);
   let continuing = false;
   if (/^(?:cancel|never mind|nevermind|stop|huwag|wag)$/i.test(message)) return response('Okay, I cancelled that request. Your saved records are unchanged.');
-  if (pending && (/^(?:[₱\d.-]|php\b)/i.test(message) || (pending.field === 'month' && monthOf(message))) && !/[?;]/.test(message)) {
+  if (pending?.field === 'kwh' && !requestsBillEntry(message) && !new RegExp(`${numberToken}\\s*kwh\\b`,'i').test(message)
+      && /\b(?:do not know|don't know|not sure|lost|vanished|missing|hindi alam|nawala)\b/i.test(message)) {
+    const result = ask(pending.message,'kwh','I still need the actual consumption in kWh to prepare this bill. A peso amount alone cannot tell me your usage. You can enter the details manually when you find a copy.');
+    result.reply.links = [{label:'Enter bill manually',href:'/bills/new'}];
+    return result;
+  }
+  if (pending && !requestsBillEntry(message) && (/^(?:[₱\d.-]|php\b)/i.test(message) || (pending.field === 'month' && monthOf(message))) && !/[?;]/.test(message)) {
     continuing = true;
     const bare = new RegExp(`^${numeric}$`).test(message);
     const unit = {watts:' W',hours:' hours',month:'',kwh:' kWh',amount:' pesos'}[pending.field];
@@ -62,6 +93,15 @@ export function localAgentReply(raw: string, context: ChatContext = {}, pending?
     const actions=results.flatMap(result=>result.actions);
     const links=results.flatMap(result=>result.reply.links??[]).filter((item,index,all)=>all.findIndex(other=>other.href===item.href)===index);
     return {reply:{text:results.filter(result=>!result.actions.length).map(result=>result.reply.text).concat(actions.length?['I prepared these changes. Review each one before confirming.']:[]).join('\n\n'),...(links.length?{links}:{})},actions,handled:true};
+  }
+  // Natural bill edits must reach the validated entry flow before read-only
+  // keyword matching. Preserve all supplied fields and ask for missing ones.
+  if (requestsBillEntry(message)
+      && !/^(?:add|save|record|dagdag|idagdag|ilagay|dugang)\s/i.test(message)) {
+    message = billFields(message).replace(/\b(plss*|please)(?=\d)/gi,'$1 ');
+    const amount = value(message,new RegExp(`\\b(?:to|amount)\\s*(?:is|of|:|=)?\\s*(?:₱|php\\s*)?${amountToken}`,'i'))
+      ?? value(message,new RegExp(`\\b(?:setup|set\\s+up)\\s+(?:(?:plss*|please)\\s*)*(?:to\\s+)?(?:₱|php\\s*)?${amountToken}`,'i'));
+    message = `Add bill, ${message}${amount !== undefined ? `, amount ${amount}` : ''}`;
   }
   if (/^(?:what|why|how|can|could|should|is|does|if|ano|paano|bakit|magkano|kailan|sino|saan)\b/i.test(message)) {
     const reply=knownHouseholdReply(message,context);
@@ -82,7 +122,9 @@ export function localAgentReply(raw: string, context: ChatContext = {}, pending?
     if (kwh === undefined) return ask(message,'kwh','How many kWh are printed on that bill?');
     if (kwh <= 0) return preserve(response('Bill usage must be greater than zero kWh.'));
     const subsidyMatch = message.match(new RegExp(`\\bsubsidy\\s*(?:of|is|:|=)?\\s*(?:₱|php)?\\s*${amountToken}`,'i'));
-    const amountText = subsidyMatch ? message.replace(subsidyMatch[0],'') : message;
+    // A comma before another named field is punctuation, not a malformed
+    // numeric token. Keep commas inside numbers intact for validation.
+    const amountText = billFields(subsidyMatch ? message.replace(subsidyMatch[0],'') : message);
     const amount = value(amountText,new RegExp(`(?:₱|php\\s*|amount\\s*(?:of|is|:|=)?\\s*)${amountToken}`,'i'))
       ?? value(amountText,new RegExp(`${numberToken}\\s*pesos\\b`,'i'));
     if (amount === undefined) return ask(message,'amount','What is the current month bill in pesos, before any subsidy?');

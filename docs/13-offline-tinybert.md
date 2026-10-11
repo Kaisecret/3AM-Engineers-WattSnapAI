@@ -1,6 +1,6 @@
 # Offline TinyBERT and online Gemini
 
-WattSnap's household assistant now combines a real four-layer TinyBERT classifier with the existing keyword grammar. Validated local commands and supported saved-data questions still resolve immediately. Other questions use Gemini when connected; offline or failed cloud requests use TinyBERT to identify a read-only topic and the existing saved-data code to answer. A low-confidence or unknown classification uses the keyword fallback. Household edits still require confirmation.
+WattSnap's household assistant combines a real four-layer TinyBERT classifier with the existing keyword grammar. Every online message, including suggested questions and edits, goes to Gemini first with the conversation and saved household context. The browser checks current connectivity on each send; an old cached document does not force offline replies after reconnecting. Offline or failed cloud requests use TinyBERT plus exact keyword parsing to answer from saved records. A low-confidence or unknown classification uses the keyword fallback. Household edits still require confirmation, and each reply identifies Gemini, TinyBERT or local fallback.
 
 The model has fourteen labels and approximately 14.35 million parameters, including its trained classification head. This is a text-understanding model. Bill-photo extraction and fresh provider information still require the online services.
 

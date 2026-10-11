@@ -12,7 +12,7 @@ const output = path.join(os.tmpdir(), `wattsnap-appliance-chat${process.env.APP_
 async function main() {
   await fs.mkdir(output, { recursive: true });
   await build({ stdin: { contents: `import React from 'react'; import {createRoot} from 'react-dom/client'; import Appliances from './src/features/dashboard/components/AppliancesScreen'; import Chat from './src/features/assistant/components/ChatScreen'; import './src/app/globals.css'; import './src/features/onboarding/theme.css'; import './src/features/onboarding/accessibility.css'; import './src/features/dashboard/frontend-refinements.css'; import './src/app/(household)/dashboard/dashboard.css'; import './src/features/dashboard/app-ui.css'; import './src/features/dashboard/appliances.css'; import './src/features/assistant/assistant.css'; createRoot(document.getElementById('root')).render(location.pathname==='/assistant'?<Chat/>:<Appliances startAdding/>);`, resolveDir: root, loader: 'tsx' }, bundle: true, outfile: path.join(output, 'app.js'), jsx: 'automatic', define: { 'process.env.NODE_ENV': '"development"' },
-    plugins: [{ name: 'next-shell', setup(build) {
+    format: 'esm', plugins: [{ name: 'next-shell', setup(build) {
       build.onResolve({filter:/^\/assets\//},args=>({path:args.path,external:true}));
       build.onResolve({filter:/^(next\/(image|link|navigation)|\.\/PageShell|.*\/AppHeader|.*\/AppNavigation)$/},args=>({path:args.path,namespace:'shell'}));
       build.onLoad({filter:/.*/,namespace:'shell'},args=>({loader:'jsx',resolveDir:root,contents:
@@ -24,9 +24,9 @@ async function main() {
     }}] });
   const server=http.createServer(async(req,res)=>{try{
     const url=new URL(req.url,'http://localhost');
-    if(['/app.js','/app.css'].includes(url.pathname)){res.setHeader('Content-Type',url.pathname.endsWith('.css')?'text/css':'text/javascript');res.end(await fs.readFile(path.join(output,path.basename(url.pathname))));}
+    if(['/app.js','/app.css'].includes(url.pathname)){res.setHeader('Content-Type',url.pathname.endsWith('.css')?'text/css; charset=utf-8':'text/javascript; charset=utf-8');res.end(await fs.readFile(path.join(output,path.basename(url.pathname))));}
     else if(url.pathname.startsWith('/assets/')){const asset=path.resolve(root,'public','.'+decodeURIComponent(url.pathname));assert.ok(asset.startsWith(path.join(root,'public')+path.sep));res.end(await fs.readFile(asset));}
-    else {res.setHeader('Content-Type','text/html');res.end(`<!doctype html><html data-theme="${process.env.APP_THEME === 'dark' ? 'dark' : 'light'}"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><style>:root{--font-sans:Arial;--ws-header-height:0px}body{margin:0;font-family:Arial}</style><div id="root"></div><script src="/app.js"></script></html>`);}
+    else {res.setHeader('Content-Type','text/html; charset=utf-8');res.end(`<!doctype html><html data-theme="${process.env.APP_THEME === 'dark' ? 'dark' : 'light'}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><style>:root{--font-sans:Arial;--ws-header-height:0px}body{margin:0;font-family:Arial}</style><div id="root"></div><script type="module" src="/app.js"></script></html>`);}
   }catch{res.statusCode=404;res.end();}});
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const base=`http://127.0.0.1:${server.address().port}`;
@@ -119,23 +119,48 @@ async function main() {
       assert.equal(await page.locator('.ad-photo').count(),0);
       assert.equal(await page.getByRole('dialog',{name:'Add appliance',exact:true}).count(),0);
     });
-    await scenario('complete typed changes are local immediately while online',390,async page=>{
-      let calls=0;await page.route('**/api/ai/assistant',route=>{calls++;return route.fulfill({status:503,json:{error:'Unavailable'}});});
+    await scenario('complete online changes go to Gemini and still require confirmation',390,async page=>{
+      let calls=0;await page.route('**/api/ai/assistant',route=>{calls++;return route.fulfill({json:{source:'gemini',reply:{text:'Review your proposed budget of ₱2,100.00.'},actions:[{type:'set_budget',amount:2100}]}});});
       await page.goto(base+'/assistant');await message(page,'Set my budget to 2100');
       await page.getByRole('button',{name:/Confirm: Set your monthly budget to ₱2,100/}).waitFor();
       assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1')).budget),0);
-      await page.getByText('Saved data · on this device',{exact:true}).waitFor();assert.equal(calls,0);
+      await page.getByText('Gemini · online',{exact:true}).waitFor();assert.equal(calls,1);
     });
-    await scenario('online saved-data questions answer together without AI calls',390,async page=>{
-      let calls=0;await page.route('**/api/ai/assistant',route=>{calls++;return route.fulfill({status:503,json:{error:'Unavailable'}});});
+    await scenario('the first online saved-data question goes to Gemini with the actual snapshot',390,async page=>{
+      let calls=0;await page.route('**/api/ai/assistant',route=>{calls++;const data=route.request().postDataJSON();assert.equal(data.context.budget,2000);return route.fulfill({json:{source:'gemini',reply:{text:'Your **monthly budget** is ₱2,000.00.\n\n- August 2026: 192 kWh · ₱3,072.60.'}}});});
       await page.goto(base+'/assistant');await page.evaluate(()=>{localStorage.setItem('wattsnap-ui-preview-v1',JSON.stringify({name:'Test home',budget:2000,bills:[{id:'aug',month:'2026-08',kwh:192,amount:3072.6}],appliances:[]}));window.dispatchEvent(new Event('wattsnap-preview-change'));});
       await message(page,'Magkano ang budget ko at bill history?');
-      const answer=page.locator('.chat-row.is-bot').last();await answer.getByText(/3,072\.60/).first().waitFor();assert.match(await answer.innerText(),/2,000\.00/);assert.equal(calls,0);
+      const answer=page.locator('.chat-row.is-bot').last();await answer.getByText(/3,072\.60/).first().waitFor();assert.match(await answer.innerText(),/2,000\.00/);assert.equal(calls,1);
+      assert.equal(await answer.locator('.chat-value.is-money').count(),2);assert.equal(await answer.locator('.chat-value.is-energy').count(),1);
+    });
+    for(const width of [320,390,768])await scenario(`conversation highlights and paragraphs fit at ${width}px`,width,async page=>{
+      let calls=0;await page.route('**/api/ai/assistant',route=>{calls++;return route.fulfill({json:{source:'gemini',reply:{text:'**September 2026** used less electricity, but your saved bill total was higher.\n\n- August: 207 kWh · ₱1,491.15\n- September: 109 kWh · ₱1,738.14\n\nThe effective averages are ₱7.20/kWh and ₱15.95/kWh. Check the original bill for the charge breakdown.'}}});});
+      await page.goto(base+'/assistant');await page.evaluate(()=>document.documentElement.dataset.offlineShell='true');
+      await message(page,'September is low why the cost is no?');await page.getByText('Gemini · online',{exact:true}).waitFor();assert.equal(calls,1);
+      assert.equal(await page.locator('.chat-bubble strong').count(),1);assert.ok(await page.locator('.chat-value').count()>=6);
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+      await page.screenshot({path:path.join(output,`conversation-${width}.png`)});
     });
     await scenario('expired authentication does not prepare a fallback action',390,async page=>{
       await page.route('**/api/ai/assistant',route=>route.fulfill({status:401,json:{error:'Sign in required'}}));
       await page.goto(base+'/assistant');await message(page,'Help me plan an energy audit');await page.getByText('Your session ended. Please log in again.',{exact:true}).waitFor();
       assert.equal(await page.locator('.chat-action').count(),0);
+    });
+    await scenario('online bill clarification continues offline without losing its amount',390,async(page,context)=>{
+      let calls=0;await page.route('**/api/ai/assistant',route=>{calls++;return route.fulfill({json:{source:'gemini',reply:{text:'Which billing month and year should I use?'}}});});
+      await page.goto(base+'/assistant');await message(page,'Can you set up my September bill to 10000? I lost the receipt');
+      await page.getByText('Gemini · online',{exact:true}).waitFor();await context.setOffline(true);
+      await message(page,'September 2026');await page.getByText('How many kWh are printed on that bill?',{exact:true}).waitFor();
+      await message(page,'120');await page.getByRole('button',{name:/Confirm: Add your September 2026 bill: 120 kWh · ₱10,000/}).waitFor();
+      assert.equal(calls,1);assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1')).bills.length),0);
+    });
+    await scenario('offline missing-receipt wording prepares the requested amount after clarification',320,async(page,context)=>{
+      await page.goto(base+'/assistant');await page.getByRole('textbox',{name:'Message WattSnap AI'}).waitFor();await context.setOffline(true);
+      await message(page,'My September bill vanished so now plss setup plss10000');
+      await page.getByText(/Which billing month and year/).waitFor();
+      await message(page,'September 2026');await page.getByText('How many kWh are printed on that bill?',{exact:true}).waitFor();
+      await message(page,'120');await page.getByRole('button',{name:/Confirm: Add your September 2026 bill: 120 kWh · ₱10,000/}).waitFor();
+      assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1')).bills.length),0);
     });
     await scenario('reset cancels an unanswered request and ignores its later reply',390,async page=>{
       let release;await page.route('**/api/ai/assistant',async route=>{await new Promise(resolve=>release=resolve);await route.fulfill({json:{source:'gemini',reply:{text:'Old answer'},actions:[{type:'set_budget',amount:2100}]}}).catch(()=>{});});

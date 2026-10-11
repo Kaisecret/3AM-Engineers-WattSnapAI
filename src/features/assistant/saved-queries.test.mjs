@@ -29,6 +29,14 @@ test('named month comparisons calculate the difference without claiming a cause'
  const text=savedHouseholdReply('Compare August 2026 and September 2026 bills',context).text;
  assert.match(text,/159.*kWh/);assert.match(text,/2,653\.75/);assert.match(text,/period|cause/i);
 });
+test('offline why-cost questions compare saved periods instead of defining kWh',()=>{
+ const home={...context,bills:[{month:'2026-08',kwh:207,amount:1491.15},{month:'2026-09',kwh:109,amount:1738.14}]};
+ for(const question of ['September is low why the cost is no?','Why august is more high']){
+   const text=savedHouseholdReply(question,home)?.text??'';
+   for(const value of ['207 kWh','109 kWh','1,491.15','1,738.14','7.20','15.95'])assert.ok(text.includes(value),`${question}: ${value}`);
+   assert.match(text,/effective|average/i);assert.match(text,/charges|breakdown/i);
+ }
+});
 test('due-date answers describe printed dates, not payment status',()=>{
  assert.match(savedHouseholdReply('Kailan due date ng bill?',context).text,/2026-09-29/);
  assert.match(savedHouseholdReply('Is my bill paid?',context).text,/payment status.*not.*recorded/i);
