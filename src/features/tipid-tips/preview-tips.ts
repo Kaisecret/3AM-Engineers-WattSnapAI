@@ -41,13 +41,13 @@ function applianceTip(item: PreviewAppliance, rank: number): PreviewTip {
   const kind = item.kind ?? guessApplianceKind(item.name), monthly = dailyApplianceKwh(item) * 30;
   let title: string, action: string, guidance: PreviewTip["guidance"];
   switch (kind) {
-    case "fridge": title = `Care for ${item.name}`; action = "Keep door openings brief and check that the door seals close properly. Keep the refrigerator powered for food storage."; guidance = fridgeGuidance; break;
-    case "aircon": title = `Review cooling time for ${item.name}`; action = "Cool only the rooms you use and close their doors while cooling. If comfortable, explore a different schedule in Watt-If."; guidance = quickWins; break;
-    case "fan": title = `Match ${item.name} to occupied hours`; action = "Run the fan when someone benefits from its airflow. Compare fewer unused hours in Watt-If."; guidance = quickWins; break;
-    case "lights": title = `Review how you use ${item.name}`; action = "Switch off lights in empty rooms. If you replace older bulbs, compare the actual wattage of suitable LEDs before deciding."; guidance = lightingGuidance; break;
-    case "washer": title = `Check settings for ${item.name}`; action = "When the care labels and washer instructions allow it, consider a cold-water wash. Review your actual running hours in the appliance list."; guidance = quickWins; break;
-    case "tv": case "laptop": case "phone": title = `Check idle time for ${item.name}`; action = "Use the device’s power-saving options and switch it off when it is not needed. Check its instructions before changing standby settings."; guidance = quickWins; break;
-    default: title = `Review the inputs for ${item.name}`; action = "Check rated power and actual running time, including short sessions. Follow the device’s instructions and compare your own assumptions in Watt-If.";
+    case "fridge": title = `Check ${item.name} door seals`; action = "Keep door openings brief and check the seals. Keep the refrigerator powered for food storage."; guidance = fridgeGuidance; break;
+    case "aircon": title = `Use ${item.name} in occupied rooms`; action = "Close doors while cooling. Try a shorter schedule in Watt-If if it stays comfortable."; guidance = quickWins; break;
+    case "fan": title = `Switch off ${item.name} when unused`; action = "Turn the fan off when the room is empty. Compare fewer unused hours in Watt-If."; guidance = quickWins; break;
+    case "lights": title = `Switch off unused ${item.name}`; action = "Turn off lights in empty rooms. When replacing bulbs, compare the wattage of suitable LEDs."; guidance = lightingGuidance; break;
+    case "washer": title = `Try a cold wash with ${item.name}`; action = "Use a cold wash when clothing labels and your washer instructions allow it."; guidance = quickWins; break;
+    case "tv": case "laptop": case "phone": title = `Reduce ${item.name} idle time`; action = "Use power-saving mode and switch off when unused. Follow the device’s standby instructions."; guidance = quickWins; break;
+    default: title = `Check ${item.name} running time`; action = "Check rated watts and daily use, including short sessions. Follow the device’s instructions.";
   }
   return {
     id: `appliance-${item.id}`, category: "appliance", title, action,
@@ -78,6 +78,7 @@ const stringList = (value: unknown): value is string[] => Array.isArray(value) &
 export function normalizeTipsSnapshot(value: unknown): PreviewTipsSnapshot | null {
   if (!value || typeof value !== "object") return null;
   const snapshot = value as PreviewTipsSnapshot;
+  if (snapshot.source !== undefined && snapshot.source !== "gemini" && snapshot.source !== "local-rule") return null;
   if (snapshot.version !== "tips-ui-v1" || !["household", "sample"].includes(snapshot.origin) || typeof snapshot.generatedAt !== "string" || !Number.isFinite(Date.parse(snapshot.generatedAt)) || typeof snapshot.inputSignature !== "string" || !snapshot.context || !Number.isInteger(snapshot.context.billCount) || snapshot.context.billCount < 0 || !Number.isInteger(snapshot.context.applianceCount) || snapshot.context.applianceCount < 0 || typeof snapshot.context.sample !== "boolean" || !stringList(snapshot.context.limitations) || !Array.isArray(snapshot.tips) || !snapshot.tips.length) return null;
   if (snapshot.tips.some(tip => !tip || typeof tip.id !== "string" || !["appliance", "bill", "getting-started"].includes(tip.category) || typeof tip.title !== "string" || typeof tip.action !== "string" || typeof tip.reason !== "string" || typeof tip.sample !== "boolean" || !stringList(tip.facts) || !stringList(tip.assumptions) || !tip.link || typeof tip.link.label !== "string" || !routes.has(tip.link.href) || (tip.guidance && (typeof tip.guidance.label !== "string" || !guides.has(tip.guidance.href))))) return null;
   if (new Set(snapshot.tips.map(tip => tip.id)).size !== snapshot.tips.length) return null;

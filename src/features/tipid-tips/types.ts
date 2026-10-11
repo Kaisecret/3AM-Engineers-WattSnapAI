@@ -5,6 +5,7 @@ export interface PreviewTip {
   link: { label: string; href: string }; guidance?: { label: string; href: string };
 }
 export interface PreviewTipsSnapshot {
+  source?: "gemini" | "local-rule";
   version: "tips-ui-v1"; generatedAt: string; inputSignature: string; origin: "household" | "sample";
   context: { billCount: number; applianceCount: number; sample: boolean; limitations: string[] };
   tips: PreviewTip[];

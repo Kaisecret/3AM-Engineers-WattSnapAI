@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { generateTipsWithGemini, hasGeminiKey } from "@/lib/gemini/client";
 import { createRateLimiter } from "@/lib/ai/rate-limit";
 import { signedInUserId, signInRequired, slowDown } from "@/lib/ai/session";
-import type { TipsGenerationRequest } from "@/lib/gemini/types";
+import { readTipsRequest } from "@/lib/ai/tips-request";
 
 export const dynamic = "force-dynamic";
 
@@ -20,9 +20,9 @@ export async function POST(request: Request) {
 
   const raw = await request.text();
   if (raw.length > maxBody) return NextResponse.json({ error: "Your household data is too large to send." }, { status: 413 });
-  let body: TipsGenerationRequest | null = null;
-  try { body = JSON.parse(raw); } catch { /* handled below */ }
-  if (!body || typeof body !== "object" || !body.household) return NextResponse.json({ error: "Household context is required to generate tips." }, { status: 400 });
+  let body = null;
+  try { body = readTipsRequest(JSON.parse(raw)); } catch { /* handled below */ }
+  if (!body) return NextResponse.json({ error: "Check your saved bill and appliance inputs before creating tips." }, { status: 400 });
   if (!perAccount(userId)) return slowDown();
 
   try {

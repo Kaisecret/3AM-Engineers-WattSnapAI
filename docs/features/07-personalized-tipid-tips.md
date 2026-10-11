@@ -10,18 +10,22 @@ Support incomplete household data by requesting useful missing information or ge
 
 ## Interfaces and dependencies
 
-Consumes HouseholdContext, ConfirmedBill, ConsumptionChange, and ApplianceEstimate. Produces SavedTips with input revisions and model/prompt version. Changed inputs visibly mark saved advice stale; regeneration is explicit and online.
+Uses saved bills, billing periods, and appliance estimates. Produces a device-local snapshot with an input signature, generation time, and Gemini/local source label. Changed inputs visibly mark saved advice stale; AI regeneration is explicit and online. Facts, estimates, navigation, and limitations remain application-owned while Gemini writes concise titles, actions, and explanations for known tip IDs.
 
-## Future files
+## Implementation
 
-- `src/features/tipid-tips/service.ts`: context selection and generation.
-- `src/features/tipid-tips/components/tips-list.tsx`: advice, basis, freshness.
+- `src/features/tipid-tips/preview-tips.ts`: evidence-backed base tips and snapshot validation.
+- `src/features/tipid-tips/ai-tips.ts`: minimal request preparation and validated copy merging.
+- `src/features/tipid-tips/components/TipsScreen.tsx`: generation, cancellation, status, filters, offline access, and stale-input protection.
+- `src/features/tipid-tips/components/tips-list.tsx`: short advice with evidence behind “Why this tip?”.
 - `src/app/api/ai/tips/route.ts`: protected Gemini call.
-- `src/features/tipid-tips/service.test.ts`: limited input and stale context behavior.
+- `src/lib/ai/tips-request.ts`: allowlisted, bounded request validation.
+- `src/lib/gemini/tips-reading.ts`: structured response schema, prompt, and copy validation.
+- `src/features/tipid-tips/ai-tips.test.mjs`, `src/lib/gemini/tips-generation.test.mjs`, and `tests/e2e/tipid-tips.cjs`: generation and browser regressions.
 
 ## Offline and errors
 
-Previously saved recommendations are available offline. New tips require connectivity; indicate timeout/quota failure without deleting saved tips. Cache freshness is visible.
+Previously saved recommendations are available offline. New AI tips require connectivity. A first-time failure or offline visit can create clearly labeled basic suggestions; a failed refresh preserves saved advice. Cancellation, changes to input records, account switches, and newer tips saved in another tab prevent an older response from being saved. Generation time and limitations are in “About these tips”.
 
 ## Acceptance
 
