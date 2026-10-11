@@ -78,3 +78,37 @@ test('restoration updates remain separate and samples stay identified', () => {
   assert.equal(advisoryTab({ ...record, ...restored }, now), 'history'); assert.equal(advisoryTab(record, now), 'active');
   assert.equal(advisoryTab(record, new Date('2026-10-08T02:00:00Z')), 'history'); assert.deepEqual(input.original, record.original);
 });
+
+test('an overnight or multi-day interruption stays active until it ends', () => {
+  const tab = (details, at) => advisoryTab({ ...record, details: { ...input.details, ...details } }, new Date(at));
+  // 8 PM on the 11th to 2 AM on the 12th, Manila time.
+  const overnight = { date: '2026-10-11', startTime: '20:00', endDate: '2026-10-12', endTime: '02:00' };
+  assert.equal(tab(overnight, '2026-10-11T16:30:00Z'), 'active', '00:30 on the 12th: still going');
+  assert.equal(tab(overnight, '2026-10-11T18:01:00Z'), 'history', '02:01 on the 12th: over');
+  // A stated end decides even on the start day.
+  assert.equal(tab({ date: '2026-10-11', startTime: '08:00', endDate: '', endTime: '17:00' }, '2026-10-11T08:59:00Z'), 'active');
+  assert.equal(tab({ date: '2026-10-11', startTime: '08:00', endDate: '', endTime: '17:00' }, '2026-10-11T09:01:00Z'), 'history');
+  // Several days with no end time: active through its last day, history the day after.
+  const days = { date: '2026-10-10', startTime: '', endDate: '2026-10-12', endTime: '' };
+  assert.equal(tab(days, '2026-10-12T15:00:00Z'), 'active', '11 PM on the last day');
+  assert.equal(tab(days, '2026-10-12T16:30:00Z'), 'history', '00:30 the day after');
+  // No end at all: over once its day has passed, as before.
+  assert.equal(tab({ date: '2026-10-11', startTime: '08:00', endDate: '', endTime: '' }, '2026-10-11T15:00:00Z'), 'active');
+  assert.equal(tab({ date: '2026-10-11', startTime: '08:00', endDate: '', endTime: '' }, '2026-10-11T16:30:00Z'), 'history');
+  assert.equal(tab({ date: '', startTime: '', endDate: '', endTime: '' }, '2027-01-01T00:00:00Z'), 'active', 'an undated advisory is not moved to history');
+});
+
+test('a collected advisory keeps its post link, and only a real facebook.com link is accepted', () => {
+  const collected = feed => ({ ...record, original: { kind: 'text', name: 'ANTECO Facebook post', text: 'SCHEDULED POWER INTERRUPTION', capturedAt: now.toISOString(), feed } });
+  const kept = normalizeReviewedAdvisory(collected({ url: 'https://www.facebook.com/antecoPH/posts/1', fromImages: true }));
+  assert.deepEqual(kept.original.feed, { url: 'https://www.facebook.com/antecoPH/posts/1', fromImages: true });
+  assert.ok(normalizeReviewedAdvisory(collected({ url: 'https://m.facebook.com/story.php?id=1', fromImages: false })));
+  for (const feed of [null, 'https://www.facebook.com/antecoPH', {}, { url: 'https://www.facebook.com/antecoPH/posts/1' }, { url: 'https://www.facebook.com/antecoPH/posts/1', fromImages: 'yes' },
+    { url: 'http://www.facebook.com/antecoPH/posts/1', fromImages: false }, { url: 'https://facebook.com.example.org/post', fromImages: false }, { url: 'https://example.org/facebook.com/', fromImages: false },
+    { url: 'https://user:secret@www.facebook.com/post', fromImages: false }, { url: 'javascript:alert(1)', fromImages: false }, { url: `https://www.facebook.com/${'x'.repeat(500)}`, fromImages: false }]) {
+    assert.equal(normalizeReviewedAdvisory(collected(feed)), null, JSON.stringify(feed));
+  }
+  // The mark belongs to collected text only: a screenshot or a sample cannot carry it.
+  assert.equal(normalizeReviewedAdvisory({ ...record, original: { ...record.original, feed: { url: 'https://www.facebook.com/antecoPH/posts/1', fromImages: false } } }), null);
+  assert.ok(normalizeReviewedAdvisory(record), 'an advisory added by hand needs no such mark');
+});

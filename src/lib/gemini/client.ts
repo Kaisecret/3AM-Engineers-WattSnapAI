@@ -12,6 +12,7 @@ import type {
 } from "./types";
 import type { Reply } from "@/features/assistant/replies";
 import { billReadingInstruction, billResponseSchema, readBillReading } from "./bill-reading";
+import { advisoryReadingInstruction, advisoryResponseSchema } from "./advisory-reading";
 import type { BillImage } from "../ai/bill-images-request";
 
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models";
@@ -357,4 +358,45 @@ Contextual guidelines:
     suggestions: parsed.suggestions?.slice(0, 3),
     links: parsed.links?.slice(0, 2),
   };
+}
+
+// -------------------------------------------------------------
+// 5. PROVIDER ADVISORY POSTS
+// -------------------------------------------------------------
+/**
+ * Reads one ANTECO Facebook post: its caption and up to a few images. Returns the model's raw
+ * answer; readAdvisoryReading decides what is kept. The text a tool extracted from the images is
+ * given only next to the images themselves, as a hint.
+ */
+export async function extractAdvisoryWithGemini(
+  post: { caption: string; postedAt: string; imageText: string },
+  images: Array<{ mimeType: string; data: string }>,
+): Promise<{ raw: unknown; model: GeminiModel }> {
+  const published = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(post.postedAt));
+  const hint = images.length && post.imageText.trim()
+    ? `
+
+Text a tool extracted from the images. It may be incomplete or only a description; the images themselves decide:
+<extracted>
+${post.imageText.trim()}
+</extracted>`
+    : "";
+  const model = scanModel();
+  const result = await callGemini({
+    model, systemInstruction: advisoryReadingInstruction, responseSchema: advisoryResponseSchema,
+    parts: [
+      { text: `Read this ANTECO Facebook post, published on ${published} (Philippine time).
+
+Caption:
+<caption>
+${post.caption.trim() || "(no caption)"}
+</caption>${hint}` },
+      ...images.map(image => ({ inlineData: { mimeType: image.mimeType, data: image.data } })),
+    ],
+    temperature: null, maxOutputTokens: 8192, timeoutMs: 40000,
+    ...(images.length ? { mediaResolution: "MEDIA_RESOLUTION_HIGH" as const } : {}),
+  });
+  const raw = parseJsonOutput<unknown>(result.text, null);
+  if (!raw || typeof raw !== "object") throw new GeminiError("Gemini returned an unreadable advisory answer.", "empty");
+  return { raw, model };
 }

@@ -1,0 +1,58 @@
+[
+  {
+    "facebookUrl": "https://www.facebook.com/antecoPH",
+    "postId": "1000000000000001",
+    "pageName": "antecoPH",
+    "url": "https://www.facebook.com/antecoPH/posts/pfbid0example1",
+    "time": "2026-10-10T01:15:00.000Z",
+    "timestamp": 1791681300,
+    "user": { "id": "100000000000001", "name": "Sample Electric Cooperative" },
+    "text": "SCHEDULED POWER INTERRUPTION\nDate: October 14, 2026\nTime: 8:00 AM - 5:00 PM\nSee attached advisory for affected areas.",
+    "likes": 12,
+    "comments": 3,
+    "shares": 4,
+    "media": [
+      {
+        "thumbnail": "https://scontent.fmnl1-1.fna.fbcdn.net/v/t39.30808-6/sample-thumb.jpg",
+        "__typename": "Photo",
+        "photo_image": { "uri": "https://scontent.fmnl1-1.fna.fbcdn.net/v/t39.30808-6/sample-full.jpg", "height": 1080, "width": 1080 },
+        "id": "2000000000000001",
+        "ocrText": "May be an image of text that says 'SCHEDULED POWER INTERRUPTION Affected: Brgy. Sample'"
+      },
+      {
+        "thumbnail": "https://images.example.org/not-facebook.jpg",
+        "__typename": "Photo",
+        "id": "2000000000000002"
+      }
+    ]
+  },
+  {
+    "facebookUrl": "https://www.facebook.com/antecoPH",
+    "facebookId": "1000000000000002",
+    "topLevelUrl": "https://www.facebook.com/antecoPH/posts/pfbid0example2",
+    "timestamp": 1791594000,
+    "text": "Our offices are open on Saturday for bill payments."
+  },
+  {
+    "postId": "1000000000000001",
+    "url": "https://www.facebook.com/antecoPH/posts/pfbid0example1",
+    "time": "2026-10-10T01:15:00.000Z",
+    "text": "The same post returned twice."
+  },
+  {
+    "url": "https://www.facebook.com/antecoPH/posts/pfbid0example3",
+    "time": "2026-10-09T01:00:00.000Z",
+    "text": "No post id."
+  },
+  {
+    "postId": "1000000000000004",
+    "url": "https://facebook.com.example.org/antecoPH/posts/4",
+    "time": "2026-10-09T02:00:00.000Z",
+    "text": "A link that is not on facebook.com."
+  },
+  {
+    "postId": "1000000000000005",
+    "url": "https://www.facebook.com/antecoPH/posts/pfbid0example5",
+    "text": "No time."
+  }
+]
