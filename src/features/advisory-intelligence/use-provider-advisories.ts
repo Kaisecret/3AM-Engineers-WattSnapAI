@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { previewStorageFor, usePreviewStorageKey } from "@/features/auth/use-preview-storage-key";
 import { usePreviewHousehold } from "@/features/dashboard/use-preview-household";
+import { isDeviceOffline } from "@/features/offline-access/connectivity";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
 import { feedColumns, feedDismissedKey, feedFilter, feedMaxPages, feedPageSize, feedProvider, type ProviderAdvisoryRow } from "./provider-feed";
 
@@ -58,7 +59,7 @@ export function useProviderAdvisories() {
     if (!enabled) { setRows([]); setStatus("idle"); return; }
     let live = true;
     const load = (force: boolean) => {
-      if (!navigator.onLine) { setStatus(current => (current === "ready" ? current : "error")); return; }
+      if (isDeviceOffline()) { setStatus(current => (current === "ready" ? current : "error")); return; }
       setStatus(current => (current === "ready" ? current : "loading"));
       loadFeed(force).then(next => { if (live) { setRows(next); setStatus("ready"); } }, () => { if (live) setStatus(current => (current === "ready" ? current : "error")); });
     };
@@ -78,6 +79,6 @@ export function useProviderAdvisories() {
     } catch { /* Storage is unavailable: the advisory may be saved again on the next visit. */ }
   }
   /** Loads the list again now. Used by the "Try again" button after a failure. */
-  function reload() { if (!enabled || !navigator.onLine) return; setStatus("loading"); loadFeed(true).then(next => { setRows(next); setStatus("ready"); }, () => setStatus("error")); }
+  function reload() { if (!enabled || isDeviceOffline()) return; setStatus("loading"); loadFeed(true).then(next => { setRows(next); setStatus("ready"); }, () => setStatus("error")); }
   return { enabled, rows, status, dismissed: dismissed?.key === storageKey ? dismissed.ids : null, dismiss, reload };
 }
