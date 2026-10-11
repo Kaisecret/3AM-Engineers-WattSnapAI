@@ -88,7 +88,7 @@ select 'providers', count(*)::text from public.providers;
 
 After the initial migration the values are: 12, 0, 37, 8, 18, 0, `advisory-originals, avatars`, 7.
 
-After `20261012000000_provider_advisories.sql` they are: 15, 0, 38, 8, 19, 0, `advisory-originals, avatars`, 7. That migration adds three tables for advisories collected from ANTECO's page (`provider_advisories`, `provider_advisory_runs`, `provider_advisory_state`) and three functions only the secret key may call. See [ANTECO advisory collection](13-anteco-advisory-ingestion.md).
+After `20261012000000_provider_advisories.sql` they are: 15, 0, 38, 8, 19, 0, `advisory-originals, avatars`, 7. That migration adds three tables for advisories collected from ANTECO's page (`provider_advisories`, `provider_advisory_runs`, `provider_advisory_state`) and three functions only the secret key may call. See [ANTECO advisory collection](14-anteco-advisory-ingestion.md).
 
 ### Starting the test project again
 

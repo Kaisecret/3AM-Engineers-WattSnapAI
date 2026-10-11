@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 // One Apify call can take two minutes, so a run needs this limit (Fluid Compute on Vercel).
 // The run works to a deadline inside it and saves its progress as it goes. A deployment that
-// allows less than 300 seconds is not supported: see docs/13-anteco-advisory-ingestion.md.
+// allows less than 300 seconds is not supported: see docs/14-anteco-advisory-ingestion.md.
 export const maxDuration = 300;
 
 const answer = (body: Record<string, unknown>, status: number) => NextResponse.json(body, { status, headers: { "cache-control": "no-store" } });

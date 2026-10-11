@@ -12,7 +12,7 @@ const dismissedEvent = "wattsnap-provider-feed-dismissed", feedEvent = "wattsnap
 /** Published advisories read from the provider's page. The same list for every account, so one fetch is shared by every screen for a minute. */
 let shared: { at: number; rows: Promise<ProviderAdvisoryRow[]> } | null = null;
 async function fetchFeed(): Promise<ProviderAdvisoryRow[]> {
-  // ponytail: untyped client until src/generated/database.types.ts is regenerated with the provider_advisories table (docs/13).
+  // ponytail: untyped client until src/generated/database.types.ts is regenerated with the provider_advisories table (docs/14).
   const supabase = getBrowserSupabase() as unknown as SupabaseClient, rows: ProviderAdvisoryRow[] = [], filter = feedFilter();
   for (let page = 0; page < feedMaxPages; page += 1) {
     const { data, error } = await supabase.from("provider_advisories").select(feedColumns).eq("provider_id", feedProvider).eq("status", "published").or(filter)

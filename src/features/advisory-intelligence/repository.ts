@@ -10,7 +10,7 @@ import { maxAttempts, maxPageSize, pageSize, type CrawlState, type IngestStore, 
  */
 
 // ponytail: untyped client. The generated database types do not list these tables until they are
-// regenerated after the migration is applied to wattsnap-dev (docs/13). Then use getAdminSupabase() directly.
+// regenerated after the migration is applied to wattsnap-dev (docs/14). Then use getAdminSupabase() directly.
 const db = () => getAdminSupabase() as unknown as SupabaseClient;
 
 function data<T>(result: { data: T | null; error: { message: string } | null }, action: string): T {
