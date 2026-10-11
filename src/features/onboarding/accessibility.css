@@ -47,9 +47,6 @@
 @media (max-width: 899px) {
   :is(.hs-page, .tt-page) .ui-main { gap: 12px; }
   :is(.hs-page, .tt-page) .ui-mobile-heading h1 { font-size: 25px; letter-spacing: -.6px; }
-  :is(.hs-page, .tt-page) .setup-resume { margin: 0; }
-  :is(.hs-page, .tt-page) .setup-resume a { min-height: 44px; width: 100%; gap: 8px; font-size: 14px; }
-  :is(.hs-page, .tt-page) .setup-resume span { margin-left: auto; font-size: 12px; }
   .hs-page .hs-story { display: none; }
   .hs-page .hs-card { padding: 18px 16px; }
   .hs-page .hs-steps { margin-bottom: 16px; }

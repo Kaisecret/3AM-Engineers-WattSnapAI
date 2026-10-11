@@ -2,7 +2,6 @@
 .setup-theme-options label { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 12px 18px; border: 1px solid #c8dce6; border-radius: 14px; cursor: pointer; color: #17374c; font-weight: 700; }
 .setup-theme-options input { width: 20px; height: 20px; accent-color: #087f9a; }
 .setup-theme-options .is-selected { background: #e7f7fc; border-color: #087f9a; }
-.setup-resume { margin: 0 0 20px; }.setup-resume a { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; width: fit-content; min-height: 48px; color: #086d8d; font-size: 16px; font-weight: 700; }.setup-resume span { font-size: 14px; font-weight: 500; }.setup-resume a:focus-visible { outline: 3px solid #1687b2; outline-offset: 3px; }
 html[data-theme="dark"] { color-scheme: dark; --text-primary: #edf6fa; --text-secondary: #c2d4df; --text-muted: #b9ccd6; --bg-page: #101e2a; --bg-card: #192e3d; --bg-card-border: #3b5968; }
 html[data-theme="dark"] body { background: #101e2a; color: #edf6fa; }
 html[data-theme="dark"] .intro-page { --intro-accent: #79daef; --intro-text: #edf6fa; --intro-muted: #c2d4df; --intro-surface: #192e3d; --intro-soft: #203e3e; background: #101e2a; }
@@ -17,7 +16,6 @@ html[data-theme="dark"] :is(.setup-page, .setup-progress-card, .setup-tips-revie
 html[data-theme="dark"] .setup-summary { background: linear-gradient(125deg, #20443b, #20394d); }
 html[data-theme="dark"] .setup-list li.is-next > a { background: #203e4c; box-shadow: inset 0 0 0 1.5px #4c8197; }
 html[data-theme="dark"] .setup-status { color: #89dfef; background: #254552; }
-html[data-theme="dark"] :is(.setup-tips-review a, .setup-resume a) { color: #89dfef; }
 html[data-theme="dark"] :is(.ws-home, .ws-shell) { background: #101e2a; color: #edf6fa; }
 html[data-theme="dark"] :is(.ui-panel, .ws-header, .ws-sidebar, .ws-bottom-nav, .st-profile) { background: #192e3d; border-color: #3b5968; color: #edf6fa; }
 html[data-theme="dark"] :is(.st-card h2, .st-row-copy strong, .st-label, .st-profile h2, .st-links strong, .ui-mobile-heading h1) { color: #edf6fa; }
