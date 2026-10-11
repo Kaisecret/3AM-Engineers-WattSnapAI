@@ -91,7 +91,8 @@ account and reads that mailbox with the account's own permission.
 4. Signed in as the project Gmail, open `script.google.com` -> New project -> paste
    `scripts/gmail-advisory-trigger.gs`. Adjust the `SEARCH` line to the sender and subject seen in step 3.
 5. Project Settings (gear) -> Script Properties: add `WEBHOOK_URL`
-   (`https://<production domain>/api/advisories/ingest`) and `CRON_SECRET`.
+   (`https://www.wattsnapai.dev/api/advisories/ingest`) and `CRON_SECRET`. Use the `www` address exactly:
+   `wattsnapai.dev` without it redirects, and a redirect drops the secret, so the app would answer 401.
 6. Select `checkMail`, press Run once, and allow the permissions Google asks for (for a personal script it
    shows an "unverified app" screen first: Advanced -> continue).
 7. Triggers (clock icon) -> Add Trigger -> `checkMail`, time-driven, minutes timer, every minute.

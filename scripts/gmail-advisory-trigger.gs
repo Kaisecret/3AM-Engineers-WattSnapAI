@@ -4,7 +4,7 @@
  * Paste this file into script.google.com while signed in as the project's Gmail account, then
  * follow docs/13-anteco-advisory-ingestion.md. It needs two Script Properties
  * (Project Settings > Script Properties). Neither value belongs in this file:
- *   WEBHOOK_URL   https://<your site>/api/advisories/ingest
+ *   WEBHOOK_URL   https://www.wattsnapai.dev/api/advisories/ingest   (with www: the address without it redirects and loses the secret)
  *   CRON_SECRET   the same value as CRON_SECRET in Vercel
  *
  * The email is only a signal. Its contents are never sent anywhere: the app reads ANTECO's
