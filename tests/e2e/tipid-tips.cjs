@@ -5,6 +5,8 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const os = require('node:os');
 const http = require('node:http');
+const { registerHooks } = require('node:module');
+registerHooks({ resolve(s, c, next) { try { return next(s, c); } catch (e) { if (e.code === 'ERR_MODULE_NOT_FOUND' && s.startsWith('.') && !/\.[a-z]+$/i.test(s)) return next(s + '.ts', c); throw e; } } });
 const toolsPath = process.env.SCANNER_TOOLS || path.join(os.tmpdir(), 'wattsnap-scanner-tools', 'node_modules');
 const { build } = require(path.join(toolsPath, 'esbuild'));
 const { chromium } = require(path.join(toolsPath, 'playwright'));
@@ -67,6 +69,60 @@ async function main() {
   const base = 'http://127.0.0.1:' + server.address().port;
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   try {
+    // Old AI advice must not freeze the outlook when bill sync imports a complete year.
+    const { generatePreviewTips } = await import('../../src/features/tipid-tips/preview-tips.ts');
+    const forecastDate = new Date('2026-10-12T04:00:00Z');
+    const recentHome = { ...seed, bills: [{ id: 'aug', month: '2026-08', amount: 1200, kwh: 100, source: 'manual' }, seed.bills[0]] };
+    const oldAdvice = generatePreviewTips(recentHome, forecastDate);
+    const pattern = [138,145,181,224,246,211,186,169,154,142,131,158];
+    const fullHome = { ...recentHome, bills: [...pattern.map((kwh,i) => ({ id: `history-${i}`, month: `2025-${String(i+1).padStart(2,'0')}`, kwh, amount: kwh*12, subsidy: 500, source: 'manual' })), ...recentHome.bills] };
+    for (const width of [1440, 390]) {
+      const fc = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce' });
+      await fc.addInitScript(({ householdKey, tipsKey, home, advice }) => {
+        if (!localStorage.getItem(householdKey)) localStorage.setItem(householdKey, JSON.stringify(home));
+        if (!localStorage.getItem(tipsKey)) localStorage.setItem(tipsKey, JSON.stringify(advice));
+      }, { householdKey, tipsKey, home: recentHome, advice: oldAdvice });
+      const fp = await fc.newPage(), errors = [], requests = [];
+      fp.setDefaultTimeout(10000);
+      fp.on('pageerror', e => errors.push(e.message));
+      fp.on('request', r => { if (new URL(r.url()).pathname.startsWith('/api/ai/')) requests.push(r.url()); });
+      await fp.clock.setFixedTime(forecastDate);
+      await fp.goto(base);
+      await fp.getByRole('heading', { name: 'Next-year outlook', exact: true }).waitFor();
+      await fp.locator('.tt-forecast-empty summary').click();
+      assert.match(await fp.locator('.tt-forecast-empty').innerText(), /2 usable receipts/);
+      await fp.evaluate(({ key, home }) => { localStorage.setItem(key, JSON.stringify(home)); window.dispatchEvent(new Event('wattsnap-preview-change')); }, { key: householdKey, home: fullHome });
+      await fp.getByRole('heading', { name: '2027 outlook', exact: true }).waitFor();
+      assert.match(await fp.locator('.tt-forecast-selected').innerText(), /246.*kWh/s);
+      assert.match(await fp.locator('.tt-forecast-highlights').innerText(), /high: May.*low: Nov/);
+      assert.equal(await fp.locator('.tt-forecast-selected').getByText('Estimated bill · before subsidies', { exact: true }).count(), 1);
+      assert.match(await fp.locator('.tt-forecast-stale').innerText(), /Refresh tips to include this outlook/);
+      assert.deepEqual(await fp.evaluate(key => JSON.parse(localStorage.getItem(key)), tipsKey), oldAdvice, 'New outlook preserves saved advice');
+      assert.equal(await fp.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
+      await fp.screenshot({ path: path.join(output, `synced-outlook-${width}.png`), fullPage: true });
+      await fp.reload();
+      await fp.getByRole('heading', { name: '2027 outlook', exact: true }).waitFor();
+      await fc.setOffline(true);
+      await fp.getByRole('button', { name: 'August 2027', exact: true }).click();
+      assert.match(await fp.locator('.tt-forecast-selected').innerText(), /169.*kWh/s);
+      const editedHome = { ...fullHome, bills: fullHome.bills.map(b => b.month === '2025-08' ? { ...b, kwh: 175 } : b) };
+      await fp.evaluate(({ key, home }) => { localStorage.setItem(key, JSON.stringify(home)); window.dispatchEvent(new Event('wattsnap-preview-change')); }, { key: householdKey, home: editedHome });
+      await fp.waitForFunction(() => document.querySelector('.tt-forecast-selected')?.textContent.includes('175'));
+      // A stored ready forecast cannot hide a missing month after a bill is removed.
+      const readyAdvice = generatePreviewTips(fullHome, forecastDate);
+      await fp.evaluate(({ householdKey, tipsKey, home, advice }) => {
+        localStorage.setItem(tipsKey, JSON.stringify(advice)); window.dispatchEvent(new Event('wattsnap-tips-change'));
+        localStorage.setItem(householdKey, JSON.stringify(home)); window.dispatchEvent(new Event('wattsnap-preview-change'));
+      }, { householdKey, tipsKey, home: { ...fullHome, bills: fullHome.bills.filter(b => b.month !== '2025-01') }, advice: readyAdvice });
+      await fp.getByRole('heading', { name: 'Next-year outlook', exact: true }).waitFor();
+      await fp.locator('.tt-forecast-empty summary').click();
+      assert.match(await fp.locator('.tt-forecast-empty').innerText(), /13 usable receipts/);
+      assert.deepEqual(await fp.evaluate(key => JSON.parse(localStorage.getItem(key)), tipsKey), readyAdvice);
+      assert.deepEqual(requests, [], 'Recalculating the outlook makes no AI calls');
+      assert.deepEqual(errors, []);
+      await fc.close();
+      console.log(`PASS: ${width}px current bill history overrides old advice for sync, edits, removal, reload and offline outlook`);
+    }
     for (const [name, width, height, dark] of [['desktop', 1440, 900, false], ['mobile', 390, 844, false], ['small-mobile', 320, 740, false], ['dark-mobile', 390, 844, true]]) {
       const context = await browser.newContext({ viewport: { width, height }, reducedMotion: 'reduce' });
       await context.addInitScript(({ key, data, dark }) => { if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(data)); if (dark) { const setTheme = () => { document.documentElement.dataset.theme = 'dark'; }; if (document.documentElement) setTheme(); else document.addEventListener('DOMContentLoaded', setTheme, { once: true }); } }, { key: householdKey, data: seed, dark });

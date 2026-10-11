@@ -12,7 +12,7 @@ The next-year outlook shows a compact monthly chart, a month picker, estimated k
 
 Valid meter-reading periods of 20–40 elapsed days normalize consumption to 30 days. Adjacent receipts may share a reading date. Otherwise, monthly totals are compared with a billing-length limitation. Samples, future receipts, duplicate months, and overlapping periods are excluded; missing months are never filled with zero. Without a complete recent year, the screen requests more history.
 
-Peso scenarios apply the blended recorded cost per kWh from the latest three valid positive-consumption, positive-amount receipts. They are estimates before subsidies, with the rate and source months disclosed. Future prices and subsidies are not predicted. Saved forecasts remain available offline and become stale when records or the Manila calendar year change.
+Peso scenarios apply the blended recorded cost per kWh from the latest three valid positive-consumption, positive-amount receipts. They are estimates before subsidies, with the rate and source months disclosed. Future prices and subsidies are not predicted. The displayed outlook recalculates from current locally saved bills, including synced records, and the Manila calendar year. It works offline and updates after bill additions, edits, or removals without refreshing AI tips. Stored tip snapshots retain the forecast used to generate their advice; changed records or years mark that advice stale until explicitly refreshed.
 
 ## Interfaces and dependencies
 

@@ -6,7 +6,7 @@ import { pesos } from "@/features/dashboard/preview-data";
 import { forecastMonthName, type BillForecast } from "../bill-forecast";
 
 const number = (n: number) => new Intl.NumberFormat("en-PH", { maximumFractionDigits: 1 }).format(n);
-export default function BillForecastPanel({ forecast, stale = false, saved = false }: { forecast: BillForecast; stale?: boolean; saved?: boolean }) {
+export default function BillForecastPanel({ forecast, stale = false }: { forecast: BillForecast; stale?: boolean }) {
   const id = useId();
   const [selected, setSelected] = useState(forecast.peakMonth ?? 1);
   useEffect(() => { setSelected(forecast.peakMonth ?? 1); }, [forecast.targetYear, forecast.peakMonth]);
@@ -22,7 +22,7 @@ export default function BillForecastPanel({ forecast, stale = false, saved = fal
   const units = forecast.unit === "kwh-30-days" ? "per 30 days" : "per billing month";
   return <section className="tt-forecast" aria-labelledby={`${id}-title`}>
     <div className="tt-forecast-heading"><div><h2 id={`${id}-title`}>{forecast.targetYear} outlook</h2><p>Estimated electricity use & bill · {units}</p></div><span className="tt-forecast-estimate">Planning estimate</span></div>
-    {stale && <p className="tt-forecast-stale" role="status"><TriangleAlert size={14} aria-hidden="true" />{saved ? "Saved forecast · refresh for the current year and latest records" : "Refresh tips to include this outlook"}</p>}
+    {stale && <p className="tt-forecast-stale" role="status"><TriangleAlert size={14} aria-hidden="true" />Refresh tips to include this outlook</p>}
     <div className="tt-forecast-legend">{years.map((year,index) => <span key={year} className={`is-history-${index}`}><i aria-hidden="true" />{year} recorded</span>)}<span className="is-projected"><i aria-hidden="true" />{forecast.targetYear} estimate</span></div>
     <svg className="tt-forecast-chart" viewBox="0 0 660 232" role="img" aria-labelledby={`${id}-chart-title ${id}-chart-desc`}>
       <title id={`${id}-chart-title`}>Monthly electricity pattern and {forecast.targetYear} estimates</title><desc id={`${id}-chart-desc`}>{forecast.peakMonth ? `${forecastMonthName(forecast.peakMonth)} may have the highest use and ${forecastMonthName(forecast.lowMonth!)} the lowest. ` : "Monthly use is roughly steady. "}Select a month below for kWh and peso estimates. Gaps mean no recorded receipt.</desc>
