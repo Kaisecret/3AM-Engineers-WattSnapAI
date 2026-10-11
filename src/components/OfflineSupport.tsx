@@ -1,10 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { isDeviceOffline } from "@/features/offline-access/connectivity";
 export default function OfflineSupport() {
-  const [offline, setOffline] = useState(false);
   useEffect(() => {
-    const sync = () => setOffline(isDeviceOffline());
     const navigate = (event: MouseEvent) => {
       if (!isDeviceOffline() || !navigator.serviceWorker?.controller || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
       const link = (event.target as Element)?.closest<HTMLAnchorElement>('a[href]');
@@ -13,8 +11,8 @@ export default function OfflineSupport() {
       if (url.origin !== location.origin || url.protocol !== location.protocol || (url.pathname === location.pathname && url.search === location.search && url.hash)) return;
       event.preventDefault(); event.stopPropagation(); location.assign(url.href);
     };
-    sync(); window.addEventListener('online', sync); window.addEventListener('offline', sync); document.addEventListener('click', navigate, true);
-    return () => { window.removeEventListener('online', sync); window.removeEventListener('offline', sync); document.removeEventListener('click', navigate, true); };
+    document.addEventListener('click', navigate, true);
+    return () => { document.removeEventListener('click', navigate, true); };
   }, []);
   useEffect(() => {
     if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
@@ -54,5 +52,5 @@ export default function OfflineSupport() {
       };
     }
   }, []);
-  return offline ? <div className="ws-connectivity" role="status">You’re offline. Saved records and local calculations remain available on this device. <button type="button" onClick={() => location.reload()}>Try connection</button></div> : null;
+  return null;
 }
