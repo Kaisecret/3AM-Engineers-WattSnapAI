@@ -15,10 +15,10 @@ function blobToBase64(blob: Blob) {
 }
 
 /** A photo shrunk to a size Gemini reads well and Vercel accepts; PDFs are sent as they are. */
-export async function prepareBillUpload(input: Blob | string): Promise<{ base64: string; mimeType: string }> {
+export async function prepareBillUpload(input: Blob | string, byteLimit = maxUpload): Promise<{ base64: string; mimeType: string }> {
   const blob = typeof input === "string" ? await (await fetch(input)).blob() : input;
   if (blob.type === "application/pdf") {
-    if (blob.size > maxUpload) throw new Error("too-large");
+    if (blob.size > byteLimit) throw new Error("too-large");
     return { base64: await blobToBase64(blob), mimeType: blob.type };
   }
   try {
@@ -34,12 +34,12 @@ export async function prepareBillUpload(input: Blob | string): Promise<{ base64:
         context.imageSmoothingEnabled = true; context.imageSmoothingQuality = "high";
         context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
         const jpeg = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.95));
-        if (jpeg && jpeg.size <= maxUpload) return { base64: await blobToBase64(jpeg), mimeType: "image/jpeg" };
+        if (jpeg && jpeg.size <= byteLimit) return { base64: await blobToBase64(jpeg), mimeType: "image/jpeg" };
         scale *= 0.8;
       }
     } finally { bitmap.close(); }
   } catch { /* Not decodable here (e.g. HEIC on Android); send the original if it fits. */ }
-  if (blob.size > maxUpload) throw new Error("too-large");
+  if (blob.size > byteLimit) throw new Error("too-large");
   return { base64: await blobToBase64(blob), mimeType: blob.type || "image/jpeg" };
 }
 
@@ -50,16 +50,32 @@ const reasons: Record<string, string> = {
   key: "AI reading isn’t working right now (API key).",
   busy: "WattSnap AI is busy. Try again in a minute.",
   model: "AI reading isn’t available right now.",
+  unavailable: "AI reading is temporarily unavailable. Your photos are still here; try reading again in a moment.",
 };
 
 /** Sends the photo to Snap AI (Gemini). Every value comes back for review; nothing is saved here. */
-export async function readBillPhoto(input: Blob | string, providerHint: string, signal: AbortSignal): Promise<BillReadingOutcome> {
-  let upload;
-  try { upload = await prepareBillUpload(input); }
+export type BillScanInput = Blob | string | string[];
+export async function readBillPhoto(input: BillScanInput, providerHint: string, signal: AbortSignal): Promise<BillReadingOutcome> {
+  let payload;
+  try {
+    if (Array.isArray(input)) {
+      if (!input.length || input.length > 4) return {ok:false,reason:"Capture between 1 and 4 sections of the same receipt."};
+      const images = [];
+      for (const section of input) {
+        if (signal.aborted) throw new DOMException("Cancelled","AbortError");
+        const upload = await prepareBillUpload(section,Math.floor(maxUpload/input.length));
+        images.push({imageBase64:upload.base64,mimeType:upload.mimeType});
+      }
+      payload = {images,providerHint};
+    } else {
+      const upload=await prepareBillUpload(input);
+      payload={imageBase64:upload.base64,mimeType:upload.mimeType,providerHint};
+    }
+  }
   catch { return { ok: false, reason: "That file is too large to read. Try a photo instead." }; }
   const response = await fetch("/api/ai/bills", {
     method: "POST", signal, headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ imageBase64: upload.base64, mimeType: upload.mimeType, providerHint }),
+    body: JSON.stringify(payload),
   });
   const body = await response.json().catch(() => null);
   if (response.ok && body?.data) return { ok: true, data: body.data as BillExtractionResult };

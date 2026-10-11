@@ -163,6 +163,9 @@ export function readBillReading(raw: unknown, now = new Date()): BillExtractionR
     if (kwh === null && !unreadKwh) { kwh = fromMeter; checks.push(`kWh was worked out from the meter readings (${plain(presentReading)} − ${plain(previousReading)}).`); }
     else if (kwh !== null && Math.abs(kwh - fromMeter) > 0.5) checks.push(`The kWh reads ${plain(kwh)}, but the meter readings give ${plain(fromMeter)}. Check the kWh.`);
   }
+  if (kwh !== null && cannotRead("previousReading", "presentReading", "multiplier")) {
+    checks.push("kWh could not be checked against the unreadable meter values. Compare it with the printed kWh before saving.");
+  }
 
   const charges = chargesFrom(readable("charges"));
   const chargesTotal = money(charges.reduce((sum, item) => sum + item.amount, 0));

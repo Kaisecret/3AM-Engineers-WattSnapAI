@@ -23,11 +23,39 @@
 .scan-viewfinder { position: relative; width: 100%; height: 100%; min-height: 0; display: grid; place-items: center; overflow: hidden; }
 .scan-frame { --scan-accent: #3fe0ff; --guide-ratio: .73; z-index: 1; position: relative; width: min(70vw, 320px, calc((100dvh - 340px) * var(--guide-ratio))); aspect-ratio: var(--guide-ratio); border-radius: 18px; box-shadow: 0 0 0 200vmax #020c1a8f; transition: width .2s, aspect-ratio .2s; }
 .scan-frame.guide-receipt { --guide-ratio: .38; }
+.scan-frame.guide-panorama { --guide-ratio: .68; }
 .camera-live .scan-frame { width: min(calc(var(--camera-image-width, 280px) * .86), calc(var(--camera-image-height, 320px) * .9 * var(--guide-ratio))); }
 .camera-live .scan-track { display: none; }
 .scan-guide-options { position: relative; z-index: 6; display: flex; align-self: center; padding: 4px; gap: 4px; border: 1px solid #ffffff29; border-radius: 999px; margin-top: 8px; background: #06172bbf; }
 .scan-guide-options button { min-height: 36px; padding: 6px 18px; border-radius: 999px; border: 0; background: none; color: #c6e5f3; font: inherit; font-size: 12px; font-weight: 700; }
 .scan-guide-options button[aria-pressed="true"] { color: #03233b; background: #7ff0ff; }
+.scan-guide-options button:disabled { cursor: default; }
+.scan-guide-options button:disabled:not([aria-pressed="true"]) { opacity: .45; }
+.scan-overlap { position: absolute; z-index: 2; inset: 0 0 auto; height: 25%; overflow: hidden; border-bottom: 2px dashed #7ff0ff; background: #07415a33; pointer-events: none; }
+.scan-overlap img { position: absolute; bottom: 0; width: 100%; height: auto; opacity: .4; }
+.scan-overlap span { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 10px); padding: 4px 6px; border-radius: 5px; color: #fff; background: #041427d9; font-size: 10px; line-height: 1.4; text-align: center; }
+.scan-panorama { position: relative; z-index: 6; flex: 0 0 auto; display: grid; gap: 10px; margin: 0 18px 14px; }
+.scan-panorama-heading { display: flex; align-items: center; justify-content: center; gap: 7px; color: #d2edf7; font-size: 12px; font-weight: 700; }
+.scan-panorama-heading svg { width: 16px; height: 16px; color: #7ff0ff; }
+.scan-section-list { display: flex; justify-content: center; gap: 8px; min-width: 0; }
+.scan-section-preview { position: relative; flex: 0 1 46px; width: 46px; height: 54px; padding: 0; overflow: hidden; border: 1px solid #7ff0ff8c; border-radius: 8px; background: #102b40; }
+.scan-section-preview img { width: 100%; height: 100%; object-fit: cover; }
+.scan-section-preview span { position: absolute; right: 3px; bottom: 3px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 5px; color: #fff; background: #041427e6; font-size: 11px; font-weight: 800; }
+.scan-section-undo { display: grid; align-content: center; justify-items: center; gap: 4px; flex: 0 0 46px; min-height: 44px; padding: 4px; color: #d2edf7; border: 0; border-radius: 8px; background: #ffffff12; font-size: 11px; }
+.scan-section-undo svg { width: 18px; height: 18px; }
+.scan-read-receipt { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 10px 16px; border: 1px solid #49b5f8; border-radius: 13px; color: white; background: #076fbd; font: inherit; font-size: 14px; font-weight: 800; }
+.scan-read-receipt svg { width: 19px; height: 19px; }
+.scan-read-receipt:disabled { color: #b9dcf0; border-color: #ffffff24; background: #ffffff12; opacity: .65; cursor: default; }
+.scan-section-dialog { width: min(640px, calc(100% - 24px)); max-height: calc(100dvh - 24px); margin: auto; padding: 18px; overflow-y: auto; border: 1px solid #ffffff35; border-radius: 20px; color: white; background: #0a2035; }
+.scan-section-dialog::backdrop { background: #020b18d9; backdrop-filter: blur(4px); }
+.scan-section-dialog > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.scan-section-dialog h2 { font-size: 18px; }
+.scan-section-dialog > div button { display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; color: white; background: #ffffff1f; }
+.scan-section-dialog > img { display: block; width: 100%; height: auto; border-radius: 10px; }
+.scan-section-dialog p { margin: 12px 0; color: #b9dcf0; font-size: 13px; line-height: 1.6; }
+.scan-section-dialog .scan-read-receipt { width: 100%; }
+.scan-app :is(.scan-guide-options button,.scan-shutter,.scan-section-preview,.scan-section-undo,.scan-read-receipt):focus-visible { outline: 3px solid #ffe066; outline-offset: 3px; }
+@media (min-width: 900px) { .scan-panorama { max-width: 480px; width: calc(100% - 36px); align-self: center; } }
 .scan-draft-banner { position: relative; z-index: 6; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px 12px; margin: 6px 12px 0; padding: 9px 12px; border-radius: 12px; font-size: 12px; line-height: 1.5; background: #092640ed; color: #fff; }
 .scan-draft-banner button { color: #7ff0ff; min-height: 32px; border: 0; background: none; font: inherit; font-weight: 700; text-decoration: underline; }
 .scan-shutter:disabled { opacity: .45; cursor: wait; }
@@ -166,7 +194,10 @@
   .scan-frame.guide-receipt { width: 190px; }
   .camera-live .scan-frame { width: min(calc(var(--camera-image-width, 280px) * .86), calc(var(--camera-image-height, 320px) * .9 * var(--guide-ratio))); }
   .scan-retry { border-radius: 18px; margin: 0 18px 18px; }
-  .phase-camera:not(.camera-live) .scan-guide-options { display: none; }
+  .phase-camera:not(.camera-live) .scan-guide-options { display: flex; background: #fff; border-color: #cfe5f0; }
+  .phase-camera:not(.camera-live) .scan-guide-options button { color: #456178; }
+  .phase-camera:not(.camera-live) .scan-guide-options button[aria-pressed="true"] { color: #fff; background: #076fbd; }
+  .phase-camera:not(.camera-live) .scan-panorama { padding: 12px; border-radius: 16px; background: #0a2035; }
   .scan-bot { max-width: 140px; }
   .phase-camera:not(.camera-live) .scan-stage { background: linear-gradient(160deg, #f6fcff, #e1f5fc); }
   .scan-preview-tag { margin: 17px 0 0; border-color: #cce8f5; background: #f3fbff; color: #3b86ac; font-size: 11px; }

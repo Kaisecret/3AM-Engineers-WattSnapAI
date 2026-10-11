@@ -12,6 +12,7 @@ import type {
 } from "./types";
 import type { Reply } from "@/features/assistant/replies";
 import { billReadingInstruction, billResponseSchema, readBillReading } from "./bill-reading";
+import type { BillImage } from "../ai/bill-images-request";
 
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 const DEFAULT_MODEL: GeminiModel = "gemini-3.5-flash-lite";
@@ -199,15 +200,21 @@ export async function extractBillWithGemini(
   mimeType = "image/jpeg",
   providerHint?: string,
 ): Promise<BillExtractionResult> {
-  const data = imageBase64.replace(/^data:[^,]*,/, "");
+  return extractBillSectionsWithGemini([{imageBase64,mimeType}],providerHint);
+}
+
+/** Ordered close-up sections of one receipt; retain original pixels instead of stitching text. */
+export async function extractBillSectionsWithGemini(images: BillImage[], providerHint?: string): Promise<BillExtractionResult> {
+  if (!images.length || images.length > 4) throw new GeminiError("Use 1 to 4 bill images.","request");
+  const multiple = images.length > 1;
   const parts = [
-    { text: `Read this electricity bill.${providerHint ? ` The household's provider is probably ${providerHint}.` : ""}` },
-    { inlineData: { mimeType, data } },
+    { text: `Read this electricity bill.${multiple ? " These are overlapping sections of the same receipt, ordered from top to bottom. Reconstruct one bill from all sections. Overlap repeats the same printed lines: never count a charge or subtotal twice. If captures disagree or omit required text, mark the field unreadable and explain the conflict; do not guess." : ""}${providerHint ? ` The household's provider is probably ${providerHint}.` : ""}` },
+    ...images.flatMap((image,index) => [...(multiple ? [{text:`Receipt section ${index+1} of ${images.length}, top to bottom.`}] : []), {inlineData:{mimeType:image.mimeType,data:image.imageBase64.replace(/^data:[^,]*,/,"")}}]),
   ];
   const read = (model: GeminiModel, schema: boolean, timeoutMs: number) => callGemini({
     model, systemInstruction: billReadingInstruction, parts, responseSchema: schema ? billResponseSchema : undefined, jsonMode: true,
     temperature: null, maxOutputTokens: 8192, timeoutMs,
-    mediaResolution: mimeType === "application/pdf" ? "MEDIA_RESOLUTION_MEDIUM" : "MEDIA_RESOLUTION_HIGH",
+    mediaResolution: images[0].mimeType === "application/pdf" ? "MEDIA_RESOLUTION_MEDIUM" : "MEDIA_RESOLUTION_HIGH",
   });
 
   const primary = scanModel(), fallback = geminiModel();
@@ -216,9 +223,9 @@ export async function extractBillWithGemini(
     result = await read(primary, true, 32000);
   } catch (error) {
     const problem = geminiProblem(error);
-    // Schema not accepted: same model, plain JSON. Model missing or out of quota: the chat model.
+    // Schema not accepted: same model, plain JSON. Missing, busy or overloaded: the configured fallback.
     if (problem === "request") result = await read(primary, false, 24000);
-    else if ((problem === "model" || problem === "busy") && fallback !== primary) {
+    else if ((problem === "model" || problem === "busy" || (error instanceof GeminiError && error.status === 503)) && fallback !== primary) {
       console.error(`[wattsnap:ai] bills: ${primary} unavailable (${problem}), using ${fallback}`);
       result = await read(fallback, true, 24000);
     } else throw error;

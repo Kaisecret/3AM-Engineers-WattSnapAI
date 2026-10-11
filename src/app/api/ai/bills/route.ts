@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { extractBillWithGemini, geminiProblem, hasGeminiKey, scanModel } from "@/lib/gemini/client";
-import { imageTypes, readImageRequest } from "@/lib/ai/image-request";
+import { extractBillSectionsWithGemini, geminiProblem, hasGeminiKey, scanModel } from "@/lib/gemini/client";
+import { readBillImagesRequest } from "@/lib/ai/bill-images-request";
 import { createRateLimiter } from "@/lib/ai/rate-limit";
 import { signedInUserId, signInRequired, slowDown } from "@/lib/ai/session";
 
@@ -20,13 +20,13 @@ export async function POST(request: Request) {
   if (!userId) return signInRequired();
   if (!hasGeminiKey()) return NextResponse.json({ error: "Bill reading is not available right now. Please type the values instead.", problem: "no-key", configured: false }, { status: 503 });
 
-  const parsed = await readImageRequest(request, "providerHint", "No bill image was provided for analysis.", [...imageTypes, "application/pdf"]);
+  const parsed = await readBillImagesRequest(request);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: parsed.status });
   if (!perAccount(userId)) return slowDown();
 
   try {
-    const { imageBase64, mimeType, hint } = parsed.value;
-    return NextResponse.json({ ok: true, data: await extractBillWithGemini(imageBase64, mimeType, hint) });
+    const { images, hint } = parsed.value;
+    return NextResponse.json({ ok: true, data: await extractBillSectionsWithGemini(images, hint) });
   } catch (error) {
     console.error("[wattsnap:ai] bills", error instanceof Error ? error.message : error);
     return NextResponse.json({ error: "We couldn’t read that bill. Please try another photo or type the values.", problem: geminiProblem(error) }, { status: 502 });

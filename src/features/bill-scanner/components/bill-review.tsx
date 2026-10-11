@@ -10,7 +10,7 @@ import type { LocalBillDraft } from "../local-draft";
 import "../bill-review.css";
 
 export type BillReviewDraft = LocalBillDraft;
-export type BillPreviewSource = { name: string; kind: "sample" | "image" | "pdf"; url?: string };
+export type BillPreviewSource = { name: string; kind: "sample" | "image" | "pdf"; url?: string; sections?: string[] };
 /** What Snap AI read from the photo. `failed` explains why the form is empty instead. */
 export type AiReading = { failed?: string; checks: string[]; missing: string[]; charges: BillChargeLine[]; readings?: MeterReadings };
 
@@ -138,7 +138,7 @@ export default function BillReview({ mode, draft, original, source, duplicate, m
 
     <dialog ref={dialog} className="br-original-dialog" aria-labelledby="original-bill-heading" onClose={() => originalButton.current?.focus()} onClick={event => { if (event.target === event.currentTarget) dialog.current?.close(); }}>
       <div className="br-original-head"><div><span className="br-eyebrow">REFERENCE DOCUMENT</span><h2 id="original-bill-heading">{source?.kind === "sample" ? "Sample electricity bill" : "Your original bill"}</h2></div><button type="button" className="ui-icon-button" aria-label="Close original bill" onClick={() => dialog.current?.close()}><X aria-hidden="true" /></button></div>
-      {source?.kind === "image" && source.url ? <Image className="br-original-image" src={source.url} alt="Original uploaded electricity bill" width={900} height={1200} unoptimized /> : source?.kind === "pdf" && source.url ? <div className="br-pdf"><FileText aria-hidden="true" /><strong>{source.name}</strong><p>Open the original PDF in another tab to compare its printed values.</p><a className="ui-primary" href={source.url} target="_blank" rel="noreferrer">Open original PDF</a></div> : original ? <div className="br-original-sample"><BillArt period={billMonth(original.month)} kwh={String(original.kwh)} amount={pesos(original.amount)} due={original.dueDate ? dueDateLabel(original.dueDate) : "Unknown"} /></div> : null}
+      {source?.kind === "image" && source.sections?.length ? <div className="br-original-sections">{source.sections.map((src,index)=><figure className="br-original-section" key={index}><figcaption>Section {index+1} of {source.sections!.length}</figcaption><Image className="br-original-image" src={src} alt={`Original receipt section ${index+1}, top to bottom`} width={900} height={1200} unoptimized /></figure>)}</div> : source?.kind === "image" && source.url ? <Image className="br-original-image" src={source.url} alt="Original uploaded electricity bill" width={900} height={1200} unoptimized /> : source?.kind === "pdf" && source.url ? <div className="br-pdf"><FileText aria-hidden="true" /><strong>{source.name}</strong><p>Open the original PDF in another tab to compare its printed values.</p><a className="ui-primary" href={source.url} target="_blank" rel="noreferrer">Open original PDF</a></div> : original ? <div className="br-original-sample"><BillArt period={billMonth(original.month)} kwh={String(original.kwh)} amount={pesos(original.amount)} due={original.dueDate ? dueDateLabel(original.dueDate) : "Unknown"} /></div> : null}
       <p className="br-original-caption">{source?.kind === "sample" ? "This example stays unchanged while you edit the review fields." : "This file stays on your device and is available until you leave or restart this workflow."}</p>
       <button type="button" className="ui-secondary" onClick={() => dialog.current?.close()}>Back to review</button>
     </dialog>

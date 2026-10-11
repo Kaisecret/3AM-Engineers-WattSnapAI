@@ -110,3 +110,8 @@ html[data-theme="dark"] .scan-fields label.is-missing input { background: #2e2a1
 html[data-theme="dark"] .br-read { background: #192e3d; border-color: #3b5968; }
 html[data-theme="dark"] :is(.br-meter, .br-charges-toggle, .br-charges li) { color: #c2d4df; }
 html[data-theme="dark"] .br-charges strong { color: #edf6fa; }
+/* Original close-up sections remain in their captured order. */
+.br-original-sections { display: grid; gap: 20px; }
+.br-original-section { margin: 0; }
+.br-original-section figcaption { padding: 8px 0; color: #486079; font-size: 13px; font-weight: 700; }
+html[data-theme="dark"] .br-original-section figcaption { color: #c2d4df; }

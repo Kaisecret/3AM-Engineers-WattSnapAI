@@ -124,3 +124,9 @@ test("an unreadable meter multiplier cannot be used to derive consumption", () =
   const result = readBillReading({ ...august, kwhUsed: null, multiplier: null, unreadable: ["multiplier"] }, now);
   assert.equal(result.consumptionKwh, null);
 });
+
+test('unreadable meter values visibly flag unverified kWh without inventing a correction',()=>{
+  const result=readBillReading({...september,kwhUsed:34,previousReading:null,presentReading:null,unreadable:['previousReading','presentReading']},now);
+  assert.equal(result.consumptionKwh,34);
+  assert.match(result.checks.join(' '),/kWh.*could not be checked.*printed kWh/i);
+});
