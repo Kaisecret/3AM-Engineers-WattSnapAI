@@ -1,5 +1,5 @@
 ﻿"use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Check, ChevronDown, Lightbulb, LoaderCircle, PlugZap, ReceiptText, RotateCcw, Sparkles, TriangleAlert, WifiOff } from "lucide-react";
 import PageShell from "@/features/dashboard/components/PageShell";
@@ -10,6 +10,8 @@ import { requestGeminiTips } from "../ai-tips";
 import { usePreviewTips } from "../use-preview-tips";
 import TipsSetupReview from "@/features/onboarding/components/TipsSetupReview";
 import TipsList from "./tips-list";
+import BillForecastPanel from "./BillForecastPanel";
+import { buildBillForecast } from "../bill-forecast";
 
 const dateLabel = (date: string) => new Intl.DateTimeFormat("en-PH", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Manila" }).format(new Date(date));
 const countLabel = (count: number, noun: string) => `${count} ${noun}${count === 1 ? "" : "s"}`;
@@ -30,6 +32,7 @@ export default function TipsScreen() {
   const ready = householdReady && saved.ready;
   const snapshot = saved.snapshot;
   const stale = snapshot ? tipsAreStale(snapshot, household) : false;
+  const forecast = useMemo(() => snapshot?.forecast ?? buildBillForecast(household.bills), [snapshot, household.bills]);
 
   useEffect(() => {
     const sync = () => setOffline(!navigator.onLine);
@@ -97,6 +100,7 @@ export default function TipsScreen() {
     {error && <div className="tt-error" role="alert"><TriangleAlert size={17} aria-hidden="true" /><div><p>{error}</p><button type="button" disabled={busy} onClick={() => void refresh()}>Try again</button></div></div>}
     {message && <p className="tt-notice" role="status"><Check size={16} aria-hidden="true" />{message}</p>}
 
+    {ready && household.bills.length > 0 && <BillForecastPanel forecast={forecast} stale={stale || (!!snapshot && !snapshot.forecast && forecast.status === "ready")} saved={!!snapshot?.forecast} />}
     {snapshot ? <>
       <div className="tt-list-heading"><div><h2 ref={heading} tabIndex={-1}>For your home</h2><p className={stale ? "tt-status is-stale" : "tt-status"}>{stale ? <TriangleAlert size={14} aria-hidden="true" /> : snapshot.source === "gemini" ? <Sparkles size={14} aria-hidden="true" /> : <Check size={14} aria-hidden="true" />}{stale ? "Records changed · refresh your tips" : snapshot.context.sample ? "Sample tips" : snapshot.source === "gemini" ? "AI tips · based on your records" : "Basic tips · based on your records"}</p></div><div className="tt-filters" role="group" aria-label="Filter tips">{(["all", "appliance", "bill"] as const).map(value => <button type="button" key={value} aria-pressed={filter === value} onClick={() => setFilter(value)}>{value === "all" ? "All tips" : value === "appliance" ? "Appliances" : "Bills"}</button>)}</div></div>
       <TipsList tips={snapshot.tips} filter={filter} sample={snapshot.origin === "sample"} />

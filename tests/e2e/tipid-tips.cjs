@@ -165,6 +165,38 @@ async function main() {
     assert.equal(await racePage.evaluate(key => localStorage.getItem(key + ':household:other-household'), tipsKey), null);
     assert.deepEqual(await racePage.evaluate(key => JSON.parse(localStorage.getItem(key)), tipsKey), newer);
     await raceContext.close(); console.log('PASS: concurrent tips, record edits, and account switches preserve saved advice');
+    // Complete last year + partial current year: actual history, computed outlook and AI advice.
+    const localYear = Number(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric' }).format(new Date()));
+    const monthly = [100,110,140,180,200,170,150,120,100,90,80,100];
+    const patternBills = (year, values) => values.map((kwh,i) => ({ id: `${year}-${i+1}`, month: `${year}-${String(i+1).padStart(2,'0')}`, kwh, amount: kwh*12, source: 'manual' }));
+    const seasonalHome = { ...seed, bills: [...patternBills(localYear-1, monthly), ...patternBills(localYear, monthly.slice(0,6).map(v=>v*1.2))] };
+    const forecastReply = [...reply, { id: 'bill-forecast', title: 'Prepare before May', action: 'Review unused appliance hours before May, your projected high-use month. Keep a budget buffer for changing rates.', explanation: 'The forecast repeats last year’s pattern, adjusted using six matching months.', assumptions: ['Future usage and rates may change.'] }];
+    for (const [name,width,dark] of [['forecast-desktop',1440,false],['forecast-mobile',390,false],['forecast-narrow',320,false],['forecast-dark',390,true]]) {
+      const fc = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce' });
+      await fc.addInitScript(({ key, data }) => { if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(data)); }, { key: householdKey, data: seasonalHome });
+      const fp = await fc.newPage(), errors = []; fp.on('pageerror', e => errors.push(e.message));
+      await fp.route('**/api/ai/tips', route => { assert.equal(route.request().postDataJSON().bills.length,18); return route.fulfill({ json: { ok: true, data: forecastReply } }); });
+      await fp.goto(base); if (dark) await fp.evaluate(() => document.documentElement.dataset.theme='dark');
+      await fp.getByRole('heading', { name: `${localYear+1} outlook`, exact: true }).waitFor();
+      assert.match(await fp.locator('.tt-forecast-selected').innerText(), /240.*kWh/s);
+      assert.match(await fp.locator('.tt-forecast-selected').innerText(), /2,880/);
+      assert.match(await fp.locator('.tt-forecast-highlights').innerText(), /high: May.*low: Nov/);
+      await fp.getByRole('button', { name: `June ${localYear+1}`, exact: true }).click();
+      assert.match(await fp.locator('.tt-forecast-selected').innerText(), /204.*May fall/s);
+      await fp.getByRole('button', { name: `May ${localYear+1}`, exact: true }).click();
+      await fp.getByRole('button', { name: 'Create tips', exact: true }).click(); await fp.getByText('Your new tips are ready.', { exact: true }).waitFor();
+      assert.equal(await fp.locator('.tt-tip').count(),4);
+      const stored = await fp.evaluate(key=>JSON.parse(localStorage.getItem(key)),tipsKey);
+      assert.equal(stored.forecast.months[4].kwh,240); assert.equal(stored.forecast.months[4].amount,2880);
+      assert.equal(await fp.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,name+' no overflow');
+      await fp.evaluate(async()=>{await document.fonts.ready; window.scrollTo(0,0);}); await fp.screenshot({ path:path.join(output,name+'.png'),fullPage:true });
+      await fp.locator('.tt-forecast-method summary').click(); assert.match(await fp.locator('.tt-forecast-method').innerText(),/before subsidies/);
+      await fp.reload(); await fp.getByRole('heading',{name:`${localYear+1} outlook`,exact:true}).waitFor();
+      assert.deepEqual(await fp.evaluate(key=>JSON.parse(localStorage.getItem(key)),tipsKey),stored);
+      await fc.setOffline(true); await fp.getByText('Offline · saved tips are available.',{exact:true}).waitFor();
+      assert.equal(await fp.locator('.tt-forecast').isVisible(),true);
+      assert.deepEqual(errors,[]); await fc.close(); console.log('PASS: '+name+' monthly pattern, kWh/pesos, month selection, AI advice, saved/offline forecast');
+    }
     console.log('Screenshots: ' + output);
   } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
 }

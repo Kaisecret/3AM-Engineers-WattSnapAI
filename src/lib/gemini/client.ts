@@ -292,7 +292,7 @@ export async function generateTipsWithGemini(
   request: TipsGenerationRequest,
 ): Promise<TipRecommendation[]> {
   const basis = generatePreviewTips(tipsRequestHousehold(request));
-  const promptText = JSON.stringify({ household: request, limitations: basis.context.limitations, tips: basis.tips.map(({ id, title, action, reason, facts, assumptions }) => ({ id, title, action, reason, facts, assumptions })) });
+  const promptText = JSON.stringify({ household: request, forecast: basis.forecast, limitations: basis.context.limitations, tips: basis.tips.map(({ id, title, action, reason, facts, assumptions }) => ({ id, title, action, reason, facts, assumptions })) });
 
   const responseText = await callGeminiApi({
     systemInstruction: tipsReadingInstruction,
