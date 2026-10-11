@@ -806,3 +806,8 @@ html.ws-auth-check body { visibility: hidden; }
 html[data-theme="dark"].ws-auth-check, html[data-theme="dark"] .ws-auth-gate { background: #10202b; }
 html[data-theme="dark"] .ws-auth-gate span { border-color: #24475a; border-top-color: #89dfef; }
 @keyframes ws-auth-spin { to { transform: rotate(360deg); } }
+.offline-entry { max-width: 440px; margin: min(20vh,160px) auto; padding: 32px 24px; color: var(--ws-text,#183a4c); }
+.offline-entry svg { color: #0284c7; margin-bottom: 20px; }
+.offline-entry h1 { font-size: 28px; line-height: 1.2; margin: 0 0 14px; }
+.offline-entry p { font-size: 16px; line-height: 1.6; color: var(--ws-muted,#526a79); }
+.offline-entry a { display: inline-block; padding: 12px 18px; margin-top: 12px; border-radius: 12px; background: #0284c7; color: white; font-weight: 700; }

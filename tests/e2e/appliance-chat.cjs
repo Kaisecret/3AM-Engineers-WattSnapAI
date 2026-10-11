@@ -119,21 +119,27 @@ async function main() {
       assert.equal(await page.locator('.ad-photo').count(),0);
       assert.equal(await page.getByRole('dialog',{name:'Add appliance',exact:true}).count(),0);
     });
-    await scenario('provider failure still prepares a local action while online',390,async page=>{
-      await page.route('**/api/ai/assistant',route=>route.fulfill({json:{source:'local-fallback',problem:'busy',reply:{text:'Fallback'},actions:[]}}));
+    await scenario('complete typed changes are local immediately while online',390,async page=>{
+      let calls=0;await page.route('**/api/ai/assistant',route=>{calls++;return route.fulfill({status:503,json:{error:'Unavailable'}});});
       await page.goto(base+'/assistant');await message(page,'Set my budget to 2100');
       await page.getByRole('button',{name:/Confirm: Set your monthly budget to ₱2,100/}).waitFor();
       assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1')).budget),0);
-      await page.getByText('Local reply · AI is busy right now',{exact:true}).waitFor();
+      await page.getByText('Saved data · on this device',{exact:true}).waitFor();assert.equal(calls,0);
+    });
+    await scenario('online saved-data questions answer together without AI calls',390,async page=>{
+      let calls=0;await page.route('**/api/ai/assistant',route=>{calls++;return route.fulfill({status:503,json:{error:'Unavailable'}});});
+      await page.goto(base+'/assistant');await page.evaluate(()=>{localStorage.setItem('wattsnap-ui-preview-v1',JSON.stringify({name:'Test home',budget:2000,bills:[{id:'aug',month:'2026-08',kwh:192,amount:3072.6}],appliances:[]}));window.dispatchEvent(new Event('wattsnap-preview-change'));});
+      await message(page,'Magkano ang budget ko at bill history?');
+      const answer=page.locator('.chat-row.is-bot').last();await answer.getByText(/3,072\.60/).first().waitFor();assert.match(await answer.innerText(),/2,000\.00/);assert.equal(calls,0);
     });
     await scenario('expired authentication does not prepare a fallback action',390,async page=>{
       await page.route('**/api/ai/assistant',route=>route.fulfill({status:401,json:{error:'Sign in required'}}));
-      await page.goto(base+'/assistant');await message(page,'Set my budget to 2100');await page.getByText('Your session ended. Please log in again.',{exact:true}).waitFor();
+      await page.goto(base+'/assistant');await message(page,'Help me plan an energy audit');await page.getByText('Your session ended. Please log in again.',{exact:true}).waitFor();
       assert.equal(await page.locator('.chat-action').count(),0);
     });
     await scenario('reset cancels an unanswered request and ignores its later reply',390,async page=>{
       let release;await page.route('**/api/ai/assistant',async route=>{await new Promise(resolve=>release=resolve);await route.fulfill({json:{source:'gemini',reply:{text:'Old answer'},actions:[{type:'set_budget',amount:2100}]}}).catch(()=>{});});
-      await page.goto(base+'/assistant');await message(page,'Set my budget to 2100');await page.waitForFunction(()=>!!document.querySelector('.chat-typing'));
+      await page.goto(base+'/assistant');await message(page,'Help me plan an energy audit');await page.waitForFunction(()=>!!document.querySelector('.chat-typing'));
       await page.getByRole('button',{name:'Start a new chat'}).click();release?.();await page.waitForTimeout(100);
       assert.equal(await page.locator('.chat-action').count(),0);assert.equal(await page.getByText('Old answer',{exact:true}).count(),0);
     });

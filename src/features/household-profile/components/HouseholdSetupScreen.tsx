@@ -1,4 +1,5 @@
 "use client";
+import { isDeviceOffline } from "@/features/offline-access/connectivity";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
@@ -49,7 +50,7 @@ export default function HouseholdSetupScreen() {
   const availableBarangays = getBarangaysForMunicipality(values.province, values.municipality);
 
   useEffect(() => {
-    const sync = () => setOffline(!navigator.onLine);
+    const sync = () => setOffline(isDeviceOffline());
     sync();
     window.addEventListener("online", sync);
     window.addEventListener("offline", sync);
@@ -129,7 +130,7 @@ export default function HouseholdSetupScreen() {
 
   function currentLocation() {
     permission.current?.close();
-    if (!navigator.onLine) { setLocationMessage("You’re offline. Enter your home location manually."); return; }
+    if (isDeviceOffline()) { setLocationMessage("You’re offline. Enter your home location manually."); return; }
     if (!navigator.geolocation) { setLocationMessage("This browser cannot request location. Enter your home location manually."); return; }
     if (locating || Date.now() - lastLookup.current < 1500) return;
     setLocating(true); setLocationState("idle"); setLocationMessage("Finding a location suggestion…");

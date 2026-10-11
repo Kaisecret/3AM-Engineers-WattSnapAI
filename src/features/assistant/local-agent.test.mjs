@@ -94,3 +94,17 @@ test('a due date is not the billing month',()=>{
   const result=localAgentReply('Add my bill, 33 kWh, amount 418.85, due 2026-10-20',context);
   assert.equal(result.actions.length,0);assert.equal(result.pending?.field,'month');
 });
+test('one complete message retains both saved-data questions and confirmed changes',()=>{
+ const result=localAgentReply('What is my budget?; Set my budget to 2500',{...context,budget:2000});
+ assert.match(result.reply.text,/2,000\.00/);assert.equal(result.actions[0]?.amount,2500);
+});
+test('polite explicit changes are handled immediately while explanatory questions stay read-only',()=>{
+ assert.equal(localAgentReply('Can you please set my budget to 2500?',context).actions[0]?.amount,2500);
+ assert.equal(localAgentReply('How do I set my budget to 2500?',context).actions.length,0);
+});
+test('compound requests retain supported update and navigation commands',()=>{
+ const result=localAgentReply('Set my budget to 2500 and update Bedroom fan to 4 hours',context);
+ assert.deepEqual(result.actions.map(action=>action.type),['set_budget','update_appliance']);
+ assert.equal(result.actions[1].changes.hours,4);
+ assert.ok(localAgentReply('Set budget to 2500 and open appliances',context).reply.links.some(link=>link.href==='/appliances'));
+});

@@ -1,4 +1,5 @@
 "use client";
+import { isDeviceOffline } from "@/features/offline-access/connectivity";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -28,7 +29,7 @@ export default function BrownoutReadyScreen() {
   const disabled = !ready || saved.loadError || advisories.loadError || Boolean(storageError);
   const source = plan ? sourceLink(plan.advisory.details.sourceUrl) : null;
   useEffect(() => {
-    const tick = () => setNow(Date.now()), sync = () => setOffline(!navigator.onLine); tick(); sync();
+    const tick = () => setNow(Date.now()), sync = () => setOffline(isDeviceOffline()); tick(); sync();
     const timer = window.setInterval(tick, 1000); window.addEventListener("online", sync); window.addEventListener("offline", sync);
     return () => { window.clearInterval(timer); window.removeEventListener("online", sync); window.removeEventListener("offline", sync); };
   }, []);

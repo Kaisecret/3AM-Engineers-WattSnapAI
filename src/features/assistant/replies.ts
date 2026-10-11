@@ -2,9 +2,10 @@
  * Rule-based replies, used when Gemini is not configured, unreachable or rate-limited.
  * Answers come from the household's saved records and the product description.
  */
+import { savedHouseholdReply } from "./saved-queries";
 export interface ChatLink { label: string; href: string; }
 export interface Reply { text: string; links?: ChatLink[]; suggestions?: string[]; }
-export interface ChatBill { month: string; kwh: number; amount: number; dueDate?: string; }
+export interface ChatBill { month: string; kwh: number; amount: number; dueDate?: string; subsidy?: number; }
 export interface ChatContext {
   name?: string;
   latest?: ChatBill;
@@ -20,6 +21,12 @@ export interface ChatContext {
   monthlySubsidy?: number;
   bills?: Array<ChatBill & { subsidy?: number }>;
   appliances?: Array<{ name: string; watts: number; hours: number; quantity: number; days?: number }>;
+  today?: string;
+  savedTips?: { generatedAt: string; stale: boolean; tips: Array<{title:string;action:string}> };
+  savedScenarios?: Array<{title:string;kwh:number;cost?:number;days:number;stale:boolean}>;
+  readinessPlans?: Array<{title:string;checked:number;total:number;updatedAt:string;stale:boolean}>;
+  savedAdvisories?: Array<{title:string;when:string;area:string;status:string;reviewedAt:string;stale:boolean}>;
+  unavailable?: string[];
 }
 
 export const householdSuggestions = ["Why did my bill change?", "How can I save on aircon?", "Any brownout today?", "Which appliance uses the most?"];
@@ -49,7 +56,14 @@ const patterns = {
   simulator: /watt.?if|simulat|what if/,
 };
 
+/** A known local topic can be answered immediately, even while connected. */
+export function knownHouseholdReply(message: string, context: ChatContext = {}): Reply | undefined {
+  return savedHouseholdReply(message, context) ?? (Object.entries(patterns).some(([name,pattern]) => !["about","price","privacy","signup","coverage"].includes(name) && pattern.test(message.toLowerCase().trim())) ? legacyHouseholdReply(message,context) : undefined);
+}
 export function householdReply(message: string, context: ChatContext = {}): Reply {
+  return knownHouseholdReply(message,context) ?? legacyHouseholdReply(message,context);
+}
+function legacyHouseholdReply(message: string, context: ChatContext = {}): Reply {
   const text = message.toLowerCase().trim();
   const first = context.name?.split(/\s+/)[0];
   const { latest, previous } = context;

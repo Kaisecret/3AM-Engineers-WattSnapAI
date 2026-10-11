@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { AgentAction } from "./agent-actions";
 import type { ChatContext, Reply } from "./replies";
 import type { LocalAgentResult, LocalPending } from "./local-agent";
+import { isDeviceOffline } from "../offline-access/connectivity";
 
 export type ActionState = "pending" | "done" | "cancelled" | "failed";
 /** A change WattSnap AI proposed, waiting for the person to confirm or cancel it. */
@@ -21,7 +22,7 @@ interface ChatOptions {
   localAgent?: (text: string, context: ChatContext, pending?: LocalPending) => LocalAgentResult;
 }
 
-const noticeFor = (problem: string) => problem === "offline" ? "Offline · using saved data" : problem === "busy" ? "Local reply · AI is busy right now" : "Local reply · AI is unavailable right now";
+const noticeFor = (problem: string) => problem === "saved" ? "Saved data · on this device" : problem === "offline" ? "Offline · using saved data" : problem === "busy" ? "Local reply · AI is busy right now" : "Local reply · AI is unavailable right now";
 
 const stateWords: Record<ActionState, string> = { pending: "waiting for confirmation", done: "confirmed and saved", cancelled: "cancelled", failed: "could not be saved" };
 // Earlier turns as plain text, including what happened to each proposed change.
@@ -73,14 +74,14 @@ export function useChat(respond: (text: string) => Reply, { endpoint, context, d
     };
 
     const parsed = localAgentRef.current?.(text, contextRef.current ?? {}, pending.current);
-    if (parsed?.pending || (pending.current && parsed?.actions.length)) {
+    if (parsed && (parsed.handled || parsed.pending || parsed.actions.length)) {
       pending.current = parsed.pending;
-      answer(parsed.reply, parsed.actions, typeof navigator !== "undefined" && !navigator.onLine ? "offline" : undefined);
+      answer(parsed.reply, parsed.actions, isDeviceOffline() ? "offline" : "saved");
       return true;
     }
     pending.current = undefined;
 
-    if (typeof navigator !== "undefined" && !navigator.onLine) { local("offline"); return true; }
+    if (isDeviceOffline()) { local("offline"); return true; }
 
     busy.current = true;
     setTyping(true);
@@ -90,7 +91,7 @@ export function useChat(respond: (text: string) => Reply, { endpoint, context, d
     fetch(endpoint, {
       method: "POST", signal: controller.signal,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text, context: contextRef.current, history }),
+      body: JSON.stringify({ message: text, context: contextRef.current ? {...contextRef.current,bills:contextRef.current.bills?.slice(-12),appliances:contextRef.current.appliances?.slice(0,40),savedAdvisories:contextRef.current.savedAdvisories?.slice(-5),savedScenarios:contextRef.current.savedScenarios?.slice(-5),readinessPlans:contextRef.current.readinessPlans?.slice(-5)} : undefined, history }),
     })
       .then(async response => {
         const data = await response.json().catch(() => null);

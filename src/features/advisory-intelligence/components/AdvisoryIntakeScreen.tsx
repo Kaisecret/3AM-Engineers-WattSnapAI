@@ -1,4 +1,5 @@
 "use client";
+import { isDeviceOffline } from "@/features/offline-access/connectivity";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -20,7 +21,7 @@ export default function AdvisoryIntakeScreen() {
   const [loading, setLoading] = useState(false), [error, setError] = useState(""), [offline, setOffline] = useState(false);
   const upload = useRef<HTMLInputElement>(null), initialized = useRef(false), request = useRef(0), heading = useRef<HTMLHeadingElement>(null);
   const ready = householdReady && saved.ready;
-  useEffect(() => { const sync = () => setOffline(!navigator.onLine); sync(); window.addEventListener("online", sync); window.addEventListener("offline", sync); return () => { window.removeEventListener("online", sync); window.removeEventListener("offline", sync); request.current++; }; }, []);
+  useEffect(() => { const sync = () => setOffline(isDeviceOffline()); sync(); window.addEventListener("online", sync); window.addEventListener("offline", sync); return () => { window.removeEventListener("online", sync); window.removeEventListener("offline", sync); request.current++; }; }, []);
   useEffect(() => { if (phase !== "input") heading.current?.focus(); }, [phase]);
   useEffect(() => {
     if (!ready || initialized.current) return; initialized.current = true;

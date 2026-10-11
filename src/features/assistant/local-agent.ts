@@ -1,9 +1,9 @@
 import { parseAgentCall, type AgentAction } from './agent-actions';
-import { householdReply, type ChatContext, type Reply } from './replies';
+import { householdReply, knownHouseholdReply, type ChatContext, type Reply } from './replies';
 import { validateAppliance } from '../dashboard/preview-data';
 
 export type LocalPending = { message: string; field: 'watts' | 'hours' | 'month' | 'kwh' | 'amount' };
-export type LocalAgentResult = { reply: Reply; actions: AgentAction[]; pending?: LocalPending };
+export type LocalAgentResult = { reply: Reply; actions: AgentAction[]; pending?: LocalPending; handled?: boolean };
 const numeric = '-?(?:(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d+)?|\\.\\d+)';
 const numberToken = `(?<![\\w.,+-])(${numeric})(?![\\d.,+-])`;
 const amountToken = `(?<![\\w.,+-])(${numeric})(?![\\w.,+-])`;
@@ -19,7 +19,7 @@ function monthOf(text: string) {
   const index = named ? months.findIndex(month => month === named[1] || month.slice(0,3) === named[1]) : -1;
   return index >= 0 ? `${named![2]}-${String(index+1).padStart(2,'0')}` : undefined;
 }
-const response = (text: string): LocalAgentResult => ({reply:{text},actions:[]});
+const response = (text: string): LocalAgentResult => ({reply:{text},actions:[],handled:true});
 const ask = (message: string, field: LocalPending['field'], text: string): LocalAgentResult => ({...response(text),pending:{message,field}});
 function checked(type: string, args: Record<string, unknown>): LocalAgentResult {
   const parsed = parseAgentCall(type,args);
@@ -53,13 +53,19 @@ export function localAgentReply(raw: string, context: ChatContext = {}, pending?
     message = `${pending.message}, ${message}${bare ? unit : ''}`.slice(0,1000);
   }
   const preserve = (result: LocalAgentResult): LocalAgentResult => continuing && !result.actions.length && !result.pending ? {...result,pending} : result;
-  if (/^(?:what|why|how|can|could|should|is|does|if|ano|paano|bakit)\b/i.test(message)) return {reply:householdReply(message,context),actions:[]};
-  const commands = message.split(/;|\n|\s+and\s+(?=(?:add|set|change|remove)\b)/i).map(part=>part.trim()).filter(Boolean);
+  message=message.replace(/^(?:can|could|would) you (?:please )?(?=set|add|change|update|remove|open)/i,"").replace(/\?$/,"");
+  const commands = message.split(/;|\n|\s+(?:and|at)\s+(?=(?:add|save|record|set|change|update|remove|delete|open|go to|show|what|why|how|can|could|would|ano|magkano|kailan|sino|saan|buksan|itakda|gawin|idagdag|dagdag|ilagay|alisin|tanggalin|baguhin)\b)/i).map(part=>part.trim()).filter(Boolean);
   if (commands.length > 1) {
     if (commands.length > 8) return response('Please send up to 8 changes at a time.');
     const results = commands.map(command=>localAgentReply(command,context));
-    if (results.some(result=>!result.actions.length)) return response('Let’s finish one change at a time. Include each appliance’s watts and hours, or the exact budget amount.');
-    return {reply:{text:'I prepared these changes. Review each one before confirming.'},actions:results.flatMap(result=>result.actions)};
+    if (results.some(result=>result.pending || (!result.handled&&!result.actions.length))) return response('Let’s finish one change at a time. Include each appliance’s watts and hours, or the exact budget amount.');
+    const actions=results.flatMap(result=>result.actions);
+    const links=results.flatMap(result=>result.reply.links??[]).filter((item,index,all)=>all.findIndex(other=>other.href===item.href)===index);
+    return {reply:{text:results.filter(result=>!result.actions.length).map(result=>result.reply.text).concat(actions.length?['I prepared these changes. Review each one before confirming.']:[]).join('\n\n'),...(links.length?{links}:{})},actions,handled:true};
+  }
+  if (/^(?:what|why|how|can|could|should|is|does|if|ano|paano|bakit|magkano|kailan|sino|saan)\b/i.test(message)) {
+    const reply=knownHouseholdReply(message,context);
+    return {reply:reply??householdReply(message,context),actions:[],handled:!!reply};
   }
   const text = message.toLowerCase();
   if (/^(?:set|change|update|itakda|gawin|ibutang)\b/.test(text) && /\b(?:budget|subsidy|peps)\b/.test(text)) {
@@ -109,9 +115,10 @@ export function localAgentReply(raw: string, context: ChatContext = {}, pending?
   }
   const page = text.match(/^(?:open|go to|show|buksan)\s+(?:my\s+|the\s+)?(.+)$/)?.[1];
   if (page) {
-    const aliases: Record<string,string> = {home:'dashboard',energy:'bills','snap ai':'add-bill','scan bill':'add-bill','add appliance':'add-appliance','tipid tips':'tips','watt-if':'simulator','home setup':'setup'};
+    const aliases: Record<string,string> = {home:'dashboard',energy:'bills',history:'bills','bill history':'bills','snap ai':'add-bill','scan bill':'add-bill','add appliance':'add-appliance','tipid tips':'tips','watt-if':'simulator','home setup':'setup',checklist:'brownout-ready','brownout ready':'brownout-ready',profile:'settings',bahay:'dashboard',badyet:'budget'};
     const parsed = parseAgentCall('open_page',{page:aliases[page] ?? page});
-    if (parsed.kind === 'link') return {reply:{text:'Here you go.',links:[parsed.link]},actions:[]};
+    if (parsed.kind === 'link') return {reply:{text:'Here you go.',links:[parsed.link]},actions:[],handled:true};
   }
-  return {reply:householdReply(message,context),actions:[]};
+  const reply=knownHouseholdReply(message,context);
+  return {reply:reply??householdReply(message,context),actions:[],handled:!!reply};
 }

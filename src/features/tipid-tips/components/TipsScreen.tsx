@@ -1,4 +1,5 @@
 "use client";
+import { isDeviceOffline } from "@/features/offline-access/connectivity";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -22,7 +23,7 @@ export default function TipsScreen() {
   const snapshot = saved.snapshot;
   const stale = snapshot ? tipsAreStale(snapshot, household) : false;
   useEffect(() => {
-    const sync = () => setOffline(!navigator.onLine); sync(); window.addEventListener("online", sync); window.addEventListener("offline", sync);
+    const sync = () => setOffline(isDeviceOffline()); sync(); window.addEventListener("online", sync); window.addEventListener("offline", sync);
     return () => { window.removeEventListener("online", sync); window.removeEventListener("offline", sync); };
   }, []);
   function refresh() {
