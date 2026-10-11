@@ -10,6 +10,8 @@
     "lint": "next lint",
     "test": "node --test \"src/**/*.test.mjs\" supabase/tests/migration.test.mjs",
     "test:isolation": "node --env-file-if-exists=.env.local --test supabase/tests/isolation.test.mjs",
+    "test:sync": "node --env-file-if-exists=.env.local --test supabase/tests/offline-sync.test.mjs",
+    "test:sync:browser": "node --env-file-if-exists=.env.local tests/e2e/record-sync.cjs",
     "setup:offline-ai": "node scripts/prepare-offline-ai.mjs --runtime-only",
     "test:offline-ai": "node --test src/features/assistant/hybrid-reply.test.mjs src/features/assistant/tinybert-client.test.mjs src/features/assistant/use-chat.test.mjs tests/offline-shell.test.cjs",
     "setup:email": "node --env-file=.env.local scripts/configure-email.mjs",

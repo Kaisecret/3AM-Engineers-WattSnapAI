@@ -6,7 +6,6 @@ import PageShell from "./PageShell";
 import UserAvatar from "./UserAvatar";
 import PhotoEditor from "./PhotoEditor";
 import LogoutDialog from "./LogoutDialog";
-import OfflineReadiness from "@/features/offline-access/components/OfflineReadiness";
 import { usePreviewHousehold } from "../use-preview-household";
 import { isPhotoDataUrl, maxMonthlySubsidy, monthlySubsidyFor, pesos, validateProfile, type NotificationPrefs } from "../preview-data";
 import { previewProviderName } from "@/features/household-profile/provider-preview";
@@ -136,7 +135,7 @@ export default function SettingsScreen() {
         <section className="ui-panel st-card" aria-labelledby="st-data-title">
           <div className="st-card-head"><span className="st-card-icon is-green"><ShieldCheck aria-hidden="true" /></span><div><h2 id="st-data-title">Privacy &amp; data</h2><p>Anyone using this browser profile can view these records.</p></div></div>
           <div className="st-rows">
-            <div className="st-row"><span className="st-row-icon is-green"><Database aria-hidden="true" /></span><span className="st-row-copy"><strong>Saved on this device</strong><small>Bills and appliances stay in this browser. Clearing browser data can remove them. Photos are saved only when you choose to keep them.</small><OfflineReadiness /></span></div>
+            <div className="st-row"><span className="st-row-icon is-green"><Database aria-hidden="true" /></span><span className="st-row-copy"><strong>Your saved records</strong><small>View and manage your bills, appliances, and household details.</small></span></div>
             {sampleBills + sampleAppliances > 0 && <div className="st-row"><span className="st-row-icon"><Sparkles aria-hidden="true" /></span><span className="st-row-copy"><strong>Sample data</strong><small>{sampleBills} sample bills and {sampleAppliances} sample appliances</small></span><button type="button" className="st-row-button" disabled={!ready} onClick={clearSamples}>Clear</button></div>}
           </div>
         </section>

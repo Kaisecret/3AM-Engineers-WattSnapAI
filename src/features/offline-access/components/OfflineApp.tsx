@@ -81,8 +81,14 @@ export default function OfflineApp() {
     window.addEventListener("pageshow", restored);
     window.addEventListener("storage", storage);
     window.addEventListener(displayIdentityEvent, checkScope);
+    // Reachability can recover without a fresh online event (Wi-Fi was connected
+    // throughout). Reopen the verified account so its pending records can sync.
+    const retry = setInterval(() => navigator.onLine ? reconnect() : undefined, 30_000);
+    window.addEventListener("focus", reconnect);
     return () => {
       active = false; probe?.abort();
+      clearInterval(retry);
+      window.removeEventListener("focus", reconnect);
       window.removeEventListener("online", reconnect);
       window.removeEventListener("beforeunload", beforeUnload);
       window.removeEventListener("pageshow", restored);

@@ -4,6 +4,7 @@ import type { PreviewHousehold } from "../dashboard/preview-data";
 import type { BrownoutPreviewPlan, PreparationId } from "./types";
 
 export const brownoutStorageKey = "wattsnap-brownout-ui-preview-v1";
+export const maxSavedPlans = 100;
 export const preparationItems: { id: PreparationId; title: string; detail: string }[] = [
   { id: "charge", title: "Charge phones and power banks", detail: "Use the time before the published schedule to charge what you need." },
   { id: "work", title: "Save your online work", detail: "Save documents and download anything you may need locally." },

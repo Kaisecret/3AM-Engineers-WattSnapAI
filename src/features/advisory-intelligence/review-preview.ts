@@ -4,6 +4,7 @@ import { advisoryTypeLabels, type AdvisoryStatus } from "./advisory-preview";
 import type { AdvisoryArea, AdvisoryDetails, AdvisoryMatch, AdvisoryOriginal, AdvisorySample, ReviewedAdvisory } from "./types";
 
 export const advisoriesStorageKey = "wattsnap-advisories-ui-preview-v1";
+export const maxSavedAdvisories = 200;
 export const maxOriginalBytes = 2 * 1024 * 1024;
 export const maxOriginalText = 12000;
 export const blankArea: AdvisoryArea = { province: "", municipality: "", barangay: "", scope: "uncertain" };

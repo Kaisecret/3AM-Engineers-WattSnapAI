@@ -108,7 +108,6 @@ export default function HomeScreen() {
           <HomeAdvisoryCard />
           <HomeTipCard />
         </main>
-        <p className="ws-desktop-preview">Saved on this device</p>
         <AppNavigation active="Home" />
         <LogoutDialog open={logout} onClose={() => setLogout(false)} name={household.name} />
       </div>

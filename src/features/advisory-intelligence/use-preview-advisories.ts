@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { previewStorageFor, usePreviewStorageKey } from "@/features/auth/use-preview-storage-key";
-import { advisoriesStorageKey, normalizeReviewedAdvisory } from "./review-preview";
+import { advisoriesStorageKey, maxSavedAdvisories, normalizeReviewedAdvisory } from "./review-preview";
 import type { ReviewedAdvisory } from "./types";
 
 export function usePreviewAdvisories() {
@@ -12,7 +12,7 @@ export function usePreviewAdvisories() {
   useEffect(() => {
     function read() {
       try { if (previewStorageFor(advisoriesStorageKey) !== storageKey) { setLoadedKey(null); return; }
-      stored.current = localStorage.getItem(storageKey); const raw = localStorage.getItem(storageKey); const parsed: unknown = raw === null ? [] : JSON.parse(raw); if (!Array.isArray(parsed) || parsed.length > 100) throw new Error("Invalid advisory history"); const normalized = parsed.map(normalizeReviewedAdvisory); if (normalized.some(record => !record) || new Set(normalized.map(record => record!.id)).size !== normalized.length) throw new Error("Invalid advisory record"); setRecords(normalized as ReviewedAdvisory[]); setError(""); setLoadError(false); }
+      stored.current = localStorage.getItem(storageKey); const raw = localStorage.getItem(storageKey); const parsed: unknown = raw === null ? [] : JSON.parse(raw); if (!Array.isArray(parsed) || parsed.length > maxSavedAdvisories) throw new Error("Invalid advisory history"); const normalized = parsed.map(normalizeReviewedAdvisory); if (normalized.some(record => !record) || new Set(normalized.map(record => record!.id)).size !== normalized.length) throw new Error("Invalid advisory record"); setRecords(normalized as ReviewedAdvisory[]); setError(""); setLoadError(false); }
       catch { setRecords([]); setLoadError(true); setError("Saved advisories could not be opened. Existing browser data is unchanged; retry loading before saving another review."); }
       setLoadedKey(storageKey);
     }
@@ -21,7 +21,7 @@ export function usePreviewAdvisories() {
   }, [storageKey]);
   function write(next: ReviewedAdvisory[]) {
     if (!ready || loadError) return false;
-    if (next.length > 100) { setError("This browser holds up to 100 advisories. Review and remove an older saved entry before adding another."); return false; }
+    if (next.length > maxSavedAdvisories) { setError(`Your household holds up to ${maxSavedAdvisories} advisories. Review and remove an older saved entry before adding another.`); return false; }
     try { if (previewStorageFor(advisoriesStorageKey) !== storageKey || localStorage.getItem(storageKey) !== stored.current) throw new Error("Household or saved records changed; reload before saving."); localStorage.setItem(storageKey, JSON.stringify(next)); stored.current = JSON.stringify(next); setRecords(next); setError(""); window.dispatchEvent(new Event("wattsnap-advisories-change")); return true; }
     catch { setError("This advisory could not be saved. Browser storage may be full or blocked. Keep your draft and try a smaller screenshot or pasted original. Earlier saved advisories are unchanged."); return false; }
   }
