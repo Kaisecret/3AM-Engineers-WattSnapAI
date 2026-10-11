@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { AgentAction } from "./agent-actions";
 import type { ChatContext, Reply } from "./replies";
 import type { LocalAgentResult, LocalPending } from "./local-agent";
+import type { HybridResult } from "./hybrid-reply";
 import { isDeviceOffline } from "../offline-access/connectivity";
 
 export type ActionState = "pending" | "done" | "cancelled" | "failed";
@@ -20,9 +21,10 @@ interface ChatOptions {
   /** Say under an answer when it is a built-in answer and why. */
   explainFallback?: boolean;
   localAgent?: (text: string, context: ChatContext, pending?: LocalPending) => LocalAgentResult;
+  asyncLocalAgent?: (text: string, context: ChatContext, pending?: LocalPending) => Promise<HybridResult>;
 }
 
-const noticeFor = (problem: string) => problem === "saved" ? "Saved data · on this device" : problem === "offline" ? "Offline · using saved data" : problem === "busy" ? "Local reply · AI is busy right now" : "Local reply · AI is unavailable right now";
+const noticeFor = (problem: string) => problem === "offline-language" ? "Offline · local language model · saved data" : problem === "local-language" ? "Local language model · saved data" : problem === "saved" ? "Saved data · on this device" : problem === "offline" ? "Offline · using saved data" : problem === "busy" ? "Local reply · AI is busy right now" : "Local reply · AI is unavailable right now";
 
 const stateWords: Record<ActionState, string> = { pending: "waiting for confirmation", done: "confirmed and saved", cancelled: "cancelled", failed: "could not be saved" };
 // Earlier turns as plain text, including what happened to each proposed change.
@@ -31,7 +33,7 @@ const toTurn = (message: ChatMessage) => ({
   text: message.actions?.length ? `${message.text}\n(${message.actions.map(item => `${item.label}: ${stateWords[item.state]}`).join("; ")})` : message.text,
 });
 
-export function useChat(respond: (text: string) => Reply, { endpoint, context, describe, explainFallback = false, localAgent }: ChatOptions) {
+export function useChat(respond: (text: string) => Reply, { endpoint, context, describe, explainFallback = false, localAgent, asyncLocalAgent }: ChatOptions) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [typing, setTyping] = useState(false);
   const nextId = useRef(0);
@@ -42,6 +44,7 @@ export function useChat(respond: (text: string) => Reply, { endpoint, context, d
   const describeRef = useRef(describe);
   const messagesRef = useRef(messages);
   const localAgentRef = useRef(localAgent);
+  const asyncLocalAgentRef = useRef(asyncLocalAgent);
   const pending = useRef<LocalPending | undefined>(undefined);
   const request = useRef<AbortController | null>(null);
 
@@ -50,6 +53,7 @@ export function useChat(respond: (text: string) => Reply, { endpoint, context, d
   useEffect(() => { describeRef.current = describe; }, [describe]);
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => { localAgentRef.current = localAgent; }, [localAgent]);
+  useEffect(() => { asyncLocalAgentRef.current = asyncLocalAgent; }, [asyncLocalAgent]);
   useEffect(() => () => { session.current++; request.current?.abort(); }, []);
 
   const send = useCallback((raw: string): boolean => {
@@ -66,11 +70,16 @@ export function useChat(respond: (text: string) => Reply, { endpoint, context, d
       const notice = explainFallback && problem ? noticeFor(problem) : undefined;
       setMessages(current => [...current, { id: nextId.current++, role: "bot", text: reply.text, reply, ...(proposed.length ? { actions: proposed } : {}), ...(notice ? { notice } : {}) }]);
     };
-    const local = (problem: string) => {
+    const local = async (problem: string) => {
       if (chat !== session.current) return;
-      const result = localAgentRef.current?.(text, contextRef.current ?? {}, pending.current);
+      let result: LocalAgentResult | HybridResult | undefined;
+      try {
+        result = asyncLocalAgentRef.current ? await asyncLocalAgentRef.current(text,contextRef.current??{},pending.current) : localAgentRef.current?.(text, contextRef.current ?? {}, pending.current);
+      } catch { result = localAgentRef.current?.(text,contextRef.current??{},pending.current); }
+      if (chat !== session.current) return;
       pending.current = result?.pending;
-      answer(result?.reply ?? respondRef.current(text), result?.actions ?? [], problem);
+      const source = result && "source" in result && result.source === "tinybert" ? (isDeviceOffline() ? "offline-language" : "local-language") : problem;
+      answer(result?.reply ?? respondRef.current(text), result?.actions ?? [], source);
     };
 
     const parsed = localAgentRef.current?.(text, contextRef.current ?? {}, pending.current);
@@ -81,7 +90,11 @@ export function useChat(respond: (text: string) => Reply, { endpoint, context, d
     }
     pending.current = undefined;
 
-    if (isDeviceOffline()) { local("offline"); return true; }
+    if (isDeviceOffline()) {
+      busy.current = true; setTyping(true);
+      void local("offline").finally(() => { if (chat === session.current) { busy.current=false; setTyping(false); } });
+      return true;
+    }
 
     busy.current = true;
     setTyping(true);

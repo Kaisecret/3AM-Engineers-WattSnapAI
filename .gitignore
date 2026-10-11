@@ -34,5 +34,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Runtime files and build-specific worker lists are generated from the locked dependencies.
+/public/ai-runtime/
+/public/offline-ai.json
+
 # Supabase CLI cache can contain project connection metadata.
 /supabase/.temp/

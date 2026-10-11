@@ -1,0 +1,530 @@
+{
+  "base_model": "huawei-noah/TinyBERT_General_4L_312D",
+  "revision": "34707a33cd59a94ecde241ac209bf35103691b43",
+  "seed": 42,
+  "dataset_sha256": "2e2b71379eab92b3e87d321d315f00a05161a5e102dc438c2409c67c7d01c576",
+  "training_examples": 248,
+  "evaluation_examples": 64,
+  "accuracy": 0.90625,
+  "accepted": 43,
+  "accepted_correct": 42,
+  "parameters": 14354630,
+  "onnx_bytes": 14610757,
+  "limits": "Small curated held-out set used for checkpoint selection; not an unbiased production benchmark. English-pretrained backbone; Tagalog coverage limited to intent examples. No generative answers or record mutations.",
+  "min_confidence": 0.9,
+  "min_margin": 0.2,
+  "results": [
+    {
+      "text": "How much room do I have left to spend?",
+      "expected": "budget",
+      "predicted": "budget",
+      "confidence": 0.9931,
+      "margin": 0.9904,
+      "accepted": true
+    },
+    {
+      "text": "Have I exceeded my electricity allowance?",
+      "expected": "budget",
+      "predicted": "budget",
+      "confidence": 0.9712,
+      "margin": 0.9493,
+      "accepted": true
+    },
+    {
+      "text": "May pera pa ba para sa kuryente?",
+      "expected": "budget",
+      "predicted": "budget",
+      "confidence": 0.9799,
+      "margin": 0.9722,
+      "accepted": true
+    },
+    {
+      "text": "How close am I to my monthly spending cap?",
+      "expected": "budget",
+      "predicted": "budget",
+      "confidence": 0.8458,
+      "margin": 0.7764,
+      "accepted": false
+    },
+    {
+      "text": "What was the charge for August 2026?",
+      "expected": "bill",
+      "predicted": "bill",
+      "confidence": 0.9706,
+      "margin": 0.9516,
+      "accepted": true
+    },
+    {
+      "text": "Tell me the latest recorded electricity amount",
+      "expected": "bill",
+      "predicted": "bill",
+      "confidence": 0.9875,
+      "margin": 0.9808,
+      "accepted": true
+    },
+    {
+      "text": "Magkano ang huling singil sa bahay?",
+      "expected": "bill",
+      "predicted": "bill",
+      "confidence": 0.9644,
+      "margin": 0.9425,
+      "accepted": true
+    },
+    {
+      "text": "How much power did we consume last month?",
+      "expected": "bill",
+      "predicted": "bill",
+      "confidence": 0.6933,
+      "margin": 0.4042,
+      "accepted": false
+    },
+    {
+      "text": "Bring up my earlier power statements",
+      "expected": "history",
+      "predicted": "history",
+      "confidence": 0.944,
+      "margin": 0.8946,
+      "accepted": true
+    },
+    {
+      "text": "Show the archive of monthly charges",
+      "expected": "history",
+      "predicted": "history",
+      "confidence": 0.9943,
+      "margin": 0.9916,
+      "accepted": true
+    },
+    {
+      "text": "Ano ang mga dating bayarin ko?",
+      "expected": "history",
+      "predicted": "history",
+      "confidence": 0.9917,
+      "margin": 0.9885,
+      "accepted": true
+    },
+    {
+      "text": "Can I see all electricity records together?",
+      "expected": "history",
+      "predicted": "history",
+      "confidence": 0.9824,
+      "margin": 0.9731,
+      "accepted": true
+    },
+    {
+      "text": "Are we using more power than before?",
+      "expected": "comparison",
+      "predicted": "comparison",
+      "confidence": 0.9072,
+      "margin": 0.8489,
+      "accepted": true
+    },
+    {
+      "text": "How does the newest charge stack up against the previous one?",
+      "expected": "comparison",
+      "predicted": "bill",
+      "confidence": 0.9747,
+      "margin": 0.9574,
+      "accepted": true
+    },
+    {
+      "text": "Mas malaki ba ang singil ngayon?",
+      "expected": "comparison",
+      "predicted": "comparison",
+      "confidence": 0.9688,
+      "margin": 0.9435,
+      "accepted": true
+    },
+    {
+      "text": "Tell me how our consumption changed between months",
+      "expected": "comparison",
+      "predicted": "comparison",
+      "confidence": 0.9743,
+      "margin": 0.9572,
+      "accepted": true
+    },
+    {
+      "text": "Which of my devices draws the greatest amount of power?",
+      "expected": "appliances",
+      "predicted": "appliances",
+      "confidence": 0.8291,
+      "margin": 0.7215,
+      "accepted": false
+    },
+    {
+      "text": "Show the equipment in my household",
+      "expected": "appliances",
+      "predicted": "appliances",
+      "confidence": 0.4811,
+      "margin": 0.1129,
+      "accepted": false
+    },
+    {
+      "text": "Aling gamit ang pinakamatakaw sa kuryente?",
+      "expected": "appliances",
+      "predicted": "comparison",
+      "confidence": 0.7623,
+      "margin": 0.5453,
+      "accepted": false
+    },
+    {
+      "text": "Where does most of my appliance consumption come from?",
+      "expected": "appliances",
+      "predicted": "appliances",
+      "confidence": 0.9779,
+      "margin": 0.9635,
+      "accepted": true
+    },
+    {
+      "text": "Work out 100 W for 8 hours, 20 days, 2 units",
+      "expected": "estimate",
+      "predicted": "estimate",
+      "confidence": 0.9964,
+      "margin": 0.9951,
+      "accepted": true
+    },
+    {
+      "text": "What would it cost to run 80 watts for 10 hours?",
+      "expected": "estimate",
+      "predicted": "estimate",
+      "confidence": 0.9939,
+      "margin": 0.9902,
+      "accepted": true
+    },
+    {
+      "text": "Kuwenta ng 75 W gamit sa 6 oras",
+      "expected": "estimate",
+      "predicted": "estimate",
+      "confidence": 0.9784,
+      "margin": 0.9659,
+      "accepted": true
+    },
+    {
+      "text": "How much energy is 0.2 kW operating for 7 hours?",
+      "expected": "estimate",
+      "predicted": "estimate",
+      "confidence": 0.9957,
+      "margin": 0.9935,
+      "accepted": true
+    },
+    {
+      "text": "Help me stop wasting electricity at home",
+      "expected": "tips",
+      "predicted": "tips",
+      "confidence": 0.9905,
+      "margin": 0.9861,
+      "accepted": true
+    },
+    {
+      "text": "Give me practical ways to use less energy",
+      "expected": "tips",
+      "predicted": "tips",
+      "confidence": 0.9899,
+      "margin": 0.9841,
+      "accepted": true
+    },
+    {
+      "text": "Paano ako makakabawas sa gastos sa kuryente?",
+      "expected": "tips",
+      "predicted": "tips",
+      "confidence": 0.9604,
+      "margin": 0.9298,
+      "accepted": true
+    },
+    {
+      "text": "What changes can make my home more energy efficient?",
+      "expected": "tips",
+      "predicted": "tips",
+      "confidence": 0.9744,
+      "margin": 0.9602,
+      "accepted": true
+    },
+    {
+      "text": "Does the utility have any power cut announcements?",
+      "expected": "advisories",
+      "predicted": "advisories",
+      "confidence": 0.814,
+      "margin": 0.6401,
+      "accepted": false
+    },
+    {
+      "text": "What interruptions are recorded for our area?",
+      "expected": "advisories",
+      "predicted": "advisories",
+      "confidence": 0.9901,
+      "margin": 0.9838,
+      "accepted": true
+    },
+    {
+      "text": "May abiso ba tungkol sa pagkawala ng kuryente?",
+      "expected": "advisories",
+      "predicted": "advisories",
+      "confidence": 0.9869,
+      "margin": 0.9792,
+      "accepted": true
+    },
+    {
+      "text": "Tell me about the electricity provider's latest notice",
+      "expected": "advisories",
+      "predicted": "advisories",
+      "confidence": 0.9717,
+      "margin": 0.9531,
+      "accepted": true
+    },
+    {
+      "text": "What remains on my outage preparation list?",
+      "expected": "readiness",
+      "predicted": "readiness",
+      "confidence": 0.98,
+      "margin": 0.9629,
+      "accepted": true
+    },
+    {
+      "text": "Help me get ready before the lights go out",
+      "expected": "readiness",
+      "predicted": "readiness",
+      "confidence": 0.9903,
+      "margin": 0.9862,
+      "accepted": true
+    },
+    {
+      "text": "Ano pa ang kailangan kong ihanda?",
+      "expected": "readiness",
+      "predicted": "readiness",
+      "confidence": 0.9377,
+      "margin": 0.8793,
+      "accepted": true
+    },
+    {
+      "text": "Show the progress of my blackout preparations",
+      "expected": "readiness",
+      "predicted": "readiness",
+      "confidence": 0.9627,
+      "margin": 0.9347,
+      "accepted": true
+    },
+    {
+      "text": "Bring up the what if experiments I stored",
+      "expected": "scenarios",
+      "predicted": "scenarios",
+      "confidence": 0.9922,
+      "margin": 0.9899,
+      "accepted": true
+    },
+    {
+      "text": "What simulator results did I keep?",
+      "expected": "scenarios",
+      "predicted": "scenarios",
+      "confidence": 0.9915,
+      "margin": 0.9885,
+      "accepted": true
+    },
+    {
+      "text": "Nasaan ang mga resulta ng simulation ko?",
+      "expected": "scenarios",
+      "predicted": "scenarios",
+      "confidence": 0.9894,
+      "margin": 0.9851,
+      "accepted": true
+    },
+    {
+      "text": "Show me the alternative habits I simulated",
+      "expected": "scenarios",
+      "predicted": "scenarios",
+      "confidence": 0.9893,
+      "margin": 0.9824,
+      "accepted": true
+    },
+    {
+      "text": "What does each kilowatt hour cost according to my saved records?",
+      "expected": "rate",
+      "predicted": "rate",
+      "confidence": 0.9752,
+      "margin": 0.9599,
+      "accepted": true
+    },
+    {
+      "text": "Tell me the unit price used for my estimates",
+      "expected": "rate",
+      "predicted": "rate",
+      "confidence": 0.9825,
+      "margin": 0.9689,
+      "accepted": true
+    },
+    {
+      "text": "Magkano ang bawat unit ng konsumo?",
+      "expected": "rate",
+      "predicted": "rate",
+      "confidence": 0.9803,
+      "margin": 0.9661,
+      "accepted": true
+    },
+    {
+      "text": "What is the electricity price basis for calculations?",
+      "expected": "rate",
+      "predicted": "rate",
+      "confidence": 0.9884,
+      "margin": 0.9838,
+      "accepted": true
+    },
+    {
+      "text": "How much financial assistance is applied to my power charge?",
+      "expected": "subsidy",
+      "predicted": "subsidy",
+      "confidence": 0.975,
+      "margin": 0.9539,
+      "accepted": true
+    },
+    {
+      "text": "Tell me the subsidy amount on record",
+      "expected": "subsidy",
+      "predicted": "subsidy",
+      "confidence": 0.8742,
+      "margin": 0.7743,
+      "accepted": false
+    },
+    {
+      "text": "Magkano ang tulong para sa bayarin ko?",
+      "expected": "subsidy",
+      "predicted": "subsidy",
+      "confidence": 0.8567,
+      "margin": 0.7278,
+      "accepted": false
+    },
+    {
+      "text": "What do I owe after the recorded electricity support?",
+      "expected": "subsidy",
+      "predicted": "subsidy",
+      "confidence": 0.9315,
+      "margin": 0.8677,
+      "accepted": true
+    },
+    {
+      "text": "What date do I need to settle my electricity charge?",
+      "expected": "due",
+      "predicted": "due",
+      "confidence": 0.9528,
+      "margin": 0.9163,
+      "accepted": true
+    },
+    {
+      "text": "Tell me the last day for paying this statement",
+      "expected": "due",
+      "predicted": "bill",
+      "confidence": 0.7185,
+      "margin": 0.5064,
+      "accepted": false
+    },
+    {
+      "text": "Kailan ang takdang araw ng bayad?",
+      "expected": "due",
+      "predicted": "due",
+      "confidence": 0.9689,
+      "margin": 0.9533,
+      "accepted": true
+    },
+    {
+      "text": "When does payment need to happen?",
+      "expected": "due",
+      "predicted": "due",
+      "confidence": 0.9844,
+      "margin": 0.9736,
+      "accepted": true
+    },
+    {
+      "text": "Who won yesterday's football match?",
+      "expected": "unknown",
+      "predicted": "unknown",
+      "confidence": 0.9054,
+      "margin": 0.8249,
+      "accepted": false
+    },
+    {
+      "text": "Explain black holes",
+      "expected": "unknown",
+      "predicted": "advisories",
+      "confidence": 0.8014,
+      "margin": 0.6186,
+      "accepted": false
+    },
+    {
+      "text": "Write an email to my teacher",
+      "expected": "unknown",
+      "predicted": "unknown",
+      "confidence": 0.9944,
+      "margin": 0.9922,
+      "accepted": false
+    },
+    {
+      "text": "How do I make a cake?",
+      "expected": "unknown",
+      "predicted": "unknown",
+      "confidence": 0.9953,
+      "margin": 0.9929,
+      "accepted": false
+    },
+    {
+      "text": "quantum bananas?",
+      "expected": "unknown",
+      "predicted": "unknown",
+      "confidence": 0.9962,
+      "margin": 0.9951,
+      "accepted": false
+    },
+    {
+      "text": "What stock will rise tomorrow?",
+      "expected": "unknown",
+      "predicted": "unknown",
+      "confidence": 0.9758,
+      "margin": 0.9623,
+      "accepted": false
+    },
+    {
+      "text": "Ano ang magandang ulam?",
+      "expected": "unknown",
+      "predicted": "unknown",
+      "confidence": 0.9829,
+      "margin": 0.9745,
+      "accepted": false
+    },
+    {
+      "text": "Sino ang artista sa pelikula?",
+      "expected": "unknown",
+      "predicted": "unknown",
+      "confidence": 0.7728,
+      "margin": 0.5549,
+      "accepted": false
+    },
+    {
+      "text": "Can you diagnose my headache?",
+      "expected": "unknown",
+      "predicted": "tips",
+      "confidence": 0.8306,
+      "margin": 0.6747,
+      "accepted": false
+    },
+    {
+      "text": "What will the weather be on Sunday?",
+      "expected": "unknown",
+      "predicted": "unknown",
+      "confidence": 0.9892,
+      "margin": 0.9823,
+      "accepted": false
+    },
+    {
+      "text": "Change the ceiling to 3000",
+      "expected": "unknown",
+      "predicted": "unknown",
+      "confidence": 0.9945,
+      "margin": 0.9914,
+      "accepted": false
+    },
+    {
+      "text": "How do I fix a faulty electrical breaker?",
+      "expected": "unknown",
+      "predicted": "tips",
+      "confidence": 0.7672,
+      "margin": 0.5501,
+      "accepted": false
+    }
+  ]
+}

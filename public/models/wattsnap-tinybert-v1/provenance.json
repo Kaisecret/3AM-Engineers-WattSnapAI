@@ -1,0 +1,16 @@
+{
+  "base_model": "huawei-noah/TinyBERT_General_4L_312D",
+  "revision": "34707a33cd59a94ecde241ac209bf35103691b43",
+  "seed": 42,
+  "dataset_sha256": "2e2b71379eab92b3e87d321d315f00a05161a5e102dc438c2409c67c7d01c576",
+  "training_examples": 248,
+  "evaluation_examples": 64,
+  "accuracy": 0.90625,
+  "accepted": 43,
+  "accepted_correct": 42,
+  "parameters": 14354630,
+  "onnx_bytes": 14610757,
+  "limits": "Small curated held-out set used for checkpoint selection; not an unbiased production benchmark. English-pretrained backbone; Tagalog coverage limited to intent examples. No generative answers or record mutations.",
+  "min_confidence": 0.9,
+  "min_margin": 0.2
+}

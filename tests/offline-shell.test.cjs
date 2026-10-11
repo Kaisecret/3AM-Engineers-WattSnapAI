@@ -11,40 +11,86 @@ const artwork = { images: [
   {src:'/assets/branding/sunny-eco-city-bg.png',width:1920},
 ], files:['/assets/branding/auth-clouds.svg','/assets/branding/wattsnap-icon-192.png'] };
 const shellHtml='<script src="/_next/static/app.js?dpl=build"></script><link href="/_next/static/app.css?dpl=build" rel="stylesheet">';
+const aiManifest={version:'test-v1',files:['/models/wattsnap-tinybert-v1/config.json','/models/wattsnap-tinybert-v1/onnx/model_quantized.onnx','/ai-runtime/ort-wasm-simd-threaded.wasm','/_next/static/chunks/tinybert.js','/_next/static/chunks/app/(household)/assistant/page-hash.js']};
 function preparationResponse(request) {
   if(request==='/offline-app') return new Response(shellHtml,{headers:{'content-type':'text/html'}});
   if(request==='/offline-artwork.json') return Response.json(artwork);
+  if(request==='/offline-ai.json') return Response.json(aiManifest);
   return new Response('static',{headers:{'content-type':String(request).includes('/_next/static/')?'application/javascript':'image/webp'}});
 }
+
+test('language model readiness requires the model, runtime and worker scripts',async()=>{
+  const runtime=worker({fetch:preparationResponse});
+  const result=await prepare(runtime);
+  assert.equal(result.aiReady,true);
+  for(const file of aiManifest.files) assert.ok(runtime.writes.some(([url])=>url===file),'AI asset saved: '+file);
+  assert.ok(runtime.writes.some(([url])=>url==='/offline-ai.json'));
+});
+test('a failed model download leaves the shell ready and cannot mark AI ready',async()=>{
+  const runtime=worker({fetch:async request=>String(request).endsWith('.onnx')?new Response('unavailable',{status:503}):preparationResponse(request)});
+  const result=await prepare(runtime);
+  assert.equal(result.ready,true);assert.equal(result.aiReady,false);
+  assert.ok(!runtime.headers['/offline-ai.json']?.get('X-WattSnap-Offline-AI'));
+});
+test('the AI manifest rejects private and external asset locations',async()=>{
+  for(const file of ['/api/ai/assistant','/dashboard','https://external.test/model.onnx']){
+    const fetched=[];
+    const runtime=worker({fetch:async request=>{fetched.push(request);return request==='/offline-ai.json'?Response.json({...aiManifest,files:[file]}):preparationResponse(request);}});
+    assert.equal((await prepare(runtime)).aiReady,false);assert.ok(!fetched.includes(file));
+  }
+});
+test('cached inference assets are available with no network',async()=>{
+  for(const file of aiManifest.files.slice(0,3)){
+    const runtime=worker({saved:{'/offline-ai.json':new Response(JSON.stringify(aiManifest),{headers:{'X-WattSnap-Offline-AI':aiManifest.version}}),[origin+file]:new Response('saved-model')},fetch:async()=>{throw new TypeError('Offline');}});
+    const event=runtime.dispatch({method:'GET',mode:'cors',url:origin+file});
+    assert.ok(event.response,'model asset is intercepted');assert.equal(await (await event.response).text(),'saved-model');
+  }
+});
 async function prepare(runtime) {
   let pending,result;
   runtime.handlers.message({data:{type:'PREPARE_OFFLINE'},ports:[{postMessage:next=>result=next}],waitUntil:promise=>pending=promise});
   await pending; return result;
 }
 
-function worker({ fetch, saved = {}, keys = [] }) {
-  const handlers = {}, writes = [], deleted = [];
-  const cache = {
+function worker({ fetch, saved = {}, keys = [], cacheContents }) {
+  const handlers = {}, writes = [], deleted = [], headers = {};
+  const makeCache = (contents,persistent=false) => ({
     add: async () => {},
     match: async (key,options={}) => {
-      const response=saved[typeof key === 'string' ? key : key.url];
+      const url=typeof key === 'string' ? key : key.url;
+      const response=contents[url]??contents[new URL(url,origin).pathname];
       if(!response)return;
       if(!options.ignoreVary && response.headers.get('vary')?.toLowerCase().includes('accept') && (typeof key==='string'?null:key.headers?.get('accept'))!==null)return;
       return response.clone();
     },
-    put: async (key, response) => writes.push([typeof key === 'string' ? key : key.url, await response.text()]),
-  };
+    put: async (key, response) => {const url=typeof key === 'string' ? key : key.url;headers[url]=response.headers;if(persistent)contents[url]=response.clone();writes.push([url,await response.text()]);},
+  });
+  const cache=makeCache(saved);
   vm.runInNewContext(source, {
     self: { location: { origin }, addEventListener: (name, handler) => { handlers[name] = handler; }, clients: { claim: async () => {} }, skipWaiting: () => {} },
-    caches: { open: async () => cache, keys: async () => keys, delete: async name => { deleted.push(name); return true; } },
+    caches: { open: async name => cacheContents ? makeCache(cacheContents[name]??=( {} ),true) : cache, keys: async () => [...new Set([...keys,...Object.keys(cacheContents??{})])], delete: async name => { deleted.push(name);if(cacheContents)delete cacheContents[name];return true; } },
     fetch, URL, Response,
   });
-  return { writes, deleted, handlers, dispatch(request) {
+  return { writes, deleted, headers, handlers, dispatch(request) {
     let response; const background = [];
     handlers.fetch({ request, respondWith: promise => { response = promise; }, waitUntil: promise => background.push(promise) });
     return { get response() { return response; }, background };
   } };
 }
+
+test('an interrupted model upgrade keeps the previous complete generation usable',async()=>{
+  const contents={'wattsnap-ai-v1':{'/offline-ai.json':new Response(JSON.stringify(aiManifest),{headers:{'X-WattSnap-Offline-AI':aiManifest.version}}),...Object.fromEntries(aiManifest.files.map(file=>[file,new Response('old-'+file)]))}};
+  let fail=true;
+  const runtime=worker({cacheContents:contents,fetch:async request=>request==='/offline-ai.json'?Response.json({...aiManifest,version:'next-v2'}):String(request).endsWith('.onnx')&&fail?new Response('unavailable',{status:503}):String(request).startsWith('/models/')?new Response('new-'+request):preparationResponse(request)});
+  const result=await prepare(runtime);
+  assert.equal(result.aiReady,true,'the previous complete language model is still available');
+  const config=aiManifest.files[0],model=aiManifest.files[1];
+  for(const file of [config,model])assert.equal(await (await runtime.dispatch({method:'GET',mode:'cors',url:origin+file}).response).text(),'old-'+file);
+  const previous=await contents['wattsnap-ai-v1']['/offline-ai.json'].clone().json();assert.equal(previous.version,aiManifest.version);
+  fail=false;assert.equal((await prepare(runtime)).aiReady,true);
+  for(const file of [config,model])assert.equal(await (await runtime.dispatch({method:'GET',mode:'cors',url:origin+file}).response).text(),'new-'+file);
+  const promoted=await contents['wattsnap-ai-v1']['/offline-ai.json'].clone().json();assert.equal(promoted.version,'next-v2');
+});
 
 test('pages always come from the server, so a signed-out visitor is sent to login', async () => {
   const toLogin = new Response(null, { status: 307, headers: { location: '/login?next=%2Fbills' } });
