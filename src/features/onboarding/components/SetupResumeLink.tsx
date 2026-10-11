@@ -8,7 +8,7 @@ import "../setup.css";
 function ResumeLink() {
   const { count, ready } = useSetupProgress();
   if (!ready) return null;
-  return <nav className="setup-resume" aria-label="Home setup"><Link href="/setup"><ArrowLeft size={18} aria-hidden="true" /> Back to home setup <span>{count}/5 completed</span></Link></nav>;
+  return <nav className="setup-resume" aria-label="Home setup"><Link href="/setup"><ArrowLeft size={18} aria-hidden="true" /> Home setup <span>{count}/5 done</span></Link></nav>;
 }
 export default function SetupResumeLink() {
   const pathname = usePathname();

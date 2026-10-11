@@ -77,7 +77,7 @@ async function main(){
     for(const route of ['/dashboard','/bills','/budget','/appliances','/tips','/advisories','/simulator','/brownout-ready','/settings','/setup','/onboarding','/bills/new','/appliances/new','/advisories/new']){
      await page.goto(base+route);await page.locator('[data-offline-app=true]').waitFor();await page.locator('main').first().waitFor();
      assert.equal(new URL(page.url()).pathname,route,'offline navigation stays on '+route);
-     const headings={'/dashboard':'Maria!','/bills':'Energy','/budget':'Smart Energy Budget','/appliances':'Appliances','/tips':'Tipid Tips','/advisories':'Advisories','/simulator':'Watt-If simulator','/brownout-ready':'Brownout Ready','/settings':'Household settings','/setup':'Home setup','/onboarding':'Set up your household','/bills/new':'Snap AI','/appliances/new':'Add an appliance','/advisories/new':'Add advisory'};
+     const headings={'/dashboard':'Maria!','/bills':'Energy','/budget':'Smart Energy Budget','/appliances':'Appliances','/tips':'Tipid Tips','/advisories':'Advisories','/simulator':'Watt-If simulator','/brownout-ready':'Brownout Ready','/settings':'Household settings','/setup':'Home setup','/onboarding':'Household setup','/bills/new':'Snap AI','/appliances/new':'Add an appliance','/advisories/new':'Add advisory'};
      if(route==='/bills/new') await page.locator('.scan-title').getByText('Snap AI',{exact:true}).waitFor();
      else await page.getByRole('heading',{name:headings[route],exact:true}).first().waitFor();
      await page.evaluate(async()=>{await Promise.all([...document.images].map(async image=>{image.loading='eager';await image.decode();if(!image.naturalWidth)throw new Error('Broken offline picture: '+image.src);}));});
