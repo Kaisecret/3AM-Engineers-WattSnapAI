@@ -5,7 +5,10 @@ import Link from "next/link";
 import { ArrowDown, ArrowUp, ChartColumnBig, ChevronDown, ChevronRight, ReceiptText, ScanText, Sparkles, Trash2, TrendingDown, TrendingUp } from "lucide-react";
 import PageShell from "./PageShell";
 import { usePreviewHousehold } from "../use-preview-household";
-import { amountPaid, averageKwh, billMonth, chartMonths, compareWithPrevious, dueDateLabel, monthName, monthlySeries, pesos, shortMonth, sortBillsByMonth, type PreviewBill } from "../preview-data";
+import { amountPaid, averageKwh, billMonth, compareWithPrevious, dueDateLabel, monthName, pesos, shortMonth, sortBillsByMonth, type PreviewBill } from "../preview-data";
+import { billHistoryFilters, filterBillHistory, type BillHistoryFilter } from "../bill-history-filter";
+import { forecastNextMonth } from "../next-month-forecast";
+import NextMonthForecast from "./NextMonthForecast";
 import { previewProviderName } from "@/features/household-profile/provider-preview";
 import ConfirmRecordRemoval from "@/components/ui/ConfirmRecordRemoval";
 import { consumptionChange } from "@/features/consumption-change/local-summary";
@@ -59,14 +62,21 @@ export default function EnergyScreen() {
   const [open, setOpen] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [removing, setRemoving] = useState<PreviewBill | null>(null);
-  const history = sortBillsByMonth(household.bills).reverse();
-  const latest = history[0];
+  const [period, setPeriod] = useState<BillHistoryFilter>("recent");
+  const now = new Date();
+  const filters = billHistoryFilters(household.bills, now);
+  // Keep the selected year visible if its final bill was removed or changed elsewhere.
+  if (!filters.some(option => option.value === period)) filters.push({ value: period, label: period });
+  const periodLabel = filters.find(option => option.value === period)?.label ?? period;
+  const series = filterBillHistory(household.bills, period, now);
+  const history = [...series].reverse();
+  const latest = sortBillsByMonth(household.bills).at(-1);
   const latestChange = latest ? compareWithPrevious(household.bills, latest.month) : null;
   const changeSummary = latest && latestChange ? consumptionChange(latest, latestChange.previous) : null;
-  const series = monthlySeries(household.bills, 6);
-  const bars = chartMonths(household.bills, 6);
+  const forecast = forecastNextMonth(household.bills, now);
+  const bars = series.map(bill => ({ ...bill, example: false }));
   const focus = bars.find(bar => bar.month === selected) ?? bars[bars.length - 1];
-  const focusChange = focus && !focus.example ? compareWithPrevious(household.bills, focus.month) : null;
+  const focusChange = focus ? compareWithPrevious(series, focus.month) : null;
   const value = (bill: PreviewBill) => unit === "kwh" ? bill.kwh : bill.amount;
   const max = Math.max(...bars.map(value), 1) * 1.18;
   // The average line only uses saved bills, never example months.
@@ -75,14 +85,23 @@ export default function EnergyScreen() {
   const highest = series.reduce<PreviewBill | undefined>((high, bill) => !high || bill.kwh > high.kwh ? bill : high, undefined);
   const budgetPercent = latest && household.budget > 0 ? Math.round(latest.amount / household.budget * 100) : 0;
   const format = (amount: number) => unit === "kwh" ? `${Math.round(amount)}` : `₱${Math.round(amount).toLocaleString("en-PH")}`;
+  const highlightedMonth = household.bills.find(bill => bill.id === highlight)?.month;
+  const highlightOutsideRecent = Boolean(highlightedMonth && !filterBillHistory(household.bills, "recent", now).some(bill => bill.id === highlight));
 
   useEffect(() => {
     const added = new URLSearchParams(window.location.search).get("added");
     if (!added) return;
     setHighlight(added); setOpen(added);
     window.history.replaceState(null, "", "/bills");
-    window.setTimeout(() => document.getElementById(`bill-${added}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
   }, []);
+
+  useEffect(() => {
+    if (!highlightedMonth) return;
+    if (highlightOutsideRecent) setPeriod(highlightedMonth.slice(0, 4) as `${number}`);
+    setSelected(highlightedMonth);
+    const timer = window.setTimeout(() => document.getElementById(`bill-${highlight}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
+    return () => window.clearTimeout(timer);
+  }, [highlight, highlightedMonth, highlightOutsideRecent]);
 
   function remove(bill: PreviewBill) {
     if (update({ bills: household.bills.filter(item => item.id !== bill.id) })) { setMessage(`${billMonth(bill.month)} bill removed.`); if (selected === bill.month) setSelected(null); return true; } return false;
@@ -120,6 +139,19 @@ export default function EnergyScreen() {
         </section>
       </div>
 
+    </> : <section className="ui-panel"><div className="ui-empty"><ReceiptText /><h3>No electricity bills yet</h3><p>Each bill you add becomes a month in your history, so you can compare your use month by month.</p><div className="en-empty-actions"><Link href="/bills/new" className="ui-primary"><ScanText size={18} aria-hidden="true" /> Add Electricity Bill</Link></div></div></section>}
+
+    <NextMonthForecast forecast={forecast} />
+
+    <div className="en-history-toolbar">
+      <div className="en-history-field"><label htmlFor="en-history-period">History period</label><select id="en-history-period" value={period} onChange={event => { setPeriod(event.target.value as BillHistoryFilter); setSelected(null); setOpen(null); }}>
+        {filters.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+      </select></div>
+      <p aria-live="polite">{periodLabel} · {series.length} saved {series.length === 1 ? "bill" : "bills"}<span>Filters the chart and history. The forecast uses all saved history.</span></p>
+    </div>
+
+    {series.length > 0 ? <>
+
       <div className="ui-stats en-stats">
         <div><span>Recorded-period average</span><strong>{Math.round(averageKwh(series))} <small>kWh</small></strong></div>
         <div><span>Lowest month</span><strong>{lowest ? `${lowest.kwh}` : "—"} <small>kWh</small></strong>{lowest && <em>{billMonth(lowest.month)}</em>}</div>
@@ -128,25 +160,25 @@ export default function EnergyScreen() {
 
       <section className="ui-panel en-chart-panel" aria-labelledby="en-chart-title">
         <div className="ui-panel-heading"><div><h2 id="en-chart-title">Monthly consumption</h2><p>Only saved periods are shown. Missing months are not estimated. Tap a period to compare.</p></div><div className="ui-segment" aria-label="Chart unit"><button type="button" aria-pressed={unit === "kwh"} onClick={() => setUnit("kwh")}>kWh</button><button type="button" aria-pressed={unit === "amount"} onClick={() => setUnit("amount")}>Pesos</button></div></div>
-        <div className="en-chart">
+        <div className="en-chart-scroll" tabIndex={0} role="region" aria-label="Scrollable monthly consumption chart"><div className="en-chart" style={bars.length > 6 ? { minWidth: `${bars.length * 72}px` } : undefined}>
           <div className="en-plot" role="group" aria-label={`Monthly ${unit === "kwh" ? "energy use in kilowatt hours" : "bill amount in pesos"}`}>
             {series.length > 1 && <span className="en-average" style={{ bottom: `${average / max * 100}%` }}><em>Avg {format(average)}</em></span>}
             {bars.map(bill => <button key={bill.id} type="button" className="en-col" aria-pressed={bill.month === focus?.month} aria-label={`${billMonth(bill.month)}: ${bill.kwh} kilowatt hours, ${pesos(bill.amount)}`} onClick={() => setSelected(bill.month)}><span className={`en-bar${bill.month === focus?.month ? " is-selected" : ""}`} style={{ height: `${value(bill) / max * 100}%` }}><b>{format(value(bill))}</b></span></button>)}
           </div>
           <div className="en-labels" aria-hidden="true">{bars.map(bill => <span key={bill.id} className={`${bill.month === focus?.month ? "is-selected" : ""}${bill.example ? " is-example" : ""}`}>{shortMonth(bill.month)} {bill.month.slice(0, 4)}</span>)}</div>
-        </div>
+        </div></div>
         {focus && <div className={`en-focus${focus.example ? " is-example" : ""}`} aria-live="polite">
           <MonthTile month={focus.month} />
           <div><strong>{billMonth(focus.month)}{focus.example && <span className="en-example-tag">Example</span>}</strong><span>{focus.example ? "Example values. Scan this month’s bill to add your real reading." : `${focus.kwh} kWh · ${pesos(focus.amount)}`}</span></div>
-          {focus.example ? <Link href="/bills/new" className="en-focus-scan"><ScanText size={16} aria-hidden="true" /> Scan</Link> : focusChange ? <div className="en-focus-change"><Change percent={focusChange.kwhPercent} /><small>vs {monthName(focusChange.previous.month)}</small></div> : <small className="en-focus-first">First recorded month</small>}
+          {focus.example ? <Link href="/bills/new" className="en-focus-scan"><ScanText size={16} aria-hidden="true" /> Scan</Link> : focusChange ? <div className="en-focus-change"><Change percent={focusChange.kwhPercent} /><small>vs {monthName(focusChange.previous.month)}</small></div> : <small className="en-focus-first">First month in this period</small>}
         </div>}
       </section>
-    </> : <section className="ui-panel"><div className="ui-empty"><ReceiptText /><h3>No electricity bills yet</h3><p>Each bill you add becomes a month in your history, so you can compare your use month by month.</p><div className="en-empty-actions"><Link href="/bills/new" className="ui-primary"><ScanText size={18} aria-hidden="true" /> Add Electricity Bill</Link></div></div></section>}
+    </> : latest ? <section className="ui-panel"><div className="ui-empty"><ReceiptText aria-hidden="true" /><h3>No bills for this period</h3><p>No saved bills match {periodLabel.toLowerCase()}. Choose another year or add a bill from this period.</p><button type="button" className="ui-secondary" onClick={() => { setPeriod("all"); setSelected(null); setOpen(null); }}>Show all years</button></div></section> : null}
 
     {history.length > 0 && <section className="ui-panel en-history" aria-labelledby="en-history-title">
-      <div className="ui-panel-heading"><div><h2 id="en-history-title">Bill history</h2><p>Every confirmed bill you save is added here.</p></div><Link href="/bills/new" className="ui-primary en-add"><ScanText size={17} aria-hidden="true" /> Add bill</Link></div>
+      <div className="ui-panel-heading"><div><h2 id="en-history-title">Bill history</h2><p>{periodLabel} · {history.length} saved {history.length === 1 ? "bill" : "bills"}</p></div><Link href="/bills/new" className="ui-primary en-add"><ScanText size={17} aria-hidden="true" /> Add bill</Link></div>
       <ul className="en-list">
-        {history.map(bill => { const change = compareWithPrevious(household.bills, bill.month); const expanded = open === bill.id; return <li key={bill.id} id={`bill-${bill.id}`} className={`${bill.id === highlight ? "is-new" : ""}${expanded ? " is-open" : ""}`}>
+        {history.map(bill => { const change = compareWithPrevious(series, bill.month); const expanded = open === bill.id; return <li key={bill.id} id={`bill-${bill.id}`} className={`${bill.id === highlight ? "is-new" : ""}${expanded ? " is-open" : ""}`}>
           <button type="button" className="en-row" aria-expanded={expanded} aria-controls={`bill-details-${bill.id}`} onClick={() => setOpen(expanded ? null : bill.id)}>
             <MonthTile month={bill.month} />
             <span className="en-list-main"><strong>{billMonth(bill.month)}{bill.id === highlight && <span className="en-new">New</span>}</strong><span>{bill.dueDate ? `Due ${dueDateLabel(bill.dueDate)}` : sourceLabels[bill.source ?? "manual"]}</span></span>

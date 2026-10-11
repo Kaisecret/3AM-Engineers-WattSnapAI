@@ -184,3 +184,47 @@ html[data-theme="dark"] .en-details-grid .is-pay dd { color: #89dfef; }
 html[data-theme="dark"] .en-charges i { background: #24475a; }
 html[data-theme="dark"] .en-details-remove { color: #ffb4a8; background: #452523; }
 @media (hover: hover) { html[data-theme="dark"] .en-row:hover { background: #142734; } }
+
+/* Forecast and historical viewing period */
+.en-forecast { border-color: #c9e7f3; }
+.en-forecast .ui-panel-heading { flex-wrap: wrap; margin-bottom: 16px; }
+.en-forecast .ui-panel-heading p { color: #526f86; font-size: 13px; font-weight: 600; }
+.en-forecast h2 > svg { color: #0284c7; flex: 0 0 auto; }
+.en-forecast-method { padding: 6px 10px; border-radius: 999px; background: #eaf8fd; color: #0479a6; font-size: 11px; font-weight: 700; }
+.en-forecast-values { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 12px; }
+.en-forecast-values > div { min-width: 0; }
+.en-forecast-values > div + div { padding-left: 12px; border-left: 1px solid #deeff6; }
+.en-forecast-values dt { color: #637f94; font-size: 12px; }
+.en-forecast-values dd { margin-top: 5px; line-height: 1.2; overflow-wrap: anywhere; }
+.en-forecast-values strong { font-size: clamp(20px, 3vw, 30px); letter-spacing: -.6px; font-variant-numeric: tabular-nums; }
+.en-forecast-values > div:last-child strong { color: #087f9a; }
+.en-forecast-values dd span { display: inline-block; color: #637f94; font-size: 12px; }
+.en-forecast-values small { display: block; margin-top: 5px; color: #637f94; font-size: 11px; }
+.en-forecast-basis { margin-top: 15px; font-size: 12px; line-height: 1.65; color: #526f86; }
+.en-forecast-details { margin-top: 15px; padding-top: 12px; border-top: 1px solid #deeff6; font-size: 12px; line-height: 1.65; color: #526f86; }
+.en-forecast-details summary { width: fit-content; cursor: pointer; font-weight: 700; color: #0479a6; padding: 5px 0; }
+.en-forecast-details p { margin-top: 8px; }
+.en-forecast-details ul { margin: 8px 0 0; padding-left: 18px; }
+.en-forecast-details li + li { margin-top: 5px; }
+.en-history-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; }
+.en-history-field { display: grid; gap: 6px; }
+.en-history-toolbar label { color: #47667e; font-size: 12px; font-weight: 700; }
+.en-history-toolbar select { min-height: 44px; max-width: 100%; padding: 0 34px 0 12px; border: 1px solid #bdddea; border-radius: 10px; color: #173b54; background: #fff; font: inherit; }
+.en-history-toolbar p { color: #47667e; font-size: 12px; font-weight: 600; }
+.en-history-toolbar p span { display: block; margin-top: 4px; color: #637f94; font-size: 11px; font-weight: 400; line-height: 1.6; }
+.en-chart-scroll { max-width: 100%; overflow-x: auto; padding-bottom: 6px; scrollbar-color: #a0d6e9 transparent; scrollbar-width: thin; }
+.en-history-toolbar select:focus-visible, .en-forecast-details summary:focus-visible, .en-chart-scroll:focus-visible { outline: 3px solid #0284c7; outline-offset: 3px; }
+.en-col:focus-visible { outline: 2px solid #0284c7; outline-offset: -2px; border-radius: 6px; }
+.en-chart-panel .ui-panel-heading { flex-wrap: wrap; }
+.en-forecast + .en-history-toolbar { margin-top: 4px; }
+.en-page .ui-empty .ui-secondary { margin-top: 16px; }
+html[data-theme="dark"] .en-forecast h2 > svg { color: #89dfef; }
+html[data-theme="dark"] .en-forecast { border-color: #3b5968; }
+html[data-theme="dark"] .en-forecast .ui-panel-heading p { color: #c2d4df; }
+html[data-theme="dark"] .en-forecast-values > div:last-child strong { color: #89dfef; }
+html[data-theme="dark"] .en-forecast-method { background: #24475a; color: #89dfef; }
+html[data-theme="dark"] :is(.en-forecast-values dt, .en-forecast-values dd span, .en-forecast-values small, .en-forecast-basis, .en-forecast-details, .en-history-toolbar label, .en-history-toolbar p, .en-history-toolbar p span) { color: #c2d4df; }
+html[data-theme="dark"] :is(.en-forecast-values > div + div, .en-forecast-details) { border-color: #3b5968; }
+html[data-theme="dark"] .en-forecast-details summary { color: #89dfef; }
+html[data-theme="dark"] .en-history-toolbar select { color: #edf6fa; background: #192e3d; border-color: #4c6e7d; }
+html[data-theme="dark"] :is(.en-history-toolbar select:focus-visible, .en-forecast-details summary:focus-visible, .en-chart-scroll:focus-visible, .en-col:focus-visible) { outline-color: #89dfef; }
