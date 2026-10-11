@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { householdReply, householdSuggestions, landingReply, landingSuggestions } from "./replies.ts";
+import { registerHooks } from 'node:module';
+registerHooks({resolve(s,c,n){try{return n(s,c);}catch(e){if(e.code==='ERR_MODULE_NOT_FOUND'&&s.startsWith('.')&&!/\.[a-z]+$/i.test(s))return n(s+'.ts',c);throw e;}}});
+const { householdReply, householdSuggestions, landingReply, landingSuggestions } = await import("./replies.ts");
 
 const context = {
   name: "Kris Santos",

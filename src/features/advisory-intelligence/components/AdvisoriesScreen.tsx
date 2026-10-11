@@ -1,4 +1,5 @@
 "use client";
+import { isDeviceOffline } from "@/features/offline-access/connectivity";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -41,7 +42,7 @@ export default function AdvisoriesScreen() {
   const list = (view: AdvisoryTab, type: AdvisoryFilter = "all") => records.filter(record => advisoryTab(record) === view && (type === "all" || record.details.type === type));
   const visible = list(tab, filter), relevant = list("active").filter(record => ["scheduled", "unscheduled"].includes(record.details.type) && matchPreviewAdvisory(record.details, basis).status === "affected" && !matchIsStale(record, basis)), next = relevant[0];
   useEffect(() => {
-    const sync = () => setOffline(!navigator.onLine); sync(); window.addEventListener("online", sync); window.addEventListener("offline", sync); return () => { window.removeEventListener("online", sync); window.removeEventListener("offline", sync); };
+    const sync = () => setOffline(isDeviceOffline()); sync(); window.addEventListener("online", sync); window.addEventListener("offline", sync); return () => { window.removeEventListener("online", sync); window.removeEventListener("offline", sync); };
   }, []);
   useEffect(() => { if (!ready || queryRead.current) return; queryRead.current = true; const query = new URLSearchParams(window.location.search), id = query.get("reviewed"); if (id && saved.records.some(record => record.id === id)) { checklistRequested.current = query.get("checklist") === "1"; setSelection({ id }); } }, [ready, saved.records]);
   useEffect(() => { if (selected && !dialog.current?.open) dialog.current?.showModal(); if (selected && checklistRequested.current) { checklistRequested.current = false; focusUncheckedItem(); } }, [selected]);

@@ -7,55 +7,37 @@ import AppHeader from "@/features/dashboard/components/AppHeader";
 import AppNavigation from "@/features/dashboard/components/AppNavigation";
 import { usePreviewStorageKey } from "@/features/auth/use-preview-storage-key";
 import { usePreviewHousehold } from "@/features/dashboard/use-preview-household";
-import { amountPaid, compareWithPrevious, dailyApplianceKwh, effectiveRate, monthlySubsidyFor, pesos, previewStorageKey, shortMonth, sortBillsByMonth, type PreviewHousehold } from "@/features/dashboard/preview-data";
-import { advisoryTypeLabels, formatAdvisoryDate } from "@/features/advisory-intelligence/advisory-preview";
-import { advisoryTab, matchIsStale, matchPreviewAdvisory, scheduleLabel } from "@/features/advisory-intelligence/review-preview";
+import { amountPaid, compareWithPrevious, pesos, previewStorageKey, shortMonth } from "@/features/dashboard/preview-data";
 import { usePreviewAdvisories } from "@/features/advisory-intelligence/use-preview-advisories";
-import type { ReviewedAdvisory } from "@/features/advisory-intelligence/types";
-import { householdReply, type ChatContext } from "../replies";
+import { usePreviewTips } from "@/features/tipid-tips/use-preview-tips";
+import { usePreviewPlans } from "@/features/brownout-ready/use-preview-plans";
+import { usePreviewScenarios } from "@/features/watt-if-simulator/use-preview-scenarios";
+import { buildChatContext } from "../context";
+import { isDeviceOffline } from "@/features/offline-access/connectivity";
+import { householdReply } from "../replies";
 import { applyAgentActions, describeAgentAction, type AgentAction } from "../agent-actions";
 import { useChat, type ChatAction, type ChatMessage } from "../use-chat";
 import { localAgentReply } from "../local-agent";
 import ChatThread, { BotAvatar } from "./ChatThread";
 
 const starters = [
-  { label: "Add my appliances", text: "Help me add my appliances", icon: Plus },
-  { label: "Set my budget", text: "Set my budget", icon: Wallet },
-  { label: "Why did my bill change?", text: "Why did my bill change?", icon: ReceiptText },
+  { label: "My appliances", text: "List my appliances and their cost", icon: Plus },
+  { label: "My budget", text: "What is my current budget?", icon: Wallet },
+  { label: "Bill history", text: "Show my bill history", icon: ReceiptText },
   { label: "What uses the most?", text: "Which appliance uses the most?", icon: PlugZap },
 ];
-const prompts = ["Set my budget to ₱2,000", "Add an electric fan, 60 W, 8 hours a day", "Add my bill for this month", "Tips to save energy"];
-
-function buildContext(household: PreviewHousehold, records: ReviewedAdvisory[]): ChatContext {
-  const bills = sortBillsByMonth(household.bills);
-  const top = [...household.appliances].sort((a, b) => dailyApplianceKwh(b) - dailyApplianceKwh(a))[0];
-  const advisory = records.find(item => advisoryTab(item) === "active" && !matchIsStale(item, household) && matchPreviewAdvisory(item.details, household).status === "affected" && ["scheduled", "unscheduled"].includes(item.details.type));
-  return {
-    name: household.name,
-    latest: bills[bills.length - 1],
-    previous: bills[bills.length - 2],
-    budget: household.budget,
-    rate: effectiveRate(household.bills),
-    topAppliance: top ? { name: top.name, monthlyKwh: dailyApplianceKwh(top) * 30 } : undefined,
-    applianceCount: household.appliances.length,
-    location: household.location,
-    provider: household.provider,
-    monthlySubsidy: monthlySubsidyFor(household),
-    bills: bills.slice(-12).map(({ month, kwh, amount, subsidy, dueDate }) => ({ month, kwh, amount, ...(subsidy ? { subsidy } : {}), ...(dueDate ? { dueDate } : {}) })),
-    appliances: household.appliances.slice(0, 40).map(({ name, watts, hours, quantity, days }) => ({ name, watts, hours, quantity, ...(days && days !== 30 ? { days } : {}) })),
-    advisory: advisory ? { title: `${advisory.original.kind === "sample" ? "Sample · " : ""}${advisory.details.title || advisoryTypeLabels[advisory.details.type]}`, when: `${advisory.details.date ? formatAdvisoryDate(advisory.details.date) : "Date unknown"} · ${scheduleLabel(advisory.details)}`, area: advisory.details.areaText, reason: advisory.details.reason || "Not provided" } : undefined,
-  };
-}
+const prompts = ["My budget and bill history", "Magkano ang budget ko?", "My saved tips and checklist", "Set my budget to ₱2,000"];
 
 export default function ChatScreen() {
-  const { household, update, ready: householdReady } = usePreviewHousehold(), advisories = usePreviewAdvisories();
-  const ready = householdReady && advisories.ready;
+  const { household, update, ready: householdReady, storageError } = usePreviewHousehold(), advisories = usePreviewAdvisories();
+  const tips=usePreviewTips(), plans=usePreviewPlans(), scenarios=usePreviewScenarios();
+  const ready = householdReady && advisories.ready && tips.ready && plans.ready && scenarios.ready;
   const [draft, setDraft] = useState("");
   const input = useRef<HTMLTextAreaElement>(null);
   const asked = useRef(false);
   const confirmed = useRef(new Set<number>());
   const [offline, setOffline] = useState(false);
-  const context = useMemo(() => buildContext(household, advisories.records), [household, advisories.records]);
+  const context = useMemo(() => buildChatContext(household, advisories.records, {tips:tips.snapshot,plans:plans.plans,scenarios:scenarios.scenarios,unavailable:[storageError&&"household",advisories.error&&"advisories",tips.error&&"tips",plans.error&&"readiness",scenarios.error&&"scenarios"].filter((item):item is string=>!!item)}), [household,advisories.records,tips.snapshot,plans.plans,scenarios.scenarios,storageError,advisories.error,tips.error,plans.error,scenarios.error]);
   const respond = useCallback((text: string) => householdReply(text, context), [context]);
   const describe = useCallback((action: AgentAction) => describeAgentAction(action, household), [household]);
   const { messages, typing, send, reset, setActionState } = useChat(respond, { endpoint: "/api/ai/assistant", context, describe, explainFallback: true, localAgent: localAgentReply });
@@ -65,7 +47,7 @@ export default function ChatScreen() {
   const latest = context.latest;
   const change = latest ? compareWithPrevious(household.bills, latest.month) : null;
   useEffect(() => {
-    const sync = () => setOffline(!navigator.onLine);
+    const sync = () => setOffline(isDeviceOffline());
     sync(); window.addEventListener("online", sync); window.addEventListener("offline", sync);
     return () => { window.removeEventListener("online", sync); window.removeEventListener("offline", sync); };
   }, []);
@@ -116,7 +98,7 @@ export default function ChatScreen() {
   const intro = <div className={`chat-welcome${messages.length ? " is-compact" : ""}`}>
     <div className="chat-welcome-art" aria-hidden="true"><span /><Image src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="" width={300} height={300} sizes="160px" priority /></div>
     <h2>Hi {first}!</h2>
-    <p>Understand your bill or prepare a change. You review it before saving.</p>
+    <p>Ask about your saved home—even offline. Budget, history, appliances and more.</p>
     {!messages.length && <div className="chat-starters">{starters.map(({ label, text, icon: Icon }) => <button type="button" key={label} disabled={!ready || typing} onClick={() => send(text)}><span><Icon aria-hidden="true" /></span><strong>{label}</strong></button>)}</div>}
   </div>;
 
@@ -130,11 +112,12 @@ export default function ChatScreen() {
           <div className="chat-head-copy"><strong>WattSnap AI</strong><span>{offline ? "Offline · local assistant" : "Your energy assistant"}</span></div>
           <button type="button" className="chat-icon-button" onClick={() => { reset(); input.current?.focus(); }} disabled={!messages.length && !typing} aria-label="Start a new chat"><RotateCcw aria-hidden="true" /></button>
         </header>
-        {offline && <p className="chat-offline-status" role="status">You’re offline. Ask about saved records or type a budget, bill or appliance change.</p>}
+        {offline && <p className="chat-offline-status" role="status">Offline · answers come from records saved on this device. New photos and provider updates need internet.</p>}
+        {storageError && <p className="chat-offline-status" role="alert">{storageError}</p>}
         <ChatThread messages={messages} typing={typing} onSuggest={send} intro={intro} actions={actions} />
         <form className="chat-composer" onSubmit={submit}>
           <div className="chat-input">
-            <textarea ref={input} rows={1} maxLength={500} disabled={!ready} value={draft} placeholder="Message WattSnap AI…" aria-label="Message WattSnap AI" onChange={event => setDraft(event.target.value)} onKeyDown={onKey} />
+            <textarea ref={input} rows={1} maxLength={500} disabled={!ready} value={draft} placeholder="Ask about budget, bills, appliances…" aria-label="Message WattSnap AI" onChange={event => setDraft(event.target.value)} onKeyDown={onKey} />
             <button type="submit" className="chat-send" disabled={!ready || !draft.trim() || typing} aria-label="Send message"><ArrowUp aria-hidden="true" /></button>
           </div>
           <p className="chat-disclaimer"><Sparkles aria-hidden="true" />{offline ? "Offline mode · confirm each change before saving" : "Review the values before confirming a change"}</p>

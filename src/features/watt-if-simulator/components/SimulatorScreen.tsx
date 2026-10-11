@@ -1,4 +1,5 @@
 "use client";
+import { isDeviceOffline } from "@/features/offline-access/connectivity";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -32,7 +33,7 @@ export default function SimulatorScreen() {
   const latest = latestBill(household.bills);
   const hasSample = working && (working.origin === "sample" || working.baseline.some(item => item.source === "sample" || item.id.startsWith("sample-")));
 
-  useEffect(() => { const sync = () => setOffline(!navigator.onLine); sync(); window.addEventListener("online", sync); window.addEventListener("offline", sync); return () => { window.removeEventListener("online", sync); window.removeEventListener("offline", sync); }; }, []);
+  useEffect(() => { const sync = () => setOffline(isDeviceOffline()); sync(); window.addEventListener("online", sync); window.addEventListener("offline", sync); return () => { window.removeEventListener("online", sync); window.removeEventListener("offline", sync); }; }, []);
   useEffect(() => { heading.current?.focus(); }, [working?.id]);
   function open(scenario: PreviewScenario, fromSaved = false) {
     setWorking({ ...scenario, baseline: scenario.baseline.map(item => ({ ...item })), entries: scenario.entries.map(item => ({ ...item })) });

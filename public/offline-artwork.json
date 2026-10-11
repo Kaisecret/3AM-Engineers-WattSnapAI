@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "images": [
+    { "src": "/assets/branding/wattsnap-logo.png", "width": 750 },
+    { "src": "/assets/branding/hero-headline-logo.png", "width": 1080 },
+    { "src": "/assets/branding/Cheerful Bee Robot Thumbs-Up.png", "width": 640 },
+    { "src": "/assets/branding/actions-1.png", "width": 640 },
+    { "src": "/assets/branding/actions-2.png", "width": 640 },
+    { "src": "/assets/branding/actions-3.png", "width": 640 },
+    { "src": "/assets/branding/actions-4.png", "width": 640 },
+    { "src": "/assets/branding/actions-5.png", "width": 640 },
+    { "src": "/assets/branding/actions-6.png", "width": 640 },
+    { "src": "/assets/branding/actions-7.png", "width": 640 },
+    { "src": "/assets/branding/actions-wit-clouds-2.png", "width": 640 },
+    { "src": "/assets/branding/all-set-bee.png", "width": 640 },
+    { "src": "/assets/branding/All Set Icon.png", "width": 640 },
+    { "src": "/assets/branding/auth-login-laptop.png", "width": 640 },
+    { "src": "/assets/branding/sunny-eco-city-bg.png", "width": 1920 },
+    { "src": "/assets/branding/wattsnap-bee-bill.png", "width": 640 },
+    { "src": "/assets/branding/wattsnap-bee-point.png", "width": 640 },
+    { "src": "/assets/branding/wattsnap-bee-peace.png", "width": 640 },
+    { "src": "/assets/branding/wattsnap-mascot-app.png", "width": 640 },
+    { "src": "/assets/branding/wattsnap-smartphone.png", "width": 640 }
+  ],
+  "files": [
+    "/assets/branding/auth-clouds.svg",
+    "/assets/branding/auth-mobile-clouds.svg",
+    "/assets/branding/hero-bg-panorama.webp",
+    "/assets/branding/hero-bg-panorama-mobile.webp",
+    "/assets/branding/wattsnap-icon-192.png",
+    "/assets/branding/wattsnap-icon-512.png",
+    "/assets/branding/wattsnap-icon-maskable-512.png",
+    "/assets/branding/wattsnap-apple-icon-180.png",
+    "/assets/branding/wattsnap-favicon-32.png",
+    "/assets/branding/wattsnap-social-preview.jpg"
+  ]
+}

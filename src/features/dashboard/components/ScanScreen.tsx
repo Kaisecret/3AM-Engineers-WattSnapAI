@@ -16,6 +16,7 @@ import { readBillPhoto, type BillScanInput } from "@/features/bill-scanner/snap"
 import { cameraGuideCrop, cameraImageSize } from "@/features/bill-scanner/camera-frame";
 import ReceiptPanorama from "@/features/bill-scanner/components/receipt-panorama";
 import type { BillExtractionResult } from "@/contracts/extraction";
+import { isDeviceOffline } from "@/features/offline-access/connectivity";
 
 type Phase = "camera" | "scanning" | "review" | "failed";
 type CameraState = "idle" | "starting" | "live" | "blocked" | "unavailable";
@@ -117,7 +118,7 @@ export default function ScanScreen() {
 
   // Camera permission is requested only after choosing the camera action.
   useEffect(() => {
-    const sync = () => setOffline(!navigator.onLine);
+    const sync = () => setOffline(isDeviceOffline());
     sync();
     window.addEventListener("online", sync);
     window.addEventListener("offline", sync);
@@ -181,7 +182,7 @@ export default function ScanScreen() {
     // A new source must never inherit fields from an earlier bill.
     setDraft(emptyDraft); setAi(null);
     const fail = (reason: string) => { setAi({ failed: reason, checks: [], missing: [], charges: [] }); setPhase("failed"); };
-    if (!navigator.onLine) { fail("You’re offline. Connect to read this photo, or enter its details below."); return; }
+    if (isDeviceOffline()) { fail("You’re offline. Connect to read this photo, or enter its details below."); return; }
     const controller = new AbortController(); reading.current = controller;
     setReadingStep(0); setPhase("scanning"); setError("");
     try {
@@ -305,7 +306,8 @@ export default function ScanScreen() {
     if (update({ bills: [...household.bills.filter(item => item.month !== bill.month), record] })) {
       try { sessionStorage.removeItem(draftKey); } catch { /* Confirmed local record is already saved. */ }
       // Saved bills open in the Energy tab with their details showing.
-      router.push(`/bills?added=${record.id}`);
+      if (isDeviceOffline()) window.location.assign(`/bills?added=${record.id}`);
+      else router.push(`/bills?added=${record.id}`);
     }
   }
 

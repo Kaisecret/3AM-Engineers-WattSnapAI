@@ -3,8 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Check, LoaderCircle, LogOut } from "lucide-react";
 import { forgetAccount, readDisplayIdentity } from "@/features/auth/session";
-import { getBrowserSupabase } from "@/lib/supabase/browser";
+import { clearBrowserSupabaseAuth, getBrowserSupabase } from "@/lib/supabase/browser";
 import { signOut } from "@/features/auth/service";
+import { isDeviceOffline } from "@/features/offline-access/connectivity";
 
 /** Ends the authenticated session and optionally removes this account's local records. */
 export default function LogoutDialog({ open, onClose, name }: { open: boolean; onClose: () => void; name: string }) {
@@ -24,8 +25,11 @@ export default function LogoutDialog({ open, onClose, name }: { open: boolean; o
     setLeaving(true); setError("");
     try {
       const identity = readDisplayIdentity();
-      const result = await signOut(getBrowserSupabase());
-      if (!result.ok) { setError(result.message); setLeaving(false); return; }
+      if (isDeviceOffline()) clearBrowserSupabaseAuth();
+      else {
+        const result = await signOut(getBrowserSupabase());
+        if (!result.ok) { setError(result.message); setLeaving(false); return; }
+      }
       if (clearData && identity) {
         const suffix = `:household:${encodeURIComponent(identity.id)}`;
         const keys = Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index)).filter((key): key is string => !!key && key.endsWith(suffix));

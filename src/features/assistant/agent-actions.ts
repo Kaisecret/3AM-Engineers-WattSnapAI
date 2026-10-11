@@ -24,6 +24,7 @@ const pages: Record<string, ChatLink> = {
   simulator: { label: "Open Watt-If", href: "/simulator" },
   advisories: { label: "Open Advisories", href: "/advisories" },
   settings: { label: "Open Settings", href: "/settings" },
+  "brownout-ready": { label: "Open Brownout Ready", href: "/brownout-ready" },
   setup: { label: "Open Home setup", href: "/setup" },
 };
 
