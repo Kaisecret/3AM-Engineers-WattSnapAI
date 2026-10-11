@@ -1,5 +1,8 @@
 /* Private pages/API responses are never cached. The offline document has no account data. */
-const CACHE = "wattsnap-static-v3";
+const CACHE = "wattsnap-static-v4";
+const AI_CACHE = "wattsnap-ai-v1";
+const AI_MANIFEST = "/offline-ai.json";
+const AI_HEADER = "X-WattSnap-Offline-AI";
 const SHELL = "/offline-app";
 const ARTWORK = "/offline-artwork.json";
 const ARTWORK_HEADER = "X-WattSnap-Offline-Artwork";
@@ -19,6 +22,61 @@ async function savedImage(cache, key, request) {
 }
 const appPath = pathname => pathname === "/" || pathname === "/welcome" || pathname === SHELL || /^\/(dashboard|setup|onboarding|bills|appliances|tips|settings|assistant|budget|brownout-ready|simulator|advisories)(\/|$)/.test(pathname);
 let preparing;
+let preparingAi;
+function publicAiAsset(path) {
+  const url = new URL(path, self.location.origin);
+  return url.origin === self.location.origin && !url.search && !url.hash && (
+    /^\/models\/wattsnap-tinybert-v1\/(?:[\w-]+\.(?:json|txt)|onnx\/model_quantized\.onnx)$/.test(url.pathname) ||
+    /^\/ai-runtime\/[\w.-]+\.(?:wasm|mjs)$/.test(url.pathname) ||
+    /^\/_next\/static\/.+\.js$/.test(url.pathname)
+  );
+}
+async function languageGeneration() {
+  const index = await caches.open(AI_CACHE), manifest = await index.match(AI_MANIFEST);
+  if (!manifest?.headers.get(AI_HEADER)) return;
+  try {
+    const list = await manifest.json();
+    // The index cache also supports the original single-cache format.
+    const name = typeof list.cacheName === "string" && list.cacheName.startsWith(AI_CACHE + "-") ? list.cacheName : AI_CACHE;
+    return {list,name,cache:await caches.open(name)};
+  } catch { return; }
+}
+function prepareLanguage() {
+  if (preparingAi) return preparingAi;
+  preparingAi = (async () => {
+    const index = await caches.open(AI_CACHE);
+    const manifest = await fetch(AI_MANIFEST, {cache:"no-store",credentials:"omit"});
+    if (!manifest.ok || manifest.redirected) throw new Error("Language assets unavailable");
+    const list = await manifest.clone().json();
+    if (typeof list.version !== "string" || !list.version || !Array.isArray(list.files) || !list.files.length || !list.files.every(path => typeof path === "string" && path.startsWith("/") && publicAiAsset(path))) throw new Error("Invalid language asset list");
+    const previous = await languageGeneration();
+    if (previous?.list.version === list.version && await savedLanguageReady()) return;
+    // Stage a separate generation. Failed or interrupted downloads cannot overwrite the active model.
+    const name = AI_CACHE + "-" + list.version + "-" + Math.random().toString(36).slice(2);
+    const cache = await caches.open(name);
+    const downloads = await Promise.allSettled(list.files.map(async path => {
+      const response = await fetch(path, {credentials:"omit"});
+      if (!response.ok || response.redirected || response.headers.get("content-type")?.includes("text/html")) throw new Error("Language asset unavailable");
+      await cache.put(path, response);
+    }));
+    if (downloads.some(result => result.status === "rejected")) {
+      await caches.delete(name);
+      throw new Error("Language assets incomplete");
+    }
+    // A single pointer write publishes the complete generation.
+    await index.put(AI_MANIFEST, new Response(JSON.stringify({...list,cacheName:name}), {headers:{"Content-Type":"application/json",[AI_HEADER]:list.version}}));
+    // Keep the current and previous complete generations; discard failed/obsolete build scripts.
+    await caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith(AI_CACHE + "-") && key !== name && key !== previous?.name).map(key => caches.delete(key)))).catch(() => {});
+  })().finally(() => { preparingAi = undefined; });
+  return preparingAi;
+}
+async function savedLanguageReady() {
+  const generation = await languageGeneration();
+  if (!generation) return false;
+  try {
+    return generation.list.files?.length > 0 && (await Promise.all(generation.list.files.map(path => generation.cache.match(path)))).every(Boolean);
+  } catch { return false; }
+}
 function prepareShell() {
   if (preparing) return preparing;
   preparing = (async () => {
@@ -60,7 +118,16 @@ self.addEventListener("activate", event => {
 });
 self.addEventListener("message", event => {
   if (event.data?.type !== "PREPARE_OFFLINE") return;
-  event.waitUntil(prepareShell().then(() => event.ports?.[0]?.postMessage({ ready: true })).catch(async () => event.ports?.[0]?.postMessage({ ready: (await (await caches.open(CACHE)).match(SHELL))?.headers.get(ARTWORK_HEADER) === "1" })));
+  event.waitUntil((async () => {
+    let ready = false;
+    try { await prepareShell(); ready = true; }
+    catch { ready = (await (await caches.open(CACHE)).match(SHELL))?.headers.get(ARTWORK_HEADER) === "1"; }
+    event.ports?.[0]?.postMessage({ready,aiReady:await savedLanguageReady(),aiPreparing:true});
+    let aiReady = false;
+    try { await prepareLanguage(); aiReady = true; }
+    catch { aiReady = await savedLanguageReady(); }
+    event.ports?.[0]?.postMessage({ready,aiReady,aiPreparing:false});
+  })());
 });
 self.addEventListener("fetch", event => {
   const request = event.request, url = new URL(request.url);
@@ -74,10 +141,18 @@ self.addEventListener("fetch", event => {
     }));
     return;
   }
+  if (url.pathname.startsWith("/models/") || url.pathname.startsWith("/ai-runtime/") || url.pathname === AI_MANIFEST) {
+    if (url.pathname !== AI_MANIFEST && !publicAiAsset(url.pathname)) return;
+    event.respondWith((async () => {
+      const cache = url.pathname === AI_MANIFEST ? await caches.open(AI_CACHE) : (await languageGeneration())?.cache;
+      return await cache?.match(request) || fetch(request);
+    })());
+    return;
+  }
   const asset = url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/assets/") || url.pathname.startsWith("/icons/") || (url.pathname === "/_next/image" && url.searchParams.get("url")?.startsWith("/assets/"));
   if (!asset) return;
   event.respondWith((async () => {
-    const cache = await caches.open(CACHE), saved = url.pathname === "/_next/image" ? await savedImage(cache, request, request) : await cache.match(request);
+    const cache = await caches.open(CACHE), saved = url.pathname === "/_next/image" ? await savedImage(cache, request, request) : await cache.match(request) || (url.pathname.startsWith("/_next/static/") ? await (await languageGeneration())?.cache.match(request) : undefined);
     if (saved) return saved;
     const fallbackImage = async () => {
       const manifest = await cache.match(ARTWORK);

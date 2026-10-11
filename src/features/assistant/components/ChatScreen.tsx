@@ -18,6 +18,11 @@ import { householdReply } from "../replies";
 import { applyAgentActions, describeAgentAction, type AgentAction } from "../agent-actions";
 import { useChat, type ChatAction, type ChatMessage } from "../use-chat";
 import { localAgentReply } from "../local-agent";
+import { hybridLocalReply } from "../hybrid-reply";
+import { inferTinyBert } from "../tinybert-client";
+import type { LocalPending } from "../local-agent";
+import type { ChatContext } from "../replies";
+import OfflineLanguageStatus from "./OfflineLanguageStatus";
 import ChatThread, { BotAvatar } from "./ChatThread";
 
 const starters = [
@@ -27,6 +32,7 @@ const starters = [
   { label: "What uses the most?", text: "Which appliance uses the most?", icon: PlugZap },
 ];
 const prompts = ["My budget and bill history", "Magkano ang budget ko?", "My saved tips and checklist", "Set my budget to ₱2,000"];
+const offlineAgent = (text:string,context:ChatContext,pending?:LocalPending) => hybridLocalReply(text,context,pending,inferTinyBert);
 
 export default function ChatScreen() {
   const { household, update, ready: householdReady, storageError } = usePreviewHousehold(), advisories = usePreviewAdvisories();
@@ -40,7 +46,7 @@ export default function ChatScreen() {
   const context = useMemo(() => buildChatContext(household, advisories.records, {tips:tips.snapshot,plans:plans.plans,scenarios:scenarios.scenarios,unavailable:[storageError&&"household",advisories.error&&"advisories",tips.error&&"tips",plans.error&&"readiness",scenarios.error&&"scenarios"].filter((item):item is string=>!!item)}), [household,advisories.records,tips.snapshot,plans.plans,scenarios.scenarios,storageError,advisories.error,tips.error,plans.error,scenarios.error]);
   const respond = useCallback((text: string) => householdReply(text, context), [context]);
   const describe = useCallback((action: AgentAction) => describeAgentAction(action, household), [household]);
-  const { messages, typing, send, reset, setActionState } = useChat(respond, { endpoint: "/api/ai/assistant", context, describe, explainFallback: true, localAgent: localAgentReply });
+  const { messages, typing, send, reset, setActionState } = useChat(respond, { endpoint: "/api/ai/assistant", context, describe, explainFallback: true, localAgent: localAgentReply, asyncLocalAgent: offlineAgent });
   const householdKey = usePreviewStorageKey(previewStorageKey);
   useEffect(() => { reset(); confirmed.current.clear(); }, [householdKey, reset]);
   const first = household.name.split(/\s+/)[0];
@@ -113,6 +119,7 @@ export default function ChatScreen() {
           <button type="button" className="chat-icon-button" onClick={() => { reset(); input.current?.focus(); }} disabled={!messages.length && !typing} aria-label="Start a new chat"><RotateCcw aria-hidden="true" /></button>
         </header>
         {offline && <p className="chat-offline-status" role="status">Offline · answers come from records saved on this device. New photos and provider updates need internet.</p>}
+        <OfflineLanguageStatus offline={offline} />
         {storageError && <p className="chat-offline-status" role="alert">{storageError}</p>}
         <ChatThread messages={messages} typing={typing} onSuggest={send} intro={intro} actions={actions} />
         <form className="chat-composer" onSubmit={submit}>

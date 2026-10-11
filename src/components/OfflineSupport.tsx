@@ -32,8 +32,11 @@ export default function OfflineSupport() {
         channel.port1.onmessage = event => {
           if (active && controller === navigator.serviceWorker.controller) {
             document.documentElement.dataset.offlineReady = event.data?.ready ? "true" : "false";
+            document.documentElement.dataset.offlineAiReady = event.data?.aiReady ? "true" : "false";
+            document.documentElement.dataset.offlineAiPreparing = event.data?.aiPreparing ? "true" : "false";
             window.dispatchEvent(new Event("wattsnap-offline-ready"));
           }
+          if (event.data?.aiPreparing) return;
           channel.port1.close();
           ports.delete(channel.port1);
         };
