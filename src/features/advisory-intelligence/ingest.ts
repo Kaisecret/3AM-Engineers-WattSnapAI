@@ -75,14 +75,16 @@ export const minGapMs = 2 * MINUTE, dailyRuns = 30, leaseSeconds = 360;
  * Known limit: if 30 or more posts lie inside this window, a post that appears late beneath them is
  * not seen, because the page fills with newer posts already stored. ANTECO posts a few times a day.
  */
-const overlapMs = 6 * HOUR, firstRunMs = 7 * DAY;
+const overlapMs = 6 * HOUR;
+/** How far back the very first run looks, when nothing is stored yet. */
+const firstRunMs = 2 * DAY;
 /** Ranges overlap by this much instead of touching, so posts that share a boundary time are not skipped. */
 const boundaryMs = 1000;
 const maxCallMs = 110_000, callMarginMs = 8000, minCallMs = 15_000, staleReadingMs = 10 * MINUTE, readLimit = 100;
 /**
  * Shares of the run's budget: no second Apify call after 100 s of 240 s, no new read after 200 s.
- * A read takes at most about 55 s (images 10 s, Gemini 40 s, saving), so one started at 200 s
- * ends by about 255 s, inside the function's 300 s limit.
+ * A read takes at most about 60 s (images 10 s, Gemini 30 s, a second model 20 s if the first is
+ * overloaded), so one started at 200 s ends by about 260 s, inside the function's 300 s limit.
  */
 const secondCallShare = 100 / 240, readShare = 200 / 240;
 

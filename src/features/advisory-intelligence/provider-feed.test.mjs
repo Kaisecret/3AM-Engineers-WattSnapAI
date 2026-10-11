@@ -51,11 +51,15 @@ test("an advisory is current while it is upcoming or ongoing, however long ago i
 });
 
 test("only listed or possibly listed, current, unsaved and unremoved advisories are saved automatically", () => {
-  const rows = [row("affected"), row("possibly", { areas: uncertain }), row("elsewhere", { areas: elsewhere }), row("ended", { date: day(-4) }), row("saved"), row("removed"), null, { ...row("broken"), details: null }];
+  // "no-place" is what a reminder or general information looks like: no town named at all.
+  const noPlace = [{ province: "Antique", municipality: "", barangay: "", scope: "uncertain" }];
+  const rows = [row("affected"), row("possibly", { areas: uncertain }), row("elsewhere", { areas: elsewhere }), row("no-place", { areas: noPlace, areaText: "Not provided" }), row("ended", { date: day(-4) }), row("saved"), row("removed"), null, { ...row("broken"), details: null }];
   const corrected = { ...feedRecord(row("saved"), home, now), revision: 4, details: details({ reason: "Corrected by the user" }) };
   const picked = feedImports(rows, [corrected], ["removed"], home, now);
   assert.deepEqual(picked.map(record => [record.id, record.match.status]), [["affected", "affected"], ["possibly", "possibly-affected"]]);
   assert.ok(picked.every(record => record.original.feed), "each is marked as collected");
+  // It would be "possibly affected" for every household, so it is not saved for anyone; it can still be shown and saved by hand.
+  assert.equal(feedRecord(row("no-place", { areas: noPlace, areaText: "Not provided" }), home, now).match.status, "possibly-affected");
   // Saving again with the first results now saved picks nothing.
   assert.deepEqual(feedImports(rows, [corrected, ...picked], ["removed"], home, now), []);
   // The same row twice in a feed is saved once.

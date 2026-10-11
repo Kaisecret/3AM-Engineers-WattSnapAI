@@ -164,9 +164,9 @@ test("a backlog is fetched completely over consecutive runs, and a full page of 
   backlog(w, 75, 5 * MINUTE);
   const first = await w.trigger();
   assert.deepEqual(w.calls.map(call => Boolean(call.olderThan)), [false, true], "a fresh call, then one backlog call");
-  assert.equal(w.calls[0].newerThan, iso(T0 - 7 * DAY), "the first run looks back seven days");
-  assert.deepEqual(w.batches[0].ranges, [{ from: iso(T0 - 7 * DAY), until: w.page[29].postedAt }], "cut off below the 30th post");
-  assert.deepEqual(w.batches[1].ranges, [{ from: iso(T0 - 7 * DAY), until: w.page[58].postedAt }], "the range moved down");
+  assert.equal(w.calls[0].newerThan, iso(T0 - 2 * DAY), "the first run looks back two days");
+  assert.deepEqual(w.batches[0].ranges, [{ from: iso(T0 - 2 * DAY), until: w.page[29].postedAt }], "cut off below the 30th post");
+  assert.deepEqual(w.batches[1].ranges, [{ from: iso(T0 - 2 * DAY), until: w.page[58].postedAt }], "the range moved down");
   assert.equal(first.result.inserted, 59);
 
   w.later();
@@ -284,7 +284,7 @@ test("an Apify failure is recorded, releases the lease, and still lets waiting p
 
 test("a failed post is retried from the database even when newer posts have pushed it out of the fetch window", async () => {
   const w = world();
-  w.post("old-outage", 3 * DAY, { text: "Scheduled power interruption in Hamtic." });
+  w.post("old-outage", DAY, { text: "Scheduled power interruption in Hamtic." });
   w.model.answer = () => new Error("Gemini error (429): quota");
   await w.trigger();
   assert.deepEqual([w.rows.get("old-outage").status, w.rows.get("old-outage").failure, w.rows.get("old-outage").attempts], ["failed", "Gemini error (429): quota", 1]);

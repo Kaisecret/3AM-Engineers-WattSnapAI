@@ -22,7 +22,8 @@ Vercel Cron, once a day at 06:00 Manila time       -> GET  /api/advisories/inges
   posts and skips the ones it already has, so a late, repeated or missing email cannot lose or duplicate an
   advisory. The daily run catches anything the emails miss.
 - **In the app**, an ANTECO household with a province and municipality set gets the advisories that list, or
-  may list, its area saved automatically when the app is opened online. They appear on Home and in Advisories,
+  may list, its area saved automatically when the app is opened online. An advisory that names no town at all
+  (a reminder, general information) is not saved for anyone; it stays in the list below. They appear on Home and in Advisories,
   marked "From ANTECO · read by AI", with a link to the original post. Other current ANTECO advisories are
   listed under "More from ANTECO's Facebook page" with a Save button.
 - **AI can misread.** A town or barangay that is not in the app's Antique list is never treated as an exact
@@ -156,10 +157,14 @@ select pending_ranges, lease_until from public.provider_advisory_state;
 
 ## Limits and cost
 
+- The very first run, when nothing is stored yet, looks back two days. After that a run fetches only posts
+  newer than the newest one stored.
 - One run starts at most every two minutes and 30 times a day. A run makes at most two Apify calls of up to
   30 posts each. The actor is billed per post returned; check its pricing tab for the current rate.
 - Gemini is called once per new post that mentions an outage or has an image, sharing the app's
-  `GEMINI_API_KEY` quota.
+  `GEMINI_API_KEY` quota. When the reading model (`GEMINI_SCAN_MODEL`, default `gemini-3.5-flash`) is
+  overloaded, busy or missing, the chat model (`GEMINI_MODEL`) reads the post instead. In the first real run
+  6 of 9 reads met an overloaded model; the retry with this fallback read all of them.
 - Rows older than 180 days are deleted, except published advisories that have not ended more than 30 days ago.
   Run rows are kept for 30 days.
 - People learn of an advisory when they open the app. There are no push notifications or emails.

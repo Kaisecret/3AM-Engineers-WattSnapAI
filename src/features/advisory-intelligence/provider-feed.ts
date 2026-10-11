@@ -48,9 +48,11 @@ export function feedCanImport(household: Pick<PreviewHousehold, "provider" | "lo
 }
 
 /**
- * The feed rows to save for this household: listed or possibly listed, still current, not saved
- * already (a saved feed advisory keeps the row's id, so a corrected one is never replaced), and
- * not removed by the user before. Stops at the saved-advisory limit.
+ * The feed rows to save for this household: listed or possibly listed in an advisory that names
+ * at least one town, still current, not saved already (a saved feed advisory keeps the row's id,
+ * so a corrected one is never replaced), and not removed by the user before. An advisory that
+ * names no place at all (a reminder, general information) would be "possibly affected" for
+ * everyone, so it is left in the list instead. Stops at the saved-advisory limit.
  */
 export function feedImports(rows: ProviderAdvisoryRow[], saved: ReviewedAdvisory[], dismissed: string[], household: PreviewHousehold, now = new Date(), limit = 100): ReviewedAdvisory[] {
   if (!feedCanImport(household)) return [];
@@ -59,7 +61,7 @@ export function feedImports(rows: ProviderAdvisoryRow[], saved: ReviewedAdvisory
     if (saved.length + picked.length >= limit) break;
     if (!row || known.has(row.id)) continue;
     const record = feedRecord(row, household, now);
-    if (!record || record.match.status === "not-listed" || !feedIsCurrent(record, now)) continue;
+    if (!record || record.match.status === "not-listed" || !record.details.areas.some(area => area.municipality.trim()) || !feedIsCurrent(record, now)) continue;
     picked.push(record); known.add(row.id);
   }
   return picked;
