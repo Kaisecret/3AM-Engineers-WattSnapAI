@@ -14,6 +14,10 @@ Review ambiguous extracted dates/areas before readiness activation. Uploading a 
 
 Consumes HouseholdContext, original image/text, Gemini adapter, locality aliases, and coverage evidence. Produces AdvisoryInterpretation and LocationMatch for F12. Match includes rationale and household/advisory revision.
 
+## Automatic source: ANTECO's Facebook page
+
+Besides what a person adds, the server collects ANTECO's public Facebook posts, reads the advisories among them with Gemini, and publishes them to a shared table (`provider_advisories`). In the browser, an ANTECO household with a province and municipality gets the ones that are Affected or Possibly Affected saved automatically, marked as read by AI and linked to the original post; the others are listed with a Save button. The same matching rules apply: a place that is not a verified Antique town or barangay never gives an exact match. Set-up and operation: [ANTECO advisory collection](../14-anteco-advisory-ingestion.md).
+
 ## Future files
 
 - `src/features/advisory-intelligence/components/advisory-intake.tsx`: upload/paste/share fallback.

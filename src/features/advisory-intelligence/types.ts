@@ -2,7 +2,9 @@ import type { PreviewHousehold } from "../dashboard/preview-data";
 import type { AdvisoryStatus, AdvisoryType } from "./advisory-preview";
 
 export type AdvisorySample = "scheduled" | "uncertain" | "not-listed" | "restored" | "notice";
-export interface AdvisoryOriginal { kind: "text" | "image" | "sample"; name: string; text: string; image?: string; capturedAt: string; sample?: AdvisorySample; }
+/** Set when the advisory came from the provider's page automatically: the post it was read from, and whether AI read part of the text from images. */
+export interface AdvisoryFeedSource { url: string; fromImages: boolean; }
+export interface AdvisoryOriginal { kind: "text" | "image" | "sample"; name: string; text: string; image?: string; capturedAt: string; sample?: AdvisorySample; feed?: AdvisoryFeedSource; }
 export interface AdvisoryArea { province: string; municipality: string; barangay: string; scope: "barangay" | "municipality" | "uncertain"; }
 export interface AdvisoryDetails {
   type: AdvisoryType; title: string; provider: string; publisher: string; sourceUrl: string;

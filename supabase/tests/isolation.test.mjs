@@ -168,6 +168,52 @@ test("a client with no session reads nothing, and login attempts are closed to a
   assert.ok((await a.client.from("auth_login_attempts").insert({ username: limiterName, ip_hash: "a".repeat(64) })).error);
 });
 
+test("accounts read published provider advisories and nothing else about them", options, async () => {
+  const { a, b, anon, admin } = world;
+  const postId = name => `${PREFIX}${run}-${name}`, postUrl = name => `https://www.facebook.com/antecoPH/posts/${postId(name)}`;
+  const details = { type: "scheduled", title: "Scheduled Power Interruption", date: "2026-10-20", endDate: "", areas: [] };
+  const columns = "id, provider_id, post_url, posted_at, status, details, schedule_end, original_text, read_from_images";
+  try {
+    const added = await admin.from("provider_advisories").insert([
+      { provider_id: "anteco", external_post_id: postId("published"), post_url: postUrl("published"), posted_at: stamp(), status: "published", attempts: 1, details, original_text: "Line maintenance in Payao", source: { caption: "kept on the server" } },
+      { provider_id: "anteco", external_post_id: postId("queued"), post_url: postUrl("queued"), posted_at: stamp() },
+      { provider_id: "anteco", external_post_id: postId("ignored"), post_url: postUrl("ignored"), posted_at: stamp(), status: "ignored", attempts: 1 },
+    ]).select("id");
+    assert.equal(added.error, null);
+    const ids = added.data.map(item => item.id);
+
+    for (const account of [a, b]) {
+      const seen = await account.client.from("provider_advisories").select(columns).in("id", ids);
+      assert.equal(seen.error, null);
+      assert.deepEqual(seen.data.map(item => [item.status, item.schedule_end, item.original_text]), [["published", "2026-10-20", "Line maintenance in Payao"]]);
+    }
+    // The server's columns are not readable, alone or through "*".
+    for (const hidden of ["source", "attempts", "failure", "model", "external_post_id", "*"]) {
+      assert.equal((await a.client.from("provider_advisories").select(hidden).in("id", ids)).error?.code, "42501", `an account reads ${hidden}`);
+    }
+    assert.ok((await a.client.from("provider_advisories").insert({ provider_id: "anteco", external_post_id: postId("mine"), post_url: postUrl("mine"), posted_at: stamp() })).error, "an account adds a post");
+    assert.ok((await a.client.from("provider_advisories").update({ original_text: "changed" }).in("id", ids)).error, "an account changes a post");
+    assert.ok((await a.client.from("provider_advisories").delete().in("id", ids)).error, "an account removes a post");
+    const kept = await admin.from("provider_advisories").select("original_text").in("id", ids).eq("status", "published");
+    assert.deepEqual(kept.data, [{ original_text: "Line maintenance in Payao" }]);
+
+    for (const client of [a.client, anon]) {
+      for (const table of ["provider_advisory_runs", "provider_advisory_state"]) {
+        const read = await client.from(table).select("*").limit(1);
+        assert.ok(read.error || read.data.length === 0, `${table} is closed`);
+      }
+      // Refused before they run: the crawl lease and the stored posts are untouched.
+      assert.ok((await client.rpc("claim_advisory_crawl", { p_provider: "anteco", p_owner: randomUUID(), p_seconds: 1 })).error, "claims the crawl lease");
+      assert.ok((await client.rpc("store_advisory_batch", { p_provider: "anteco", p_owner: randomUUID(), p_posts: [], p_ranges: [], p_backlog_call: false, p_fresh_started_at: null })).error, "stores a page");
+      assert.ok((await client.rpc("prune_provider_advisories", { p_provider: "anteco" })).error, "prunes");
+    }
+    const noSession = await anon.from("provider_advisories").select(columns).in("id", ids);
+    assert.ok(noSession.error || noSession.data.length === 0, "no session reads no advisory");
+  } finally {
+    await admin.from("provider_advisories").delete().like("external_post_id", `${PREFIX}${run}-%`);
+  }
+});
+
 test("out-of-range values are refused", options, async () => {
   const { a } = world;
   const h = a.householdId;

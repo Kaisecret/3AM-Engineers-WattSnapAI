@@ -203,7 +203,7 @@ const OWNED = {
   scenarios: "insert into public.scenarios (household_id, title, payload) values ($1, 'My Watt-If scenario', '{}')",
   setup_progress: "insert into public.setup_progress (household_id, reviewed_tips) values ($1, '[]')",
 };
-const ALL_TABLES = ["providers", "profiles", "households", ...Object.keys(OWNED), "auth_login_attempts"];
+const ALL_TABLES = ["providers", "profiles", "households", ...Object.keys(OWNED), "auth_login_attempts", "provider_advisories", "provider_advisory_runs", "provider_advisory_state"];
 
 test("every table has row-level security and anon holds no privilege", async () => {
   assert.deepEqual((await sql("select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relkind = 'r' order by 1")).map(row => row.relname), [...ALL_TABLES].sort());
@@ -299,4 +299,136 @@ test("advisory originals follow the path pattern and stop at 60 files", async ()
   // Another account's count is its own.
   await asUser(B, () => put(`${B}/${advisory}/r1.webp`));
   assert.equal(await asUser(A, () => affected("delete from storage.objects where bucket_id = 'advisory-originals'")), 60);
+});
+
+// ---------------------------------------------------------------------
+// Provider advisories: shared announcements read from the provider's page
+// ---------------------------------------------------------------------
+const FEED_COLUMNS = "id, provider_id, post_url, posted_at, status, details, schedule_end, original_text, read_from_images";
+const postUrl = id => `https://www.facebook.com/antecoPH/posts/${id}`;
+const advisoryDetails = (fields = {}) => JSON.stringify({ type: "scheduled", date: "2026-10-20", endDate: "", ...fields });
+const addPublished = (id, details, age = "0 days") => db.query(
+  `insert into public.provider_advisories (provider_id, external_post_id, post_url, posted_at, status, attempts, details, original_text, source, model)
+   values ('anteco', $1, $2, now() - $4::interval, 'published', 1, $3::text::jsonb, 'Line maintenance in Payao', '{"caption":"kept on the server"}', 'model-name')`,
+  [id, postUrl(id), details, age]);
+
+test("accounts read published provider advisories and nothing else about them", async () => {
+  await addPublished("pub", advisoryDetails());
+  await db.query("insert into public.provider_advisories (provider_id, external_post_id, post_url, posted_at, status, attempts) values ('anteco', 'ign', $1, now(), 'ignored', 1), ('anteco', 'que', $2, now(), 'queued', 0), ('anteco', 'bad', $3, now(), 'failed', 3)", [postUrl("ign"), postUrl("que"), postUrl("bad")]);
+  for (const user of [A, B]) assert.deepEqual((await asUser(user, () => sql(`select ${FEED_COLUMNS} from public.provider_advisories`))).map(row => row.status), ["published"]);
+  for (const hidden of ["source", "attempts", "failure", "model", "external_post_id", "*"]) await rejects(asUser(A, () => db.query(`select ${hidden} from public.provider_advisories`)), "42501", `an account reads ${hidden}`);
+  await rejects(asUser(A, () => db.query("insert into public.provider_advisories (provider_id, external_post_id, post_url, posted_at) values ('anteco', 'mine', $1, now())", [postUrl("mine")])), "42501", "an account adds a post");
+  await rejects(asUser(A, () => db.query("update public.provider_advisories set original_text = 'changed'")), "42501", "an account changes a post");
+  await rejects(asUser(A, () => db.query("delete from public.provider_advisories")), "42501", "an account removes a post");
+  for (const table of ["provider_advisory_runs", "provider_advisory_state"]) await rejects(asUser(A, () => db.query(`select 1 from public.${table}`)), "42501", `an account reads ${table}`);
+  await rejects(as("anon", null, () => db.query(`select ${FEED_COLUMNS} from public.provider_advisories`)), "42501", "no session");
+});
+
+test("provider advisory rows keep their rules, and the schedule decides what is current", async () => {
+  await rejects(db.query("insert into public.provider_advisories (provider_id, external_post_id, post_url, posted_at) values ('anteco', 'pub', $1, now())", [postUrl("pub")]), "23505", "the same post twice");
+  await rejects(db.query("update public.provider_advisories set attempts = 4 where external_post_id = 'que'"), "23514", "a fourth attempt");
+  await rejects(db.query("update public.provider_advisories set status = 'published' where external_post_id = 'que'"), "23514", "published without details");
+  await rejects(db.query("update public.provider_advisories set status = 'published', details = $1::text::jsonb where external_post_id = 'que'", [advisoryDetails()]), "23514", "published without its original text");
+  await rejects(db.query("update public.provider_advisories set details = $1::text::jsonb where external_post_id = 'que'", [JSON.stringify({ type: "rumour" })]), "23514", "an unknown advisory type");
+  for (const url of ["http://www.facebook.com/antecoPH/posts/1", "https://facebook.com.example.org/post", "https://example.org/facebook.com/"]) {
+    await rejects(db.query("insert into public.provider_advisories (provider_id, external_post_id, post_url, posted_at) values ('anteco', 'elsewhere', $1, now())", [url]), "23514", url);
+  }
+  const day = offset => new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);
+  await addPublished("announced-early", advisoryDetails({ date: day(1) }), "61 days");
+  await addPublished("two-days", advisoryDetails({ date: day(-1), endDate: day(1) }));
+  await addPublished("long-over", advisoryDetails({ date: day(-40) }), "41 days");
+  await addPublished("undated", advisoryDetails({ date: "" }));
+  const ends = Object.fromEntries((await sql("select external_post_id, schedule_end from public.provider_advisories where status = 'published'")).map(row => [row.external_post_id, row.schedule_end]));
+  assert.deepEqual(ends, { pub: "2026-10-20", "announced-early": day(1), "two-days": day(1), "long-over": day(-40), undated: null });
+  // Selected by schedule, not by how long ago it was announced.
+  const current = (await asUser(A, () => sql("select post_url from public.provider_advisories where schedule_end >= $1 and schedule_end <> '2026-10-20'", [day(-3)]))).map(row => row.post_url).sort();
+  assert.deepEqual(current, [postUrl("announced-early"), postUrl("two-days")]);
+  await rejects(db.query("update public.provider_advisories set details = $1::text::jsonb where external_post_id = 'undated'", [JSON.stringify({ type: "notice", date: "next week" })]), "23514", "a date that is not a date");
+});
+
+test("one run at a time holds the crawl lease, and a page is stored with its ranges or not at all", async () => {
+  const first = "11111111-1111-4111-8111-111111111111", second = "22222222-2222-4222-8222-222222222222";
+  const claim = owner => as("service_role", null, () => sql("select * from public.claim_advisory_crawl('anteco', $1, 360)", [owner]));
+  const store = (owner, posts, ranges, backlog = false, freshStartedAt = null) => as("service_role", null, () => sql("select public.store_advisory_batch('anteco', $1, $2::text::jsonb, $3::text::jsonb, $4, $5::timestamptz) as added", [owner, JSON.stringify(posts), JSON.stringify(ranges), backlog, freshStartedAt]));
+  const fetched = (id, caption) => ({ id, url: postUrl(id), posted_at: "2026-10-10T01:00:00Z", source: { caption } });
+  const state = async () => (await sql("select pending_ranges, last_backlog_call from public.provider_advisory_state where provider_id = 'anteco'"))[0];
+  const captionOf = async id => (await sql("select source ->> 'caption' as caption from public.provider_advisories where external_post_id = $1", [id]))[0]?.caption;
+  const ranges = [{ from: "2026-10-01T00:00:00.000Z", until: "2026-10-10T01:00:00.000Z" }];
+
+  assert.deepEqual(await claim(first), [{ pending_ranges: [], last_backlog_call: false }]);
+  assert.deepEqual(await claim(second), [], "the lease is held");
+
+  // One new post; a post still waiting gets fresh links; a decided post is left alone.
+  assert.equal((await store(first, [fetched("new-1", "new"), fetched("que", "fresh links"), fetched("pub", "must not change")], ranges, true))[0].added, 1);
+  assert.equal(await captionOf("new-1"), "new");
+  assert.equal(await captionOf("que"), "fresh links");
+  assert.equal(await captionOf("pub"), "kept on the server");
+  assert.deepEqual(await state(), { pending_ranges: ranges, last_backlog_call: true });
+
+  await rejects(store(second, [fetched("new-2", "stolen")], []), "P0001", "a run that does not hold the lease");
+  assert.equal(await captionOf("new-2"), undefined);
+  assert.deepEqual(await state(), { pending_ranges: ranges, last_backlog_call: true });
+
+  // A page with one bad post stores nothing, and the ranges stay as they were.
+  await rejects(store(first, [fetched("new-3", "good"), { ...fetched("new-4", "bad"), url: "https://example.org/post" }], []), "23514", "a page with a bad post");
+  assert.equal(await captionOf("new-3"), undefined);
+  assert.deepEqual(await state(), { pending_ranges: ranges, last_backlog_call: true });
+  await rejects(store(first, [], [1, 2, 3, 4, 5, 6]), "23514", "more than five ranges");
+
+  // An expired lease can be taken, and the run that lost it can no longer store.
+  await db.query("update public.provider_advisory_state set lease_until = now() - interval '1 second' where provider_id = 'anteco'");
+  assert.deepEqual(await claim(second), [{ pending_ranges: ranges, last_backlog_call: true }]);
+  await rejects(store(first, [fetched("new-5", "late")], []), "P0001", "a run whose lease expired");
+  assert.equal((await store(second, [], [], false))[0].added, 0);
+  assert.deepEqual(await state(), { pending_ranges: [], last_backlog_call: false });
+
+  // A fresh page records when its fetch began; a backlog page leaves that time alone.
+  const freshAt = async () => (await sql("select last_fresh_started_at from public.provider_advisory_state where provider_id = 'anteco'"))[0].last_fresh_started_at;
+  assert.equal(await freshAt(), null);
+  await store(second, [], [], false, "2026-10-11T01:00:00Z");
+  assert.equal(new Date(await freshAt()).toISOString(), "2026-10-11T01:00:00.000Z");
+  await store(second, [], [], true, null);
+  assert.equal(new Date(await freshAt()).toISOString(), "2026-10-11T01:00:00.000Z");
+
+  for (const [role, user] of [["anon", null], ["authenticated", A]]) {
+    await rejects(as(role, user, () => db.query("select * from public.claim_advisory_crawl('anteco', $1, 60)", [first])), "42501", `${role} claims the lease`);
+    await rejects(as(role, user, () => db.query("select public.store_advisory_batch('anteco', $1, '[]', '[]', false, null)", [first])), "42501", `${role} stores a page`);
+    await rejects(as(role, user, () => db.query("select public.prune_provider_advisories('anteco')")), "42501", `${role} prunes`);
+  }
+});
+
+test("housekeeping removes old posts and runs but keeps an advisory that has not ended", async () => {
+  const day = offset => new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);
+  await db.query("delete from public.provider_advisories");
+  await addPublished("old-upcoming", advisoryDetails({ date: day(2) }), "200 days");
+  await addPublished("old-ended-recently", advisoryDetails({ date: day(-10) }), "200 days");
+  await addPublished("old-ended-long-ago", advisoryDetails({ date: day(-40) }), "200 days");
+  await addPublished("old-undated", advisoryDetails({ date: "" }), "200 days");
+  await addPublished("recent-ended-long-ago", advisoryDetails({ date: day(-40) }), "50 days");
+  await db.query(`insert into public.provider_advisories (provider_id, external_post_id, post_url, posted_at, status, attempts) values
+    ('anteco', 'old-ignored', $1, now() - interval '200 days', 'ignored', 1),
+    ('anteco', 'new-ignored', $1, now() - interval '20 days', 'ignored', 1),
+    ('anteco', 'old-queued', $1, now() - interval '200 days', 'queued', 0),
+    ('anteco', 'old-retryable', $1, now() - interval '200 days', 'failed', 2),
+    ('anteco', 'old-gave-up', $1, now() - interval '200 days', 'failed', 3),
+    ('anteco', 'old-reading', $1, now() - interval '200 days', 'reading', 1),
+    ('anteco', 'stuck', $1, now(), 'reading', 3),
+    ('anteco', 'reading-now', $1, now(), 'reading', 3),
+    ('anteco', 'stuck-early', $1, now(), 'reading', 2)`, [postUrl("x")]);
+  // updated_at is set by a trigger, so these rows are aged with the trigger off.
+  await db.exec("alter table public.provider_advisories disable trigger set_updated_at");
+  await db.query("update public.provider_advisories set updated_at = now() - interval '11 minutes' where external_post_id in ('stuck', 'stuck-early')");
+  await db.exec("alter table public.provider_advisories enable trigger set_updated_at");
+  await db.query("insert into public.provider_advisory_runs (provider_id, trigger, started_at) values ('anteco', 'cron', now() - interval '31 days'), ('anteco', 'email', now() - interval '29 days')");
+
+  await as("service_role", null, () => db.query("select public.prune_provider_advisories('anteco')"));
+  const left = Object.fromEntries((await sql("select external_post_id, status from public.provider_advisories")).map(row => [row.external_post_id, row.status]));
+  assert.deepEqual(left, {
+    "old-upcoming": "published", "old-ended-recently": "published", "recent-ended-long-ago": "published",
+    "new-ignored": "ignored", stuck: "failed", "reading-now": "reading", "stuck-early": "reading",
+    // Still waiting to be read, so kept whatever their age. The one that used its three attempts is gone.
+    "old-queued": "queued", "old-retryable": "failed", "old-reading": "reading",
+  });
+  assert.equal((await sql("select failure from public.provider_advisories where external_post_id = 'stuck'"))[0].failure, "interrupted");
+  assert.deepEqual((await sql("select trigger from public.provider_advisory_runs")).map(row => row.trigger), ["email"]);
 });
