@@ -68,7 +68,7 @@ test('ambiguous months ask for the year and unsupported text returns no match',(
 test('mixed topics retain dates, checklist and advisories rather than dropping answers',()=>{
  assert.match(savedHouseholdReply('My budget and August 2026 bill',context).text,/192 kWh/);
  const reply=savedHouseholdReply('My checklist and saved advisories',{...context,readinessPlans:[],savedAdvisories:[]});
- assert.ok(reply.links.some(link=>link.href==='/brownout-ready'));assert.ok(reply.links.some(link=>link.href==='/advisories'));
+ assert.deepEqual(reply.links.map(link=>link.href),['/advisories']);assert.match(reply.text,/No preparation checklist/);assert.match(reply.text,/No provider notices/);
 });
 test('plural bill requests still honor an explicit month',()=>{
  const text=savedHouseholdReply('Show my bills for August 2026',context).text;

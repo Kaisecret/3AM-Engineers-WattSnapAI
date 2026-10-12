@@ -157,7 +157,7 @@ export function localAgentReply(raw: string, context: ChatContext = {}, pending?
   }
   const page = text.match(/^(?:open|go to|show|buksan)\s+(?:my\s+|the\s+)?(.+)$/)?.[1];
   if (page) {
-    const aliases: Record<string,string> = {home:'dashboard',energy:'bills',history:'bills','bill history':'bills','snap ai':'add-bill','scan bill':'add-bill','add appliance':'add-appliance','tipid tips':'tips','watt-if':'simulator','home setup':'setup',checklist:'brownout-ready','brownout ready':'brownout-ready',profile:'settings',bahay:'dashboard',badyet:'budget'};
+    const aliases: Record<string,string> = {home:'dashboard',energy:'bills',history:'bills','bill history':'bills','snap ai':'add-bill','scan bill':'add-bill','add appliance':'add-appliance','tipid tips':'tips','watt-if':'simulator','home setup':'setup',checklist:'advisories','brownout ready':'advisories',profile:'settings',bahay:'dashboard',badyet:'budget'};
     const parsed = parseAgentCall('open_page',{page:aliases[page] ?? page});
     if (parsed.kind === 'link') return {reply:{text:'Here you go.',links:[parsed.link]},actions:[],handled:true};
   }

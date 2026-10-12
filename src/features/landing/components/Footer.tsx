@@ -8,7 +8,7 @@ const productLinks = [
   { label: "Log in", href: "/login" },
 ];
 
-const capabilities = ["Bill Photo & Review", "Watt-If Simulator", "Tipid Tips & Budget", "Brownout Ready Mode"];
+const capabilities = ["Bill Photo & Review", "Watt-If Simulator", "Tipid Tips & Budget", "Brownout Advisories"];
 const coverage = ["ANTECO validation", "Manual provider selection", "Saved offline access", "Browser storage"];
 
 export function Footer() {
