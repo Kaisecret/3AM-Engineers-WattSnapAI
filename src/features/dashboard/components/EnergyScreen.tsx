@@ -169,8 +169,8 @@ export default function EnergyScreen() {
 
       <div className="ui-stats en-stats">
         <div><span>Average</span><strong>{Math.round(averageKwh(series))} <small>kWh</small></strong></div>
-        <div><span>Lowest</span><strong>{lowest ? `${lowest.kwh}` : "—"} <small>kWh</small></strong>{lowest && <em>{shortMonth(lowest.month)} {lowest.month.slice(0, 4)}</em>}</div>
-        <div><span>Highest</span><strong>{highest ? `${highest.kwh}` : "—"} <small>kWh</small></strong>{highest && <em>{shortMonth(highest.month)} {highest.month.slice(0, 4)}</em>}</div>
+        <div className="is-lowest"><span>Lowest</span><strong>{lowest ? `${lowest.kwh}` : "—"} <small>kWh</small></strong>{lowest && <em>{shortMonth(lowest.month)} {lowest.month.slice(0, 4)}</em>}<ArrowDown aria-hidden="true" /></div>
+        <div className="is-highest"><span>Highest</span><strong>{highest ? `${highest.kwh}` : "—"} <small>kWh</small></strong>{highest && <em>{shortMonth(highest.month)} {highest.month.slice(0, 4)}</em>}<ArrowUp aria-hidden="true" /></div>
       </div>
 
       <section className="ui-panel en-chart-panel" aria-labelledby="en-chart-title">

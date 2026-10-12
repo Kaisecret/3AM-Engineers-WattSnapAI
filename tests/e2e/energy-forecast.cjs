@@ -99,6 +99,17 @@ async function main() {
       await comparison.getByText('Comparison details', { exact: true }).click();
       const forecast = page.getByRole('region', { name: 'Next month estimate', exact: true });
       await forecast.getByText('November 2026', { exact: true }).waitFor();
+      // Forecast card: the basis label sits with its explanation, both figures share a row, the disclosure is a full touch target.
+      assert.equal(await forecast.locator('.en-forecast-basis .en-forecast-method').innerText(), 'Seasonal baseline');
+      const forecastLayout = await forecast.evaluate(panel => { const box = element => element.getBoundingClientRect(), values = [...panel.querySelectorAll('.en-forecast-values dd')].map(box); return { sameRow: Math.abs(values[0].top - values[1].top) < 2, head: box(panel.querySelector('.en-forecast-head')).height, icon: box(panel.querySelector('.en-forecast-icon')).width, summary: box(panel.querySelector('summary')).height }; });
+      assert.ok(forecastLayout.sameRow, 'Use and cost read side by side');
+      assert.ok(forecastLayout.icon >= 40 && forecastLayout.head <= 56, `Compact heading beside its icon (${JSON.stringify(forecastLayout)})`);
+      assert.ok(forecastLayout.summary >= 44, 'How this is estimated is a comfortable touch target');
+      // History period: the bill count is a small pill on the label row, not a second control beside the select.
+      const toolbar = await page.locator('.en-history-toolbar').evaluate(bar => { const box = element => element.getBoundingClientRect(), count = box(bar.querySelector('.en-history-count')), select = box(bar.querySelector('select')), label = box(bar.querySelector('label')); return { aboveSelect: count.bottom <= select.top + 1, onLabelRow: Math.abs((count.top + count.bottom) / 2 - (label.top + label.bottom) / 2) < 6, select: select.width, bar: box(bar).width, count: count.height }; });
+      if (width < 600) { assert.ok(toolbar.aboveSelect && toolbar.onLabelRow, `Bill count sits on the label row (${JSON.stringify(toolbar)})`); assert.ok(toolbar.select >= toolbar.bar - 1, 'Period select spans the row'); }
+      assert.ok(toolbar.count <= 30, `Bill count is a small pill (${toolbar.count}px)`);
+      assert.equal(await page.locator('.en-stats svg').count(), 2, 'Lowest and highest carry direction icons');
       await forecast.getByText('96', { exact: true }).waitFor();
       assert.match(await forecast.innerText(), /₱1,152\.00/);
       const estimate = await forecast.innerText();
