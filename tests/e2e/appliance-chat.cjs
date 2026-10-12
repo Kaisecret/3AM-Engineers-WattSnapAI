@@ -11,7 +11,7 @@ const output = path.join(os.tmpdir(), `wattsnap-appliance-chat${process.env.APP_
 
 async function main() {
   await fs.mkdir(output, { recursive: true });
-  await build({ stdin: { contents: `import React from 'react'; import {createRoot} from 'react-dom/client'; import Appliances from './src/features/dashboard/components/AppliancesScreen'; import Chat from './src/features/assistant/components/ChatScreen'; import './src/app/globals.css'; import './src/features/onboarding/theme.css'; import './src/features/onboarding/accessibility.css'; import './src/features/dashboard/frontend-refinements.css'; import './src/app/(household)/dashboard/dashboard.css'; import './src/features/dashboard/app-ui.css'; import './src/features/dashboard/appliances.css'; import './src/features/assistant/assistant.css'; createRoot(document.getElementById('root')).render(location.pathname==='/assistant'?<Chat/>:<Appliances startAdding/>);`, resolveDir: root, loader: 'tsx' }, bundle: true, outfile: path.join(output, 'app.js'), jsx: 'automatic', define: { 'process.env.NODE_ENV': '"development"' },
+  await build({ stdin: { contents: `import React from 'react'; import {createRoot} from 'react-dom/client'; import Appliances from './src/features/dashboard/components/AppliancesScreen'; import Chat from './src/features/assistant/components/ChatScreen'; import './src/app/globals.css'; import './src/features/onboarding/theme.css'; import './src/features/onboarding/accessibility.css'; import './src/features/dashboard/frontend-refinements.css'; import './src/app/(household)/dashboard/dashboard.css'; import './src/features/dashboard/app-ui.css'; import './src/features/dashboard/appliances.css'; import './src/features/assistant/assistant.css'; createRoot(document.getElementById('root')).render(location.pathname==='/assistant'?<Chat/>:<Appliances startAdding={location.pathname==='/appliances/new'}/>);`, resolveDir: root, loader: 'tsx' }, bundle: true, outfile: path.join(output, 'app.js'), jsx: 'automatic', define: { 'process.env.NODE_ENV': '"development"' },
     format: 'esm', plugins: [{ name: 'next-shell', setup(build) {
       build.onResolve({filter:/^\/assets\//},args=>({path:args.path,external:true}));
       build.onResolve({filter:/^(next\/(image|link|navigation)|\.\/PageShell|.*\/AppHeader|.*\/AppNavigation)$/},args=>({path:args.path,namespace:'shell'}));
@@ -41,6 +41,24 @@ async function main() {
   }
   async function message(page,text){await page.getByRole('textbox',{name:'Message WattSnap AI'}).fill(text);await page.getByRole('button',{name:'Send message',exact:true}).click();}
   try {
+    for(const width of [320,390,768,1440])await scenario(`appliance summary card is compact and clear of the mascot at ${width}px`,width,async page=>{
+      await page.addInitScript(()=>localStorage.setItem('wattsnap-ui-preview-v1',JSON.stringify({name:'Test home',budget:0,bills:[{id:'b1',month:'2026-09',kwh:109,amount:1738.14,source:'manual'}],appliances:[{id:'a1',name:'Electric fan',kind:'fan',watts:60,hours:1,quantity:1,days:30,source:'manual'},{id:'a2',name:'Aircon',kind:'aircon',watts:1000,hours:8,quantity:1,days:30,source:'manual'}]})));
+      await page.goto(base+'/appliances');
+      const card=page.locator('.ap-summary');await card.getByRole('heading',{name:'Monthly estimate',exact:true}).waitFor();
+      assert.match(await card.innerText(),/241\.8\s*kWh \/ month/);assert.match(await card.innerText(),/Appliances\s*2/);assert.match(await card.innerText(),/Per day\s*8\.06\s*kWh/);
+      const layout=await card.evaluate(element=>{
+        const box=item=>item.getBoundingClientRect(),art=box(element.querySelector('.ap-summary-art')),button=box(element.querySelector('.ap-add'));
+        // The mascot must never cover the estimate, the facts or the add action.
+        const covered=[...element.querySelectorAll('.ap-summary-title, .ap-summary-figure, .ap-summary-cost, .ap-summary-stats, .ap-add')].filter(item=>{const b=box(item);return b.left<art.right&&b.right>art.left&&b.top<art.bottom&&b.bottom>art.top;}).map(item=>item.className);
+        return {covered,parts:element.querySelectorAll('.ap-summary-title, .ap-summary-figure, .ap-summary-cost, .ap-summary-stats, .ap-add').length,art:art.width,height:box(element).height,buttonWidth:button.width,buttonHeight:button.height,copyWidth:box(element.querySelector('.ap-summary-copy')).width};
+      });
+      assert.equal(layout.parts,5);assert.ok(layout.art>60,'Mascot stays on the card');
+      assert.deepEqual(layout.covered,[],`${width}px: mascot covers nothing`);
+      assert.ok(layout.buttonHeight>=44,'Add button is a comfortable touch target');
+      if(width<600){assert.ok(layout.buttonWidth>=layout.copyWidth-1,'Phone add button spans the card');assert.ok(layout.height<=240,`Phone card stays compact (${layout.height}px)`);}
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+      await card.screenshot({path:path.join(output,`summary-${width}.png`)});
+    });
     for(const width of [320,390,768,1440])await scenario(`appliance form and save popup fit at ${width}px`,width,async page=>{
       await page.goto(base+'/appliances/new');
       await page.getByRole('button',{name:/^Type it in/}).click();

@@ -105,15 +105,17 @@ export default function AppliancesScreen({ startAdding = false }: { startAdding?
   return <PageShell title="Appliances" subtitle="See how your appliances use energy" active="Appliances" className="ap-page">
     <section className="ap-summary" aria-labelledby="ap-summary-title">
       <div className="ap-summary-copy">
-        <p className="ap-eyebrow">Monthly estimate</p>
-        <h2 id="ap-summary-title"><span>{(totalDaily * 30).toFixed(1)}</span> kWh / month</h2>
-        <p className="ap-summary-cost">{rate > 0 ? `≈ ${pesos(totalDaily * 30 * rate)} per month` : "Add a bill to see the cost."}</p>
+        <div className="ap-summary-facts">
+          <h2 id="ap-summary-title" className="ap-summary-title">Monthly estimate</h2>
+          <p className="ap-summary-figure"><strong>{(totalDaily * 30).toFixed(1)}</strong> <span>kWh / month</span></p>
+          <p className="ap-summary-cost">{rate > 0 ? `≈ ${pesos(totalDaily * 30 * rate)} per month` : "Add a bill to see the cost."}</p>
+        </div>
+        <dl className="ap-summary-stats">
+          <div><dt>Appliances</dt><dd>{items.reduce((sum, item) => sum + item.quantity, 0)}</dd></div>
+          <div><dt>Per day</dt><dd>{totalDaily.toFixed(2)} kWh</dd></div>
+        </dl>
         <button type="button" className="ap-add" aria-haspopup="dialog" disabled={!ready} onClick={startAdd}><Plus aria-hidden="true" /> Add appliance</button>
       </div>
-      <dl className="ap-summary-stats">
-        <div><dt>Appliances</dt><dd>{items.reduce((sum, item) => sum + item.quantity, 0)}</dd></div>
-        <div><dt>Per day</dt><dd>{totalDaily.toFixed(2)} <small>kWh</small></dd></div>
-      </dl>
       <Image className="ap-summary-art" src="/assets/branding/actions-5.png" alt="" width={260} height={260} sizes="(min-width: 900px) 170px, 112px" />
     </section>
 
