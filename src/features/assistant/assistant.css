@@ -295,3 +295,4 @@ html[data-theme="dark"] .chat-main { background: radial-gradient(130% 55% at 50%
   .lchat-ping { animation: lchat-ping 2.4s ease-out infinite; }
   .lchat-panel { animation: lchat-open .3s cubic-bezier(.2, .9, .25, 1) both; }
 }
+html[data-theme="dark"] .chat-side-card dd.is-higher { color: #fdba74; }

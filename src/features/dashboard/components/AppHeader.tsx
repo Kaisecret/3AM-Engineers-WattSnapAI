@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, ChevronDown, ChevronRight, LogOut, MapPin, Settings, X } from "lucide-react";
+import { Bell, ChevronDown, X } from "lucide-react";
 import UserAvatar from "./UserAvatar";
+import HeaderMenu from "./HeaderMenu";
 import LogoutDialog from "./LogoutDialog";
 import { usePreviewHousehold } from "../use-preview-household";
 
@@ -38,12 +39,7 @@ export default function AppHeader({ title, subtitle }: { title?: string; subtitl
       </div>
       {panel && <div className="ws-header-panel" role="region" aria-label={panel === "profile" ? "Household" : "Notifications"}>
         <button className="ws-panel-close" aria-label="Close panel" onClick={() => { triggers.current[panel]?.focus(); setPanel(null); }}><X size={17} /></button>
-        {panel === "profile" ? <>
-          <div className="ws-panel-user"><span className="ws-avatar"><UserAvatar photo={household.photo} /></span><div><strong>{household.name}</strong><p>{household.email ?? `${household.name.split(/\s+/)[0]}'s home`}</p></div></div>
-          <Link href="/settings" onClick={() => setPanel(null)}><Settings size={17} /> Household settings</Link>
-          <Link href="/onboarding" onClick={() => setPanel(null)}><MapPin size={17} /> Household setup</Link>
-          <button type="button" className="ws-panel-logout" onClick={() => { setPanel(null); setLogout(true); }}><LogOut size={17} /> Log out</button>
-        </> : <><strong>Household advisories</strong><p>Review saved notices and their original sources. No live outage status or automatic provider updates are provided.</p><Link href="/advisories" onClick={() => setPanel(null)}>View advisories <ChevronRight size={16} /></Link></>}
+        <HeaderMenu panel={panel} household={household} onNavigate={() => setPanel(null)} onLogout={() => { setPanel(null); setLogout(true); }} />
       </div>}
     </header>
     <LogoutDialog open={logout} onClose={() => setLogout(false)} name={household.name} />

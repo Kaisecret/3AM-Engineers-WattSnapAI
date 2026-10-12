@@ -492,7 +492,8 @@ a:focus-visible, button:focus-visible {
   position: absolute;
   top: 100%;
   inset-inline: 0;
-  display: flex;
+  /* Shown only where the toggle that closes it is shown (max-width: 850px below). */
+  display: none;
   flex-direction: column;
   gap: 8px;
   padding: 18px 7% 24px;
@@ -501,6 +502,9 @@ a:focus-visible, button:focus-visible {
   box-shadow: 0 16px 25px rgba(15, 50, 100, .1);
 }
 .landing-mobile-menu > a { padding: 12px; font-weight: 600; }
+.landing-mobile-menu > a:not(.btn-primary) { color: var(--landing-navy); }
+/* The landing page has one (light) design; the in-app dark preference must not leak into it. */
+html[data-theme="dark"] .landing-page { color-scheme: light; color: #0f172a; background: #f8fbff; --text-primary: #0f172a; --text-secondary: #475569; --text-muted: #94a3b8; --bg-page: #f8fbff; --bg-card: rgba(255, 255, 255, 0.92); --bg-card-border: rgba(226, 232, 240, 0.8); }
 
 .wattsnap-hero {
   position: relative;
@@ -727,6 +731,7 @@ a:focus-visible, button:focus-visible {
 @media (max-width: 850px) {
   .landing-desktop-links, .landing-account-actions { display: none; }
   .landing-menu-toggle { display: block; }
+  .landing-mobile-menu { display: flex; }
   .landing-brand { width: 160px; }
   .hero-inner { width: 90%; }
   .hero-copy { width: 100%; max-width: 550px; margin-inline: auto; text-align: center; padding-bottom: 0; }

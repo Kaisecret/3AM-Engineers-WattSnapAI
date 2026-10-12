@@ -40,3 +40,20 @@
 .aw-feed-area { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: #5d788c; }
 .aw-feed-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 6px; }
 .aw-feed-actions button { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding-inline: 16px; }
+
+/* Dark theme. Panels (.ui-panel) and the page turn dark in onboarding/theme.css; text and inner surfaces follow here. */
+html[data-theme="dark"] .aw-original-heading h2, html[data-theme="dark"] .aw-match-heading h2, html[data-theme="dark"] .aw-feed-list strong, html[data-theme="dark"] .aw-original-dialog h2, html[data-theme="dark"] .aw-note strong, html[data-theme="dark"] .aw-match-basis strong { color: #edf6fa; }
+html[data-theme="dark"] .aw-muted, html[data-theme="dark"] .aw-original-heading p, html[data-theme="dark"] .aw-original pre, html[data-theme="dark"] .aw-match-heading p, html[data-theme="dark"] .aw-match > ul, html[data-theme="dark"] .aw-match-basis span, html[data-theme="dark"] .aw-card-tags, html[data-theme="dark"] .aw-review-stamp, html[data-theme="dark"] .aw-manage, html[data-theme="dark"] .aw-original-dialog > p, html[data-theme="dark"] .aw-feed-list li, html[data-theme="dark"] .aw-feed-area { color: #c2d4df; }
+html[data-theme="dark"] .aw-original summary, html[data-theme="dark"] .aw-original details > button, html[data-theme="dark"] .aw-match-setup, html[data-theme="dark"] .aw-loading > button, html[data-theme="dark"] .aw-feed-source a, html[data-theme="dark"] .aw-feed-actions a, html[data-theme="dark"] .aw-detail-dialog .adv-detail-list a, html[data-theme="dark"] .aw-match-basis > svg { color: #89dfef; }
+html[data-theme="dark"] .aw-match.is-affected .aw-match-heading h2 { color: #f5b08a; }
+html[data-theme="dark"] .aw-match.is-possibly-affected .aw-match-heading h2 { color: #f1d9a0; }
+html[data-theme="dark"] .aw-note, html[data-theme="dark"] .aw-loading, html[data-theme="dark"] .aw-feed-source, html[data-theme="dark"] .aw-original-preview, html[data-theme="dark"] .aw-match-basis { color: #c2d4df; background: #112735; border-color: #3b5968; }
+html[data-theme="dark"] .aw-feed-list li { background: #192e3d; border-color: #3b5968; box-shadow: none; }
+html[data-theme="dark"] .aw-original > details, html[data-theme="dark"] .aw-manage { border-top-color: #3b5968; }
+html[data-theme="dark"] .aw-card-tags em { color: #89dfef; background: #203e4c; }
+html[data-theme="dark"] .aw-card-tags .is-stale { color: #f1d9a0; background: #2e2a1c; }
+/* The warning box is themed together with its text: a box is never left light while its text turns light. */
+html[data-theme="dark"] .aw-stale { color: #f1d9a0; background: #2e2a1c; border-color: #6b5a2c; }
+html[data-theme="dark"] .aw-stale strong { color: #f6e2b0; }
+html[data-theme="dark"] .aw-original-dialog { color: #edf6fa; background: #142734; border-color: #3b5968; }
+html[data-theme="dark"] .aw-original-dialog button { color: #89dfef; background: #203e4c; }

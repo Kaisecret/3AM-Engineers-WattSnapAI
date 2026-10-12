@@ -314,3 +314,5 @@ html[data-theme="dark"] .ws-home :is(.ap-saved-actions, .ad-dialog .ap-dialog-ac
 @media (min-width: 900px) { .ad-dialog .ap-dialog-head { top: -26px; padding-block: 14px; } .ad-dialog .ap-dialog-actions { bottom: -28px; margin: 18px -28px -28px; padding: 16px 28px 28px; } }
 html[data-theme="dark"] .ap-list li.is-new { animation-name: ap-new-dark; }
 @keyframes ap-new-dark { 0%, 40% { background: #1d3a4a; box-shadow: 0 0 0 8px #1d3a4a; } 100% { background: transparent; box-shadow: 0 0 0 8px transparent; } }
+html[data-theme="dark"] .ap-presets legend, html[data-theme="dark"] .ap-field { color: #c2d4df; }
+html[data-theme="dark"] .ws-home .ap-presets label.is-selected { color: #fff; }

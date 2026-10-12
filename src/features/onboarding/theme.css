@@ -37,6 +37,7 @@ html[data-theme="dark"] .auth-input::placeholder { color: #afc3cf; }
 html[data-theme="dark"] .auth-input[type="date"] { color-scheme: dark; }
 html[data-theme="dark"] .ws-nav-item { color: #c2d4df; }
 html[data-theme="dark"] .ws-nav-item.is-active { color: #79daef; }
+@media (min-width: 900px) { html[data-theme="dark"] .ws-nav-item.is-active { background: #203e4c; box-shadow: none; } html[data-theme="dark"] .ws-nav-item.is-active .ws-nav-icon { color: #79daef; background: #254552; box-shadow: none; } }
 html[data-theme="dark"] .ws-nav-scan .ws-nav-icon { box-shadow: 0 0 0 6px #192e3d; }
 html[data-theme="dark"] :is(.ui-stats, .ui-secondary, .ui-form input, .ui-form select, .ui-form textarea, .np-steps, .np-category, .np-fields input, .np-fields select, .br-period > div, .br-period > button, .tt-input-counts > a) { background: #112735; border-color: #4c6e7d; color: #edf6fa; }
 html[data-theme="dark"] :is(.ui-panel-heading p, .ui-toolbar p, .ui-empty p, .ui-stats span, .np-start p, .np-sheet small, .np-eyebrow, .br-source strong, .br-source small, .br-provider, .br-field-hint, .br-period p, .tt-inputs-heading p, .tt-preview-note) { color: #c2d4df; }
@@ -66,3 +67,9 @@ html[data-theme="dark"] .ws-home .ws-chart-placeholder i { border-color: #4c8197
 html[data-theme="dark"] .ws-home .ws-chart-placeholder p { color: #c2d4df; }
 html[data-theme="dark"] .ws-home .ws-chart-placeholder svg { color: #89dfef; }
 html[data-theme="dark"] .ws-home :is(.ws-muted, .ws-bill-meta, .ws-tip-copy p, .ws-tip-copy small, .ws-updated) { color: #c2d4df; }
+html[data-theme="dark"] .ws-checklist-error, html[data-theme="dark"] .ws-header-panel .ws-panel-logout { color: #ffb4a8; }
+/* color-scheme: dark turns the default button text white, which vanishes on these light message boxes. */
+html[data-theme="dark"] :is(.ui-error, .ui-success, .setup-error) button { color: inherit; }
+html[data-theme="dark"] .ws-header-panel p { color: #c2d4df; }
+html[data-theme="dark"] .ws-checklist-error button { color: #89dfef; }
+html[data-theme="dark"] .ws-desktop-heading p { color: #c2d4df; }
