@@ -30,7 +30,20 @@
 .tt-tip-top > span:nth-child(2) { color: var(--tt-muted); font-size: 11px; }
 .tt-tip-top small { margin-left: auto; padding: 3px 6px; border-radius: 5px; background: var(--tt-soft); color: var(--tt-muted); font-size: 10px; }
 .tt-tip h3 { margin-top: 18px; color: var(--tt-ink); font-size: 18px; line-height: 1.35; letter-spacing: -.3px; font-weight: 750; overflow-wrap: anywhere; }
-.tt-tip-action { color: var(--tt-muted); font-size: 13px; line-height: 1.75; margin-top: 9px; overflow-wrap: anywhere; }
+.tt-tip-action { color: var(--tt-ink); font-size: 14px; line-height: 1.65; margin-top: 12px; overflow-wrap: anywhere; }
+.tt-tip-why { color: var(--tt-muted); font-size: 12.5px; line-height: 1.65; margin-top: 8px; overflow-wrap: anywhere; }
+.tt-tip-why b { color: var(--tt-ink); font-weight: 700; }
+.tt-figure { padding: 0 3px; border-radius: 4px; color: inherit; background: color-mix(in srgb, var(--tt-accent) 15%, transparent); font-weight: 700; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.tt-benefit { --tt-tone-soft: var(--tt-soft); --tt-tone-ink: var(--tt-ink); display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 14px; padding: 12px 14px; border-radius: 14px; background: var(--tt-tone-soft); color: var(--tt-tone-ink); }
+.tt-benefit.is-save { --tt-tone-soft: #e7f7ee; --tt-tone-ink: #0d6b3c; }
+.tt-benefit.is-cost { --tt-tone-soft: #e8f3fd; --tt-tone-ink: #0a5f93; }
+.tt-benefit.is-warn { --tt-tone-soft: #fff3da; --tt-tone-ink: #8a5300; }
+.tt-benefit-icon { display: grid; place-items: center; flex: 0 0 auto; width: 36px; height: 36px; border-radius: 11px; background: color-mix(in srgb, var(--tt-tone-ink) 13%, transparent); }
+.tt-benefit-icon svg { width: 19px; height: 19px; }
+.tt-benefit-copy { display: grid; flex: 1; min-width: 0; }
+.tt-benefit small { font-size: 11.5px; font-weight: 600; }
+.tt-benefit strong { font-size: 20px; font-weight: 800; line-height: 1.25; letter-spacing: -.4px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.tt-benefit-detail { font-size: 11.5px; font-weight: 600; text-align: right; }
 .tt-tip-basis { border-top: 1px solid var(--tt-line); margin-top: 20px; }
 .tt-tip-basis summary, .tt-about summary, .tt-setup summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; color: var(--tt-muted); font-size: 12px; cursor: pointer; list-style: none; }
 .tt-page summary::-webkit-details-marker { display: none; }
@@ -38,7 +51,7 @@
 .tt-page details[open] > summary svg { transform: rotate(180deg); }
 .tt-tip-detail { color: var(--tt-muted); font-size: 12px; line-height: 1.7; padding: 0 0 12px; animation: tt-enter .2s ease both; }
 .tt-tip-detail p + p { margin-top: 8px; }
-.tt-tip-detail ul { padding-left: 17px; margin: 12px 0; }
+.tt-tip-detail ul { padding-left: 17px; margin: 0 0 12px; }
 .tt-tip-detail a { display: inline-flex; align-items: center; gap: 4px; color: var(--tt-accent); min-height: 36px; margin-top: 8px; }
 .tt-tip-links { margin-top: auto; padding-top: 7px; }
 .tt-tip-links a, .tt-filter-empty a { display: inline-flex; align-items: center; gap: 5px; min-height: 36px; color: var(--tt-accent); font-size: 12px; font-weight: 700; }
@@ -65,12 +78,17 @@
   .tt-intro p { font-size: 12px; }
   .tt-tip-grid { grid-template-columns: minmax(0, 1fr); gap: 13px; }
   .tt-tip { padding: 20px; }
+  /* The detail drops under the figure so the figure keeps one line. */
+  .tt-benefit-detail { flex-basis: 100%; padding-left: 48px; text-align: left; }
   .tt-list-heading { gap: 14px; }
   .tt-filters, .tt-forecast-years { width: 100%; }
   .tt-filters button, .tt-forecast-years button { flex: 1; padding-inline: 9px; }
 }
 html[data-theme="dark"] .tt-page { --tt-ink: #deedf4; --tt-muted: #a5bdcb; --tt-line: #2c4858; --tt-surface: #183442; --tt-soft: #213f4f; --tt-accent: #7bd7ed; }
 html[data-theme="dark"] .tt-intro-icon { background: #443c23; color: #f3cc69; }
+html[data-theme="dark"] .tt-benefit.is-save { --tt-tone-soft: #1d3f2f; --tt-tone-ink: #a8ecc6; }
+html[data-theme="dark"] .tt-benefit.is-cost { --tt-tone-soft: #1f3d52; --tt-tone-ink: #b2e2ff; }
+html[data-theme="dark"] .tt-benefit.is-warn { --tt-tone-soft: #47381c; --tt-tone-ink: #f6d58a; }
 html[data-theme="dark"] .tt-status.is-stale { color: #edc06c; }
 html[data-theme="dark"] .tt-error { background: #3d3025; border-color: #69503a; color: #f1c39c; }
 @media (prefers-reduced-motion: reduce) { .tt-page *, .tt-page *::before, .tt-page *::after { animation: none !important; transition: none !important; } }

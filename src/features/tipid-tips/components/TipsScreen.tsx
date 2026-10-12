@@ -1,5 +1,5 @@
 ﻿"use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Check, ChevronDown, Lightbulb, LoaderCircle, PlugZap, ReceiptText, Sparkles, TriangleAlert, WifiOff } from "lucide-react";
 import PageShell from "@/features/dashboard/components/PageShell";
@@ -32,6 +32,9 @@ export default function TipsScreen() {
   const ready = householdReady && saved.ready;
   const snapshot = saved.snapshot;
   const stale = snapshot ? tipsAreStale(snapshot, household) : false;
+  // Tips saved before cards showed what each tip gives are rebuilt once, so they gain that line.
+  const offersBenefits = useMemo(() => generatePreviewTips(household).tips.some(tip => tip.benefit), [currentSignature.current]); // eslint-disable-line react-hooks/exhaustive-deps
+  const outdated = !!snapshot && !stale && offersBenefits && !snapshot.tips.some(tip => tip.benefit);
   // Saved advice retains its original basis; the outlook follows the current bills and year.
   const forecast = buildBillForecast(household.bills);
 
@@ -75,13 +78,13 @@ export default function TipsScreen() {
       if (saved.save(next)) setMessage(useLocal ? "Basic tips saved on this device." : "Your new tips are ready.");
     } catch (problem) {
       if (request.current !== controller || previewStorageFor(tipsStorageKey) !== storageKey) return;
-      if ((controller.signal.aborted && !timedOut) || quiet) return;
+      if (controller.signal.aborted && !timedOut) return;
       if (!tipsUnchanged()) { attempted.current = ""; return; }
       const reason = timedOut ? "WattSnap AI took too long. Try again." : problem instanceof Error && !(problem instanceof TypeError) ? problem.message : "WattSnap AI is unavailable. Try again shortly.";
       const keep = snapshot?.source === "gemini";
       // Fresh basic tips are a complete answer, so they replace the alert. Only kept AI tips need Try again.
-      if (keep) setError(reason + " Your saved tips are unchanged.");
-      else if (currentSignature.current === basis.inputSignature && saved.save(basis)) setMessage("WattSnap AI is unavailable. Basic tips saved for now.");
+      if (keep) { if (!quiet) setError(reason + " Your saved tips are unchanged."); }
+      else if (currentSignature.current === basis.inputSignature && saved.save(basis) && !quiet) setMessage("WattSnap AI is unavailable. Basic tips saved for now.");
     } finally {
       clearTimeout(timer);
       if (request.current === controller) { request.current = null; setBusy(false); }
@@ -93,16 +96,16 @@ export default function TipsScreen() {
   // Tips create and update themselves. Each set of records is tried once, so a failed request cannot loop.
   const signature = currentSignature.current;
   const upgrade = !!snapshot && !stale && snapshot.source !== "gemini" && !snapshot.context.sample && household.bills.length + household.appliances.length > 0;
-  const wanted = ready && !saved.error && !storageError && (!snapshot || (stale && (!offline || snapshot.source !== "gemini")) || (upgrade && !offline));
+  const wanted = ready && !saved.error && !storageError && (!snapshot || ((stale || outdated) && (!offline || snapshot.source !== "gemini")) || (upgrade && !offline));
   const attempt = [storageKey, signature, offline ? "local" : "ai"].join("|");
   // An update that is about to start already counts as updating, so the status does not flicker.
   const updating = busy || (wanted && attempted.current !== attempt);
   useEffect(() => {
     if (!wanted || busy) return;
     if (attempted.current === attempt) return;
-    const timer = window.setTimeout(() => { attempted.current = attempt; void run.current(upgrade); }, 500);
+    const timer = window.setTimeout(() => { attempted.current = attempt; void run.current(upgrade || outdated); }, 500);
     return () => window.clearTimeout(timer);
-  }, [wanted, busy, attempt, upgrade]);
+  }, [wanted, busy, attempt, upgrade, outdated]);
 
   return <PageShell title="Tipid Tips" active="Home" className="tt-page">
     <section className="tt-intro" aria-labelledby="tt-intro-heading">
