@@ -74,6 +74,7 @@ test("sample household records are valid and appliance kinds are guessed from na
   assert.equal(guessApplianceKind("Split type aircon"), "aircon");
   assert.equal(guessApplianceKind("Kitchen Refrigerator"), "fridge");
   assert.equal(guessApplianceKind("Water pump"), "other");
+  assert.equal(guessApplianceKind("Fan-cooled refrigerator"), "fan", "Guess order is part of saved Watt-If scenario signatures; tips check refrigeration names themselves");
   assert.ok(validateBill({ month: "2026-10", amount: 10, kwh: 1, dueDate: "2026-13-40" }));
 });
 test("profile fields survive storage only when valid", () => {
