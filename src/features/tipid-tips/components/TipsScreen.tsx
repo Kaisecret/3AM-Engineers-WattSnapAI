@@ -79,8 +79,9 @@ export default function TipsScreen() {
       if (!tipsUnchanged()) { attempted.current = ""; return; }
       const reason = timedOut ? "WattSnap AI took too long. Try again." : problem instanceof Error && !(problem instanceof TypeError) ? problem.message : "WattSnap AI is unavailable. Try again shortly.";
       const keep = snapshot?.source === "gemini";
-      if (!keep && currentSignature.current === basis.inputSignature && saved.save(basis)) setMessage("WattSnap AI is unavailable. Basic tips saved for now.");
-      setError(keep ? reason + " Your saved tips are unchanged." : reason);
+      // Fresh basic tips are a complete answer, so they replace the alert. Only kept AI tips need Try again.
+      if (keep) setError(reason + " Your saved tips are unchanged.");
+      else if (currentSignature.current === basis.inputSignature && saved.save(basis)) setMessage("WattSnap AI is unavailable. Basic tips saved for now.");
     } finally {
       clearTimeout(timer);
       if (request.current === controller) { request.current = null; setBusy(false); }
@@ -119,7 +120,6 @@ export default function TipsScreen() {
     {error && <div className="tt-error" role="alert"><TriangleAlert size={17} aria-hidden="true" /><div><p>{error}</p><button type="button" disabled={busy} onClick={() => void refresh()}>Try again</button></div></div>}
     {message && <p className="tt-notice" role="status"><Check size={16} aria-hidden="true" />{message}</p>}
 
-    {ready && household.bills.length > 0 && <BillForecastPanel forecast={forecast} bills={household.bills} />}
     {snapshot ? <>
       <div className="tt-list-heading"><div><h2>For your home</h2><p className={stale ? "tt-status is-stale" : "tt-status"}>{stale ? <TriangleAlert size={14} aria-hidden="true" /> : snapshot.source === "gemini" ? <Sparkles size={14} aria-hidden="true" /> : <Check size={14} aria-hidden="true" />}{stale ? updating ? "Records changed · updating your tips" : offline ? "Records changed · tips update when you’re online" : "Records changed · tips not updated yet" : snapshot.context.sample ? "Sample tips" : snapshot.source === "gemini" ? "AI tips · based on your records" : "Basic tips · based on your records"}</p></div><div className="tt-filters" role="group" aria-label="Filter tips">{(["all", "appliance", "bill"] as const).map(value => <button type="button" key={value} aria-pressed={filter === value} onClick={() => setFilter(value)}>{value === "all" ? "All tips" : value === "appliance" ? "Appliances" : "Bills"}</button>)}</div></div>
       <TipsList tips={snapshot.tips} filter={filter} sample={snapshot.origin === "sample"} />
@@ -127,5 +127,7 @@ export default function TipsScreen() {
       <Link className="tt-next" href="/simulator"><Lightbulb size={21} aria-hidden="true" /><span>Try a change in Watt-If</span><ArrowUpRight size={19} aria-hidden="true" /></Link>
       <details className="tt-setup"><summary>Home setup<ChevronDown size={15} aria-hidden="true" /></summary><TipsSetupReview /></details>
     </> : ready ? <section className="tt-empty"><Lightbulb aria-hidden="true" /><h2>Your next small change starts here</h2><p>{error ? "Tips could not be created yet." : "Preparing tips from your saved bills and appliances…"}</p></section> : null}
+    {/* Tips come first. The outlook is reference material, so it closes the page. */}
+    {ready && household.bills.length > 0 && <BillForecastPanel forecast={forecast} bills={household.bills} />}
   </PageShell>;
 }

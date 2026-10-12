@@ -112,7 +112,7 @@ html[data-theme="dark"] .tt-error { background: #3d3025; border-color: #69503a; 
 .tt-forecast-method p { margin: 10px 0; }
 .tt-forecast-method ul, .tt-forecast-empty ul { padding-left: 18px; }
 .tt-forecast-method li + li, .tt-forecast-empty li + li { margin-top: 7px; }
-.tt-forecast-empty { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--tt-line); }
+.tt-forecast-empty { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 12px; padding: 16px 0; border-top: 1px solid var(--tt-line); }
 .tt-forecast-empty > svg { color: var(--tt-accent); margin-top: 3px; flex-shrink: 0; }
 .tt-forecast-empty > div { flex: 1; min-width: 0; }
 .tt-forecast-empty h2 { font-size: 15px; }
@@ -122,6 +122,8 @@ html[data-theme="dark"] .tt-forecast-history.is-history-1 { color: #b2c2da; }
 html[data-theme="dark"] .tt-forecast-years .is-history-1 i { border-color: #b2c2da; }
 @media (max-width:700px) {
   .tt-forecast { padding: 18px; }
+  /* The chart is drawn 660 units wide, so phone screens need larger axis text to stay readable. */
+  .tt-forecast-axis { font-size: 19px; }
   .tt-forecast-heading { flex-wrap: wrap; }
   .tt-forecast-months { grid-template-columns: repeat(6,minmax(0,1fr)); gap: 4px; }
   .tt-forecast-months button { min-height: 40px; font-size: 12px; }
