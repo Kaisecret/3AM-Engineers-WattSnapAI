@@ -1,7 +1,7 @@
 /* Smart Energy Budget: wallet-style balance card and e-wallet style amount picker */
 .bg-layout { display: grid; gap: 16px; min-width: 0; }
 
-.bg-wallet { position: relative; isolation: isolate; overflow: hidden; padding: 20px; border-radius: 24px; color: #fff; background: linear-gradient(135deg, #0a52d6 0%, #0a7cf0 55%, #08b9ec 100%); box-shadow: 0 16px 32px #0a62d433; }
+.bg-wallet { position: relative; isolation: isolate; overflow: hidden; padding: 18px; border-radius: 24px; color: #fff; background: linear-gradient(135deg, #0a52d6 0%, #0a7cf0 55%, #08b9ec 100%); box-shadow: 0 16px 32px #0a62d433; }
 .bg-wallet::before, .bg-wallet::after { content: ""; position: absolute; z-index: -1; border-radius: 50%; }
 .bg-wallet::before { width: 260px; height: 260px; right: -90px; top: -110px; background: radial-gradient(circle, #ffffff33, transparent 70%); }
 .bg-wallet::after { width: 200px; height: 200px; left: -70px; bottom: -120px; background: #ffffff12; }
@@ -12,39 +12,26 @@
 .bg-wallet-top small { color: #cfe7ff; font-size: 11.5px; }
 .bg-eye { position: relative; z-index: 1; display: grid; place-items: center; width: 38px; height: 38px; margin-left: auto; border-radius: 50%; color: #fff; background: #ffffff1f; transition: background .2s; }
 .bg-eye svg { width: 18px; height: 18px; }
-.bg-wallet-amount { display: block; margin-top: 16px; font-size: 38px; font-weight: 800; line-height: 1.1; letter-spacing: -1.2px; font-variant-numeric: tabular-nums; }
+.bg-wallet-amount { display: block; margin-top: 12px; font-size: 32px; font-weight: 800; line-height: 1.1; letter-spacing: -1.2px; font-variant-numeric: tabular-nums; }
 .bg-wallet-left { margin-top: 4px; color: #dbeeff; font-size: 13px; }
 .bg-wallet-left b { color: #fff; }
 .bg-wallet-left a { color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
-.bg-meter { height: 10px; margin-top: 16px; overflow: hidden; border-radius: 10px; background: #ffffff2e; }
+.bg-meter { height: 8px; margin-top: 12px; overflow: hidden; border-radius: 10px; background: #ffffff2e; }
 .bg-meter span { display: block; height: 100%; border-radius: inherit; background: #4ade80; box-shadow: 0 0 10px #4ade8099; transition: width .5s cubic-bezier(.2, .8, .2, 1); }
 .bg-wallet.is-near .bg-meter span { background: #fbbf24; box-shadow: 0 0 10px #fbbf2499; }
 .bg-wallet.is-over .bg-meter span { background: #fb7185; box-shadow: 0 0 10px #fb718599; }
 .bg-meter-labels { display: flex; justify-content: space-between; gap: 8px; margin-top: 7px; color: #d6ebff; font-size: 11.5px; font-weight: 600; }
-.bg-wallet-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid #ffffff26; }
-.bg-status { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px; color: #dcfce7; background: #22c55e40; font-size: 12px; font-weight: 800; }
-.bg-status svg { width: 15px; height: 15px; }
+.bg-status { padding: 4px 10px 4px 8px; border-radius: 999px; color: #dcfce7; background: #22c55e40; font-weight: 800; }
 .bg-wallet.is-near .bg-status { color: #fef3c7; background: #f59e0b4d; }
 .bg-wallet.is-over .bg-status { color: #ffe4e6; background: #ef44444d; }
-.bg-avg { color: #d6ebff; font-size: 12px; font-weight: 600; }
-.bg-bill { position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 11px 12px; border-radius: 16px; color: #fff; background: #ffffff1f; transition: background .2s; }
-.bg-bill-icon { flex: 0 0 auto; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; background: #ffffff26; }
-.bg-bill-icon svg { width: 17px; height: 17px; }
-.bg-bill-copy { flex: 1; min-width: 0; display: grid; gap: 2px; }
-.bg-bill-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 10px; }
-.bg-bill-copy b { font-size: 13px; font-weight: 800; }
-.bg-bill-copy small { color: #d6ebff; font-size: 11.5px; line-height: 1.4; }
-.bg-bill strong { font-size: 13.5px; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.bg-bill.is-near strong { color: #fde68a; }
-.bg-bill.is-over strong { color: #fecdd3; }
-.bg-bill > svg { flex: 0 0 auto; width: 16px; height: 16px; color: #cfe7ff; }
-.bg-facts { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; list-style: none; color: #fff; font-size: 11.5px; font-weight: 600; }
+.bg-facts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 12px; list-style: none; color: #fff; font-size: 11.5px; font-weight: 600; }
 .bg-facts li, .bg-facts a { display: inline-flex; align-items: center; gap: 5px; }
 .bg-facts a { margin: -6px 0; padding: 6px 0; color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 .bg-facts svg { flex: 0 0 auto; width: 14px; height: 14px; color: #cfe7ff; }
 .bg-facts .is-close svg { color: #86efac; }
 .bg-facts :is(.is-under, .is-over) svg { color: #fde68a; }
-.bg-wallet-art { position: absolute; z-index: -1; right: -6px; top: 50px; width: 104px; height: auto; filter: drop-shadow(0 10px 14px #00205566); }
+.bg-facts .bg-status svg { color: inherit; }
+.bg-wallet-art { position: absolute; z-index: -1; right: -6px; top: 54px; width: 92px; height: auto; filter: drop-shadow(0 10px 14px #00205566); }
 
 .bg-set { padding: 20px; }
 .bg-set-head h2 { font-size: 17px; font-weight: 800; letter-spacing: -.4px; }
@@ -110,7 +97,7 @@
 
 @media (max-width: 359px) {
   .bg-wallet-art { display: none; }
-  .bg-wallet-amount { font-size: 32px; }
+  .bg-wallet-amount { font-size: 28px; }
   .bg-amount-field input { font-size: 34px; }
   .bg-presets { gap: 8px; }
   .bg-presets strong { font-size: 14px; }
@@ -118,13 +105,12 @@
 }
 @media (min-width: 900px) {
   .bg-layout { gap: 22px; }
-  .bg-wallet { padding: 28px 30px; }
-  .bg-wallet-amount { margin-top: 20px; font-size: 52px; }
-  .bg-wallet-left { font-size: 15px; }
-  .bg-wallet-art { top: auto; bottom: -18px; right: 20px; width: 150px; }
-  .bg-meter { max-width: calc(100% - 150px); }
-  .bg-meter-labels { max-width: calc(100% - 150px); font-size: 12.5px; }
-  .bg-wallet-foot, .bg-bill, .bg-facts { max-width: calc(100% - 150px); }
+  .bg-wallet { padding: 22px 24px; }
+  .bg-wallet-amount { margin-top: 14px; font-size: 40px; }
+  .bg-wallet-left { font-size: 14px; }
+  .bg-wallet-art { top: auto; bottom: -14px; right: 18px; width: 128px; }
+  .bg-meter, .bg-meter-labels, .bg-facts { max-width: calc(100% - 140px); }
+  .bg-meter-labels, .bg-facts { font-size: 12.5px; }
   .bg-set { padding: 26px; }
   .bg-set-head h2 { font-size: 20px; }
   .bg-set-head p { font-size: 14px; }
@@ -143,7 +129,7 @@
   .bg-tips { grid-column: 2; grid-row: 3; }
 }
 @media (hover: hover) {
-  .bg-eye:hover, .bg-bill:hover { background: #ffffff33; }
+  .bg-eye:hover { background: #ffffff33; }
   .bg-presets button:not(.is-selected):hover { border-color: #9bdcf2; background: #f3fbff; transform: translateY(-1px); }
   .bg-suggest:hover { border-color: #5cc6ea; background: #eef9fe; }
   .bg-link:hover, .bg-tips-link:hover { text-decoration: underline; }

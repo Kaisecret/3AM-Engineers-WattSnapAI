@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Check, ChevronRight, CircleCheck, Eye, EyeOff, HandCoins, Lightbulb, ReceiptText, Sparkles, TrendingDown, TriangleAlert, Wallet } from "lucide-react";
 import PageShell from "./PageShell";
 import { usePreviewHousehold } from "../use-preview-household";
-import { amountPaid, averageKwh, billMonth, budgetPresets, budgetStatus, deviceEstimate, effectiveRate, latestBill, monthName, monthlySeries, parseAmount, pesos, shortMonth, suggestedBudget, validateBudget, type BudgetStatus } from "../preview-data";
+import { amountPaid, averageKwh, budgetPresets, budgetStatus, deviceEstimate, effectiveRate, latestBill, monthName, monthlySeries, parseAmount, pesos, shortMonth, suggestedBudget, validateBudget, type BudgetStatus } from "../preview-data";
 import { billCoverage } from "../bill-coverage";
 
 const statusCopy: Record<BudgetStatus, { label: string; detail: string }> = {
@@ -24,12 +24,10 @@ export default function BudgetScreen() {
   const latest = latestBill(household.bills);
   const recent = monthlySeries(household.bills, 6).reverse();
   const budget = household.budget;
-  // The budget is measured against the 30-day device estimate. The latest bill is a finished month, so it has its own row.
+  // The budget is measured against the 30-day device estimate only. Finished bills are compared in "Bills vs budget".
   const devices = deviceEstimate(household);
   const used = devices && budget > 0 ? devices.pay / budget * 100 : 0;
   const status = budgetStatus(devices?.pay ?? 0, budget);
-  // The bill row is about money leaving the household, so it uses what was paid after any subsidy.
-  const paid = latest ? amountPaid(latest) : 0;
   const suggestion = suggestedBudget(household.bills);
   const rate = effectiveRate(household.bills);
   const coverage = devices && latest ? billCoverage(devices.kwh, latest.kwh) : null;
@@ -73,22 +71,11 @@ export default function BudgetScreen() {
         <p className="bg-wallet-left">{budget <= 0 ? "Set a budget to compare your spending" : devices ? devices.pay > budget ? <>Over by <b>{money(devices.pay - budget)}</b> with your devices</> : <><b>{money(budget - devices.pay)}</b> left after your devices</> : <Link href={devicesPrompt.href}>{devicesPrompt.text}</Link>}</p>
         <div className="bg-meter" role="progressbar" aria-label="Budget used by your device estimate" aria-valuenow={Math.round(used)} aria-valuemin={0} aria-valuemax={Math.max(100, Math.ceil(used))}><span style={{ width: `${Math.min(used, 100)}%` }} /></div>
         <div className="bg-meter-labels"><span>{Math.round(used)}% used</span><span>{devices ? <>≈ {money(devices.pay)} estimated</> : "No estimate yet"}</span></div>
-        {budget > 0 && devices && coverage && latest && <ul className="bg-facts">
-          <li className={`is-${coverage.status}`}>{coverage.status === "close" ? <><CircleCheck aria-hidden="true" /> Close to your {monthName(latest.month)} bill</> : <Link href="/appliances"><TriangleAlert aria-hidden="true" /> {coverage.status === "over" ? <>Higher than your {monthName(latest.month)} bill</> : <>Covers only {coverage.percent}% of your {monthName(latest.month)} bill</>}</Link>}</li>
-          {devices.subsidy > 0 && <li><HandCoins aria-hidden="true" /> {money(devices.subsidy)} subsidy applied</li>}
-        </ul>}
-        <div className="bg-wallet-foot">
-          <span className="bg-status">{status === "on-track" ? <CircleCheck aria-hidden="true" /> : <TriangleAlert aria-hidden="true" />}{budget <= 0 ? "Budget not set" : devices ? statusCopy[status].label : "Waiting for your devices"}</span>
-          <span className="bg-avg">Avg paid {money(recent.length ? recent.reduce((sum, bill) => sum + amountPaid(bill), 0) / recent.length : 0)}</span>
-        </div>
-        {budget > 0 && <Link href={latest ? "/bills" : "/bills/new"} className={`bg-bill${latest ? ` is-${budgetStatus(paid, budget)}` : ""}`}>
-          <span className="bg-bill-icon"><ReceiptText aria-hidden="true" /></span>
-          <span className="bg-bill-copy">
-            <span className="bg-bill-top"><b>Last bill</b>{latest && <strong>{paid > budget ? <>Over by {money(paid - budget)}</> : <>{money(budget - paid)} under</>}</strong>}</span>
-            <small>{latest ? <>{billMonth(latest.month)} · {money(paid)} paid</> : "Scan a bill to compare it with your budget"}</small>
-          </span>
-          <ChevronRight aria-hidden="true" />
-        </Link>}
+        <ul className="bg-facts">
+          <li className="bg-status">{status === "on-track" ? <CircleCheck aria-hidden="true" /> : <TriangleAlert aria-hidden="true" />}{budget <= 0 ? "Budget not set" : devices ? statusCopy[status].label : "Waiting for your devices"}</li>
+          {budget > 0 && devices && coverage && latest && <li className={`is-${coverage.status}`}>{coverage.status === "close" ? <><CircleCheck aria-hidden="true" /> Close to your {monthName(latest.month)} bill</> : <Link href="/appliances"><TriangleAlert aria-hidden="true" /> {coverage.status === "over" ? <>Higher than your {monthName(latest.month)} bill</> : <>Covers only {coverage.percent}% of your {monthName(latest.month)} bill</>}</Link>}</li>}
+          {budget > 0 && devices && devices.subsidy > 0 && <li><HandCoins aria-hidden="true" /> {money(devices.subsidy)} subsidy applied</li>}
+        </ul>
         <Image className="bg-wallet-art" src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="" width={240} height={240} sizes="(min-width: 900px) 150px, 100px" />
       </section>
 
@@ -112,7 +99,7 @@ export default function BudgetScreen() {
       </section>
 
       <section className="ui-panel bg-history" aria-labelledby="bg-history-title">
-        <div className="ui-panel-heading"><div><h2 id="bg-history-title">Bills vs budget</h2><p>Each month compared with your {whole(budget)} target.</p></div><Link href="/bills" className="bg-link">All bills <ChevronRight size={16} aria-hidden="true" /></Link></div>
+        <div className="ui-panel-heading"><div><h2 id="bg-history-title">Bills vs budget</h2><p>Each month compared with your {whole(budget)} target.{recent.length > 0 && <> Average paid {money(recent.reduce((sum, bill) => sum + amountPaid(bill), 0) / recent.length)}.</>}</p></div><Link href="/bills" className="bg-link">All bills <ChevronRight size={16} aria-hidden="true" /></Link></div>
         {recent.length ? <ul className="bg-months">
           {recent.map(bill => { const paid = amountPaid(bill); const share = budget > 0 ? paid / budget * 100 : 0; const state = budgetStatus(paid, budget); return <li key={bill.id} className={`is-${state}`}>
             <span className="bg-month-tile"><b>{shortMonth(bill.month)}</b><small>{bill.month.slice(0, 4)}</small></span>
