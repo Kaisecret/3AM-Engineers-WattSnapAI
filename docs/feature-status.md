@@ -22,7 +22,7 @@ An ANTECO receipt shows the total kWh and the amount, for example **192 kWh and 
 | 8 | Advisories and location match | Long provider posts, unclear if your barangay is affected | Advisories | 🟡 | ANTECO's Facebook page is collected automatically and read by Gemini (caption and images); advisories that list your area are saved for you with a link to the post. Screenshot or pasted text still works, and there the user types the details. No sharing from other apps. No notification when the app is closed. Needs the set-up in `docs/14-anteco-advisory-ingestion.md`. |
 | 9 | Offline access | Brownouts often cut mobile data too | Whole app | 🟡 | Records stay on the device, but pages need a connection to open. Offline shows a notice. This was a security choice (no signed-in page shown after logout). |
 | 10 | Watt-If simulator | Savings are unknown until habits change | Simulator | ✅ | – |
-| 11 | Smart budget | Overspending is noticed only when the bill arrives | Budget | 🟡 | Peso budget with On track / near limit / Over budget works. No kWh target, no "days left / at risk" forecast, and device estimates are not used. |
+| 11 | Smart budget | Overspending is noticed only when the bill arrives | Budget | 🟡 | Peso budget with On track / near limit / Over budget works against the latest bill. The Budget card also compares the budget with the 30-day device estimate, kept separate from the bill. No kWh target and no "days left / at risk" forecast. |
 | 12 | Brownout Ready | Families are unprepared when an interruption starts | Advisories | 🟡 | The separate Brownout Ready page was retired. An advisory that lists the household's area shows its schedule and a preparation checklist. No countdown. |
 
 Gemini 3.5 Flash-Lite is wired into the server (`src/lib/gemini/`, needs `GEMINI_API_KEY`; `GEMINI_MODEL` can name another model). Two chats use it:
@@ -65,7 +65,7 @@ Antique's Provincial Electric Power Subsidy covers up to ₱500 of a household's
 | Household settings | **Monthly subsidy** is ₱500 for ANTECO households until changed. Enter 0 to turn it off, or another amount if yours differs. |
 | Bill form | **Subsidy** fills itself in with the smaller of the monthly subsidy and the bill (₱500 on ₱3,072.60; ₱418.85 on ₱418.85). It can be edited to match the receipt. **You pay** updates as you type. |
 | Home, Energy, saved bill | Show the bill and **You pay** (₱3,072.60 → ₱2,572.60). |
-| Smart budget | Compares the budget with **what you pay**. The average and history bars use it too. |
+| Smart budget | Compares the budget with **what you pay**. The average and history bars use it too. The device estimate takes off the monthly subsidy the same way (`deviceEstimate`). |
 | Price per kWh | Uses the **full bill** (₱3,072.60 ÷ 192 = **₱16.00/kWh**). The subsidy is a fixed monthly amount, not a per-kWh discount, so each extra kWh still costs the full price. Subtracting it would make every device and Watt-If estimate too low (₱13.40/kWh). |
 
 Code: `antiquePepsSubsidy`, `monthlySubsidyFor`, `subsidyFor` and `amountPaid` in `src/features/dashboard/preview-data.ts`, tested in `subsidy.test.mjs`. A bill stores `amount` (before subsidy) and an optional `subsidy`; the household stores an optional `monthlySubsidy`.
@@ -128,7 +128,7 @@ These are estimates, not meter readings. Fridges and air conditioners switch on 
 ## Remaining work
 
 1. **Use Gemini in more screens.** Snap AI now reads bills. The Tips screen uses the `tips` route and Add appliance uses the `appliances` route. The `advisories` route still needs a Gemini implementation. This covers feature 8.
-2. **Budget (feature 11):** add a kWh target, a "days left / at risk" forecast, and use device estimates as the proposal describes.
+2. **Budget (feature 11):** add a kWh target and a "days left / at risk" forecast. The device estimate is compared with the budget, but it is a 30-day figure, not use to date.
 3. **Offline pages (feature 9):** decide whether signed-in pages should open offline again. The current service worker never caches them, for security after logout.
 4. **Share to WattSnap (feature 8):** accept advisory screenshots shared from Facebook or Messenger (needs a web app share target).
 5. **Receipt charge breakdown (new idea):** ANTECO receipts itemise every charge; generation alone was ₱1,624.93, 53% of the August bill. A "where your money goes" view needs AI reading first.

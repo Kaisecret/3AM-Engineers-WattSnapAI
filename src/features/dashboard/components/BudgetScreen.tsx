@@ -2,10 +2,11 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Check, ChevronRight, CircleCheck, Eye, EyeOff, Lightbulb, ReceiptText, Sparkles, TrendingDown, TriangleAlert, Wallet } from "lucide-react";
+import { Check, ChevronRight, CircleCheck, Eye, EyeOff, Lightbulb, Plug, ReceiptText, Sparkles, TrendingDown, TriangleAlert, Wallet } from "lucide-react";
 import PageShell from "./PageShell";
 import { usePreviewHousehold } from "../use-preview-household";
-import { amountPaid, averageKwh, billMonth, budgetPresets, budgetStatus, effectiveRate, latestBill, monthlySeries, parseAmount, pesos, shortMonth, suggestedBudget, validateBudget, type BudgetStatus } from "../preview-data";
+import { amountPaid, averageKwh, billMonth, budgetPresets, budgetStatus, deviceEstimate, effectiveRate, latestBill, monthName, monthlySeries, parseAmount, pesos, shortMonth, suggestedBudget, validateBudget, type BudgetStatus } from "../preview-data";
+import { billCoverage } from "../bill-coverage";
 
 const statusCopy: Record<BudgetStatus, { label: string; detail: string }> = {
   "on-track": { label: "On track", detail: "Your latest bill is well within budget." },
@@ -29,6 +30,10 @@ export default function BudgetScreen() {
   const status = budgetStatus(spent, budget);
   const suggestion = suggestedBudget(household.bills);
   const rate = effectiveRate(household.bills);
+  // The latest bill is a finished month, so the devices give the only figure for the month still running.
+  const devices = deviceEstimate(household);
+  const coverage = devices && latest ? billCoverage(devices.kwh, latest.kwh) : null;
+  const devicesPrompt = !household.appliances.length ? { href: "/appliances/new", text: "Add your devices to estimate the month ahead" } : rate > 0 ? { href: "/appliances", text: "Check the watts and hours of your devices" } : { href: "/bills/new", text: "Scan a bill to price your devices" };
   const value = draft ?? (budget > 0 ? String(budget) : "");
   const amount = parseAmount(value);
   const changed = draft !== null && amount !== budget;
@@ -65,13 +70,22 @@ export default function BudgetScreen() {
           <button type="button" className="bg-eye" aria-label={hidden ? "Show amounts" : "Hide amounts"} aria-pressed={hidden} onClick={() => setHidden(value => !value)}>{hidden ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}</button>
         </div>
         <strong className="bg-wallet-amount">{budget > 0 ? money(budget) : "Not set"}</strong>
-        <p className="bg-wallet-left">{budget <= 0 ? "Set a budget to compare your spending" : latest ? spent > budget ? <>Over by <b>{money(spent - budget)}</b></> : <><b>{money(budget - spent)}</b> left this month</> : "Scan a bill to see how much is left"}</p>
+        <p className="bg-wallet-left">{budget <= 0 ? "Set a budget to compare your spending" : latest ? spent > budget ? <>Over by <b>{money(spent - budget)}</b> on your {monthName(latest.month)} bill</> : <><b>{money(budget - spent)}</b> under budget on your {monthName(latest.month)} bill</> : "Scan a bill to compare it with your budget"}</p>
         <div className="bg-meter" role="progressbar" aria-label="Budget used by latest bill" aria-valuenow={Math.round(used)} aria-valuemin={0} aria-valuemax={Math.max(100, Math.ceil(used))}><span style={{ width: `${Math.min(used, 100)}%` }} /></div>
         <div className="bg-meter-labels"><span>{Math.round(used)}% used</span><span>{money(spent)} spent</span></div>
         <div className="bg-wallet-foot">
           <span className="bg-status">{status === "on-track" ? <CircleCheck aria-hidden="true" /> : <TriangleAlert aria-hidden="true" />}{budget <= 0 ? "Budget not set" : latest ? statusCopy[status].label : "Waiting for a bill"}</span>
           <span className="bg-avg">Avg paid {money(recent.length ? recent.reduce((sum, bill) => sum + amountPaid(bill), 0) / recent.length : 0)}</span>
         </div>
+        {budget > 0 && <Link href={devices ? "/appliances" : devicesPrompt.href} className={`bg-devices${devices ? ` is-${budgetStatus(devices.pay, budget)}` : ""}`}>
+          <span className="bg-devices-icon"><Plug aria-hidden="true" /></span>
+          <span className="bg-devices-copy">
+            <span className="bg-devices-top"><b>Your devices</b>{devices && <strong>{devices.pay > budget ? <>Over by {money(devices.pay - budget)}</> : <>{money(budget - devices.pay)} left</>}</strong>}</span>
+            <small>{devices ? <>30-day estimate · ≈ {money(devices.pay)} to pay{devices.subsidy > 0 && <> after {money(devices.subsidy)} subsidy</>}</> : devicesPrompt.text}</small>
+          </span>
+          <ChevronRight aria-hidden="true" />
+        </Link>}
+        {budget > 0 && devices && coverage && latest && <p className="bg-devices-note">An estimate for the devices you listed, not a meter reading. {coverage.status === "over" ? <>They add up to more than your {monthName(latest.month)} bill, so check the hours you entered.</> : <>They explain {coverage.percent}% of your {monthName(latest.month)} bill{coverage.status === "under" && ", so the real bill may be higher"}.</>}</p>}
         <Image className="bg-wallet-art" src="/assets/branding/Cheerful Bee Robot Thumbs-Up.png" alt="" width={240} height={240} sizes="(min-width: 900px) 150px, 100px" />
       </section>
 

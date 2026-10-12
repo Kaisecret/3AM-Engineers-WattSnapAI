@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { amountPaid, antiquePepsSubsidy, effectiveRate, monthlySubsidyFor, normalizePreview, subsidyFor, suggestedBudget, validateBill } from "./preview-data.ts";
+import { amountPaid, antiquePepsSubsidy, deviceEstimate, effectiveRate, monthlySubsidyFor, normalizePreview, subsidyFor, suggestedBudget, validateBill } from "./preview-data.ts";
 
 const august = { month: "2026-08", kwh: 192, amount: 3072.6 };
 
@@ -38,4 +38,19 @@ test("the household setting is kept when valid and the budget suggestion uses wh
   assert.equal(normalizePreview({ name: "Santos", bills: [], appliances: [], budget: 0, monthlySubsidy: 500 }).monthlySubsidy, 500);
   assert.equal(normalizePreview({ name: "Santos", bills: [], appliances: [], budget: 0, monthlySubsidy: -5 }).monthlySubsidy, undefined);
   assert.equal(suggestedBudget([{ id: "a", ...august, subsidy: 500 }]), 2800, "₱2,572.60 paid + 5% headroom, rounded up to ₱100");
+});
+
+test("the budget compares the 30-day device estimate after the monthly subsidy, like a paid bill", () => {
+  const bills = [{ id: "sep", month: "2026-09", kwh: 100, amount: 1200 }];
+  const aircon = { id: "ac", name: "Aircon", watts: 1000, hours: 5, quantity: 1 };
+  assert.deepEqual(deviceEstimate({ bills, appliances: [aircon], provider: "anteco" }), { kwh: 150, cost: 1800, subsidy: 500, pay: 1300 });
+  assert.deepEqual(deviceEstimate({ bills, appliances: [aircon], provider: "akelco" }), { kwh: 150, cost: 1800, subsidy: 0, pay: 1800 });
+  const fan = { id: "fan", name: "Fan", watts: 55, hours: 8, quantity: 1 };
+  assert.equal(deviceEstimate({ bills, appliances: [fan], provider: "anteco" }).pay, 0, "a small estimate is fully covered");
+});
+
+test("no device estimate without devices or a bill to price them", () => {
+  const fan = { id: "fan", name: "Fan", watts: 55, hours: 8, quantity: 1 };
+  assert.equal(deviceEstimate({ bills: [], appliances: [fan] }), null);
+  assert.equal(deviceEstimate({ bills: [{ id: "sep", month: "2026-09", kwh: 100, amount: 1200 }], appliances: [] }), null);
 });

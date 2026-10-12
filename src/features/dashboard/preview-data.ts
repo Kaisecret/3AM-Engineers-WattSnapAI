@@ -230,6 +230,19 @@ export function effectiveRate(bills: PreviewBill[]) {
   const latest = latestBill(bills);
   return latest && latest.kwh > 0 && latest.amount > 0 ? latest.amount / latest.kwh : 0;
 }
+export interface DeviceEstimate { kwh: number; cost: number; subsidy: number; pay: number; }
+/**
+ * What the registered devices are estimated to cost over 30 days at the latest bill's price per kWh.
+ * `pay` takes off the monthly subsidy, so it compares with the budget the same way a paid bill does.
+ */
+export function deviceEstimate(home: Pick<PreviewHousehold, "appliances" | "bills" | "monthlySubsidy" | "provider">): DeviceEstimate | null {
+  const kwh = home.appliances.reduce((sum, item) => sum + dailyApplianceKwh(item), 0) * 30;
+  const rate = effectiveRate(home.bills);
+  if (!(kwh > 0) || !(rate > 0)) return null;
+  const cost = Math.round(kwh * rate * 100) / 100;
+  const subsidy = subsidyFor(cost, monthlySubsidyFor(home));
+  return { kwh, cost, subsidy, pay: Math.round((cost - subsidy) * 100) / 100 };
+}
 export function shiftMonth(month: string, delta: number) {
   const [year, value] = month.split("-").map(Number);
   const date = new Date(Date.UTC(year, value - 1 + delta, 1));

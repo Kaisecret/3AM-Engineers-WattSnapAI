@@ -26,6 +26,18 @@
 .bg-wallet.is-near .bg-status { color: #fef3c7; background: #f59e0b4d; }
 .bg-wallet.is-over .bg-status { color: #ffe4e6; background: #ef44444d; }
 .bg-avg { color: #d6ebff; font-size: 12px; font-weight: 600; }
+.bg-devices { position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 11px 12px; border-radius: 16px; color: #fff; background: #ffffff1f; transition: background .2s; }
+.bg-devices-icon { flex: 0 0 auto; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; background: #ffffff26; }
+.bg-devices-icon svg { width: 17px; height: 17px; }
+.bg-devices-copy { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.bg-devices-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 10px; }
+.bg-devices-copy b { font-size: 13px; font-weight: 800; }
+.bg-devices-copy small { color: #d6ebff; font-size: 11.5px; line-height: 1.4; }
+.bg-devices strong { font-size: 13.5px; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.bg-devices.is-near strong { color: #fde68a; }
+.bg-devices.is-over strong { color: #fecdd3; }
+.bg-devices > svg { flex: 0 0 auto; width: 16px; height: 16px; color: #cfe7ff; }
+.bg-devices-note { margin-top: 7px; color: #d6ebff; font-size: 11.5px; line-height: 1.45; }
 .bg-wallet-art { position: absolute; z-index: -1; right: -6px; top: 50px; width: 104px; height: auto; filter: drop-shadow(0 10px 14px #00205566); }
 
 .bg-set { padding: 20px; }
@@ -106,7 +118,7 @@
   .bg-wallet-art { top: auto; bottom: -18px; right: 20px; width: 150px; }
   .bg-meter { max-width: calc(100% - 150px); }
   .bg-meter-labels { max-width: calc(100% - 150px); font-size: 12.5px; }
-  .bg-wallet-foot { max-width: calc(100% - 150px); }
+  .bg-wallet-foot, .bg-devices, .bg-devices-note { max-width: calc(100% - 150px); }
   .bg-set { padding: 26px; }
   .bg-set-head h2 { font-size: 20px; }
   .bg-set-head p { font-size: 14px; }
@@ -125,7 +137,7 @@
   .bg-tips { grid-column: 2; grid-row: 3; }
 }
 @media (hover: hover) {
-  .bg-eye:hover { background: #ffffff33; }
+  .bg-eye:hover, .bg-devices:hover { background: #ffffff33; }
   .bg-presets button:not(.is-selected):hover { border-color: #9bdcf2; background: #f3fbff; transform: translateY(-1px); }
   .bg-suggest:hover { border-color: #5cc6ea; background: #eef9fe; }
   .bg-link:hover, .bg-tips-link:hover { text-decoration: underline; }
