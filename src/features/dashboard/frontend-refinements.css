@@ -5,10 +5,27 @@
 .ws-home :is(input, select, textarea) { max-width: 100%; }
 .scan-fields select { width: 100%; min-height: 48px; border: 1px solid #d7e6ec; border-radius: 12px; padding: 10px 12px; font: inherit; color: #17394d; background: white; }
 html[data-theme="dark"] .scan-fields select { background: #192e3d; border-color: #4c6e7d; color: #edf6fa; }
-.ui-confirm-dialog { width: min(440px, calc(100% - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: 28px; border: 1px solid #d7e6ec; border-radius: 24px; color: #17394d; background: white; box-shadow: 0 24px 60px #17394d26; }
-.ui-confirm-dialog::backdrop { background: #17394d66; }.ui-confirm-dialog h2 { font-size: 24px; overflow-wrap: anywhere; }.ui-confirm-dialog p { margin: 16px 0; font-size: 16px; line-height: 1.6; }.ui-confirm-dialog > div { display: flex; flex-wrap: wrap; gap: 12px; }
-.ui-confirm-dialog :is(.ui-primary, .ui-secondary) { min-height: 48px; font: inherit; padding: 12px 16px; border-radius: 12px; }.ui-confirm-dialog .ui-primary { background: #08738e; color: white; }.ui-confirm-dialog .ui-secondary { border: 1px solid #08738e; background: white; color: #08738e; }
+/* Remove-record confirmation. The global reset clears a dialog's own centring, so `margin: auto` puts it back. */
+.ui-confirm-dialog { width: min(400px, calc(100% - 32px)); max-height: calc(100dvh - 32px); margin: auto; overflow: auto; padding: 28px; border: 1px solid #dcecf4; border-radius: 24px; color: #17394d; background: white; box-shadow: 0 24px 70px #0b2a4a40; text-align: center; }
+.ui-confirm-dialog::backdrop { background: #0b2a4a66; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.ui-confirm-icon { display: grid; place-items: center; width: 56px; height: 56px; margin: 0 auto 18px; border: 1px solid #f5d8d1; border-radius: 18px; color: #b54735; background: #fff2ee; }
+.ui-confirm-icon svg { width: 26px; height: 26px; }
+.ui-confirm-dialog h2 { font-size: 22px; font-weight: 800; letter-spacing: -.5px; line-height: 1.3; overflow-wrap: anywhere; text-wrap: balance; }
+.ui-confirm-dialog h2 + p { margin-top: 10px; color: #587386; font-size: 16px; line-height: 1.55; text-wrap: pretty; }
+.ui-confirm-dialog .ui-error { margin-top: 16px; font-size: 14px; }
+.ui-confirm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px; }
+.ui-confirm-dialog :is(.ui-primary, .ui-secondary) { width: 100%; min-height: 48px; padding: 12px 14px; border-radius: 12px; font: inherit; font-size: 15px; font-weight: 700; line-height: 1.3; cursor: pointer; }
+.ui-confirm-dialog .ui-secondary { border: 1px solid #b9deee; color: #076c93; background: #f0faff; }
+.ui-confirm-dialog .ui-confirm-remove { border: 1px solid #ad3e30; color: white; background: #b54735; }
+.ui-confirm-remove svg { flex: 0 0 auto; width: 18px; height: 18px; }
+.ui-confirm-dialog :focus-visible { outline: 3px solid #1687b2; outline-offset: 3px; }
+@media (hover: hover) { .ui-confirm-dialog .ui-secondary:hover { background: #e2f4fc; } .ui-confirm-dialog .ui-confirm-remove:hover { background: #9d3829; } html[data-theme="dark"] .ui-confirm-dialog .ui-secondary:hover { background: #27495c; } }
+@media (max-width: 479px) { .ui-confirm-dialog { padding: 24px; } .ui-confirm-actions { grid-template-columns: 1fr; gap: 10px; margin-top: 22px; } }
+@media (prefers-reduced-motion: no-preference) { .ui-confirm-dialog[open] { animation: ws-arrive .2s ease-out both; } }
 html[data-theme="dark"] .ui-confirm-dialog { color: #edf6fa; background: #192e3d; border-color: #4c6e7d; }
+html[data-theme="dark"] .ui-confirm-dialog h2 + p { color: #b4c8d5; }
+html[data-theme="dark"] .ui-confirm-icon { border-color: #71483f; color: #f5b5a5; background: #3d2c2b; }
+html[data-theme="dark"] .ui-confirm-dialog .ui-secondary { border-color: #467184; color: #a7def1; background: #203f50; }
 .en-chart { overflow-x: auto; }.en-col { min-width: 44px; }.en-bar { display: block; }.ws-chart { overflow-x: auto; }.ws-chart-day { min-width: 44px; }.ws-day-label small { display: block; }
 .en-col { border: 0; padding: 0; background: transparent; }.en-plot, .en-labels { min-width: 314px; }.en-labels span { min-width: 44px; }.en-col:focus-visible { outline: 3px solid #1687b2; outline-offset: 2px; }.en-compare .ui-note { margin-top: 16px; font-size: 14px; line-height: 1.6; }
 /* Existing cards and buttons retain their arrangement, with readable secondary text. */
