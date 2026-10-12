@@ -62,10 +62,28 @@ async function main() {
     catch (error) { console.error((await page.locator('body').innerText()).slice(0, 2000)); throw error; }
     return { context, page };
   }
+  // The mascot must never cover the bill facts or its actions.
+  const heroLayout = page => page.locator('.en-hero').evaluate(card => {
+    const box = element => element.getBoundingClientRect();
+    const art = box(card.querySelector('.en-hero-art'));
+    const covered = [...card.querySelectorAll('.en-hero-title, .en-hero-figure, .en-hero-meta, .en-hero-change, .en-hero-budget, .en-hero-button')].filter(item => { const b = box(item); return b.left < art.right && b.right > art.left && b.top < art.bottom && b.bottom > art.top; }).map(item => item.className);
+    const bar = card.querySelector('.en-hero-budget-bar'), button = box(card.querySelector('.en-hero-button'));
+    return { covered, art: art.width, fill: bar ? box(bar.firstElementChild).width / box(bar).width : null, buttonWidth: button.width, buttonHeight: button.height, copyWidth: box(card.querySelector('.en-hero-copy')).width };
+  });
   try {
     for (const width of [1440, 390, 320]) {
       const { context, page } = await open(seed, width);
       const errors = []; page.on('pageerror', error => errors.push(error.message));
+      const hero = page.locator('.en-hero');
+      await hero.getByRole('heading', { name: 'September 2026 bill', exact: true }).waitFor();
+      assert.equal(await hero.getByRole('link', { name: /Budget\s*80% of ₱1,800/ }).getAttribute('href'), '/budget');
+      const layout = await heroLayout(page);
+      assert.ok(layout.art > 60, 'Mascot stays on the card');
+      assert.deepEqual(layout.covered, [], `${width}px: mascot covers no bill fact or action`);
+      assert.ok(Math.abs(layout.fill - 0.8) < 0.02, `Budget bar shows the share used (${layout.fill})`);
+      assert.ok(layout.buttonHeight >= 44, 'Scan button is a comfortable touch target');
+      if (width < 600) assert.ok(layout.buttonWidth >= layout.copyWidth - 1, 'Phone scan button spans the card');
+      await hero.screenshot({ path: path.join(output, `hero-${width}.png`) });
       const comparison = page.locator('.en-compare');
       assert.equal(await comparison.locator('details[open]').count(), 0, 'Comparison details start collapsed');
       assert((await comparison.innerText()).length < 220, 'Comparison copy fits a quick mobile scan');
@@ -148,6 +166,21 @@ async function main() {
     assert.equal(await added.page.getByLabel('History period', { exact: true }).inputValue(), '2025', 'A newly saved old bill is visible in its year');
     assert.equal(await added.page.locator('#bill-2025-1 .en-row').getAttribute('aria-expanded'), 'true');
     console.log('PASS: newly saved historical bills remain visible and open');
+    const subsidised = await open({ ...seed, bills: [...seed.bills.slice(0, -1), { ...seed.bills.at(-1), amount: 1200, subsidy: 300, dueDate: '2026-10-05' }] });
+    await subsidised.page.locator('.en-hero').getByRole('link', { name: /Budget\s*50% of ₱1,800/ }).waitFor();
+    assert.match(await subsidised.page.locator('.en-hero').innerText(), /Due Oct 5, 2026/);
+    const unset = await open({ ...seed, budget: 0 });
+    assert.equal(await unset.page.locator('.en-hero').getByRole('link', { name: 'Set a monthly budget', exact: true }).getAttribute('href'), '/budget');
+    assert.equal(await unset.page.locator('.en-hero-budget-bar').count(), 0, 'No bar without a budget');
+    const over = await open({ ...seed, budget: 1000 });
+    await over.page.locator('.en-hero-budget.is-over').getByText('144% of ₱1,000', { exact: true }).waitFor();
+    assert.equal((await heroLayout(over.page)).fill, 1, 'An over-budget bar stops at full');
+    await over.page.locator('.en-hero').screenshot({ path: path.join(output, 'hero-over-390.png') });
+    const large = await open({ ...seed, bills: [{ id: 'earlier', month: '2026-08', kwh: 2000, amount: 20000, source: 'manual' }, { id: 'large', month: '2026-09', kwh: 1234, amount: 12345.67, dueDate: '2026-10-05', source: 'manual' }] }, 320);
+    assert.deepEqual((await heroLayout(large.page)).covered, [], 'Large values stay clear of the mascot on a small phone');
+    assert.equal(await large.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
+    await large.page.locator('.en-hero').screenshot({ path: path.join(output, 'hero-large-320.png') });
+    console.log('PASS: latest-bill card budget share after subsidy, unset and over budget, large values');
     console.log('Screenshots: ' + output);
   } finally {
     await Promise.all(contexts.map(context => context.close().catch(() => {})));

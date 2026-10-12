@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowDown, ArrowUp, CalendarDays, ChartColumnBig, ChevronDown, ChevronRight, ReceiptText, ScanText, Sparkles, Trash2, TrendingDown, TrendingUp } from "lucide-react";
 import PageShell from "./PageShell";
 import { usePreviewHousehold } from "../use-preview-household";
-import { amountPaid, averageKwh, billMonth, compareWithPrevious, dueDateLabel, monthName, pesos, shortMonth, sortBillsByMonth, type PreviewBill } from "../preview-data";
+import { amountPaid, averageKwh, billMonth, budgetStatus, compareWithPrevious, dueDateLabel, monthName, pesos, shortMonth, sortBillsByMonth, type PreviewBill } from "../preview-data";
 import { billHistoryFilters, filterBillHistory, type BillHistoryFilter } from "../bill-history-filter";
 import { forecastNextMonth } from "../next-month-forecast";
 import NextMonthForecast from "./NextMonthForecast";
@@ -15,6 +15,7 @@ import { consumptionChange } from "@/features/consumption-change/local-summary";
 
 const sourceLabels = { scan: "WattSnap AI", manual: "WattSnap AI", sample: "Sample" };
 const shortDate = (date: string) => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`));
+const whole = (value: number) => pesos(Math.round(value)).replace(/\.00$/, "");
 
 /** Everything saved for one bill, including what Snap AI read: meter, subsidy and the charge groups. */
 function BillDetails({ bill, onRemove, disabled }: { bill: PreviewBill; onRemove: () => void; disabled: boolean }) {
@@ -83,7 +84,9 @@ export default function EnergyScreen() {
   const average = series.length ? series.reduce((sum, bill) => sum + value(bill), 0) / series.length : 0;
   const lowest = series.reduce<PreviewBill | undefined>((low, bill) => !low || bill.kwh < low.kwh ? bill : low, undefined);
   const highest = series.reduce<PreviewBill | undefined>((high, bill) => !high || bill.kwh > high.kwh ? bill : high, undefined);
-  const budgetPercent = latest && household.budget > 0 ? Math.round(latest.amount / household.budget * 100) : 0;
+  // As on the Budget screen, the share used counts what was paid after any subsidy.
+  const budgetSpent = latest ? amountPaid(latest) : 0;
+  const budgetPercent = household.budget > 0 ? Math.round(budgetSpent / household.budget * 100) : 0;
   const format = (amount: number) => unit === "kwh" ? `${Math.round(amount)}` : `₱${Math.round(amount).toLocaleString("en-PH")}`;
   const highlightedMonth = household.bills.find(bill => bill.id === highlight)?.month;
   const highlightOutsideRecent = Boolean(highlightedMonth && !filterBillHistory(household.bills, "recent", now).some(bill => bill.id === highlight));
@@ -113,11 +116,19 @@ export default function EnergyScreen() {
       <div className="en-top">
         <section className="en-hero" aria-labelledby="en-hero-title">
           <div className="en-hero-copy">
-            <p className="en-eyebrow">Latest bill · {billMonth(latest.month)}</p>
-            <h2 id="en-hero-title"><span>{latest.kwh}</span> kWh</h2>
-            <p className="en-hero-meta">{pesos(latest.amount)}{latest.dueDate && <> · Due {dueDateLabel(latest.dueDate)}</>}</p>
+            <div className="en-hero-facts">
+              <h2 id="en-hero-title" className="en-hero-title">{billMonth(latest.month)} bill</h2>
+              <p className="en-hero-figure"><strong>{latest.kwh}</strong> kWh</p>
+              <p className="en-hero-meta"><span>{pesos(latest.amount)}</span>{latest.dueDate && <span className="en-hero-due">Due {dueDateLabel(latest.dueDate)}</span>}</p>
+            </div>
             {latestChange ? <p className={`en-hero-change ${latestChange.kwhPercent <= 0 ? "is-lower" : "is-higher"}`}>{latestChange.kwhPercent !== 0 && (latestChange.kwhPercent < 0 ? <TrendingDown aria-hidden="true" /> : <TrendingUp aria-hidden="true" />)}{latestChange.kwhPercent === 0 ? `No change from ${monthName(latestChange.previous.month)}` : `${Math.abs(latestChange.kwhPercent).toFixed(0)}% ${latestChange.kwhPercent < 0 ? "less" : "more"} than ${monthName(latestChange.previous.month)}`}</p> : <p className="en-hero-change">Add another month to compare</p>}
-            <div className="en-hero-actions"><Link href="/bills/new" className="en-hero-button"><ScanText size={18} aria-hidden="true" /> Scan new bill</Link><Link href="/budget" className="en-hero-link">Budget {budgetPercent}% used <ChevronRight size={16} aria-hidden="true" /></Link></div>
+            {household.budget > 0 ? <Link href="/budget" className={`en-hero-budget is-${budgetStatus(budgetSpent, household.budget)}`}>
+              <span className="en-hero-budget-label">Budget</span>
+              <span className="en-hero-budget-value">{budgetPercent}% of {whole(household.budget)}</span>
+              <ChevronRight size={16} aria-hidden="true" />
+              <span className="en-hero-budget-bar" aria-hidden="true"><span style={{ width: `${Math.min(budgetPercent, 100)}%` }} /></span>
+            </Link> : <Link href="/budget" className="en-hero-budget">Set a monthly budget<ChevronRight size={16} aria-hidden="true" /></Link>}
+            <Link href="/bills/new" className="en-hero-button"><ScanText size={18} aria-hidden="true" /> Scan new bill</Link>
           </div>
           <Image className="en-hero-art" src="/assets/branding/actions-7.png" alt="" width={260} height={260} sizes="(min-width: 900px) 190px, 130px" />
         </section>
