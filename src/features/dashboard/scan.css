@@ -17,32 +17,27 @@
 .scan-title { flex: 1; min-width: 0; text-align: center; }
 .scan-title strong { display: block; font-size: 16px; font-weight: 800; letter-spacing: -.3px; }
 .scan-title span { display: block; margin-top: 1px; color: #b9dcf0; font-size: 11px; }
-.scan-preview-tag { position: relative; z-index: 6; align-self: center; max-width: calc(100% - 28px); padding: 6px 11px; border: 1px solid #ffffff2b; border-radius: 999px; color: #bee4f6; background: #092640b8; font-size: 9px; line-height: 1.5; text-align: center; }
+/* Phones keep the camera clear: only the offline notice shows above it. */
+.scan-preview-tag { display: none; position: relative; z-index: 6; align-self: center; max-width: calc(100% - 28px); padding: 6px 11px; border: 1px solid #ffffff2b; border-radius: 999px; color: #bee4f6; background: #092640b8; font-size: 11px; line-height: 1.5; text-align: center; }
+.scan-preview-tag.is-offline { display: block; }
 
 .scan-frame-wrap { position: relative; z-index: 2; flex: 1; min-height: 0; display: grid; padding: 10px 12px; }
 .scan-viewfinder { position: relative; width: 100%; height: 100%; min-height: 0; display: grid; place-items: center; overflow: hidden; }
-.scan-frame { --scan-accent: #3fe0ff; --guide-ratio: .73; z-index: 1; position: relative; width: min(70vw, 320px, calc((100dvh - 340px) * var(--guide-ratio))); aspect-ratio: var(--guide-ratio); border-radius: 18px; box-shadow: 0 0 0 200vmax #020c1a8f; transition: width .2s, aspect-ratio .2s; }
-.scan-frame.guide-receipt { --guide-ratio: .38; }
-.scan-frame.guide-panorama { --guide-ratio: .68; }
+.scan-frame { --scan-accent: #3fe0ff; --guide-ratio: .68; z-index: 1; position: relative; width: min(70vw, 320px, calc((100dvh - 340px) * var(--guide-ratio))); aspect-ratio: var(--guide-ratio); border-radius: 18px; box-shadow: 0 0 0 200vmax #020c1a8f; }
 .camera-live .scan-frame { width: min(calc(var(--camera-image-width, 280px) * .86), calc(var(--camera-image-height, 320px) * .9 * var(--guide-ratio))); }
 .camera-live .scan-track { display: none; }
-.scan-guide-options { position: relative; z-index: 6; display: flex; align-self: center; padding: 4px; gap: 4px; border: 1px solid #ffffff29; border-radius: 999px; margin-top: 8px; background: #06172bbf; }
-.scan-guide-options button { min-height: 36px; padding: 6px 18px; border-radius: 999px; border: 0; background: none; color: #c6e5f3; font: inherit; font-size: 12px; font-weight: 700; }
-.scan-guide-options button[aria-pressed="true"] { color: #03233b; background: #7ff0ff; }
-.scan-guide-options button:disabled { cursor: default; }
-.scan-guide-options button:disabled:not([aria-pressed="true"]) { opacity: .45; }
 .scan-overlap { position: absolute; z-index: 2; inset: 0 0 auto; height: 25%; overflow: hidden; border-bottom: 2px dashed #7ff0ff; background: #07415a33; pointer-events: none; }
 .scan-overlap img { position: absolute; bottom: 0; width: 100%; height: auto; opacity: .4; }
-.scan-overlap span { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 10px); padding: 4px 6px; border-radius: 5px; color: #fff; background: #041427d9; font-size: 10px; line-height: 1.4; text-align: center; }
+.scan-overlap span { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 10px); padding: 4px 6px; overflow: hidden; border-radius: 5px; color: #fff; background: #041427d9; font-size: 10px; line-height: 1.4; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 .scan-panorama { position: relative; z-index: 6; flex: 0 0 auto; display: grid; gap: 10px; margin: 0 18px 14px; }
-.scan-panorama-heading { display: flex; align-items: center; justify-content: center; gap: 7px; color: #d2edf7; font-size: 12px; font-weight: 700; }
-.scan-panorama-heading svg { width: 16px; height: 16px; color: #7ff0ff; }
 .scan-section-list { display: flex; justify-content: center; gap: 8px; min-width: 0; }
 .scan-section-preview { position: relative; flex: 0 1 46px; width: 46px; height: 54px; padding: 0; overflow: hidden; border: 1px solid #7ff0ff8c; border-radius: 8px; background: #102b40; }
 .scan-section-preview img { width: 100%; height: 100%; object-fit: cover; }
 .scan-section-preview span { position: absolute; right: 3px; bottom: 3px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 5px; color: #fff; background: #041427e6; font-size: 11px; font-weight: 800; }
-.scan-section-undo { display: grid; align-content: center; justify-items: center; gap: 4px; flex: 0 0 46px; min-height: 44px; padding: 4px; color: #d2edf7; border: 0; border-radius: 8px; background: #ffffff12; font-size: 11px; }
+.scan-section-slot { flex: 0 1 46px; display: grid; place-items: center; width: 46px; height: 54px; border: 1px dashed #ffffff47; border-radius: 8px; color: #9cc3d6; font-size: 12px; font-weight: 700; }
+.scan-section-undo { display: grid; align-content: center; justify-items: center; gap: 4px; flex: 0 0 46px; min-height: 44px; margin-left: 4px; padding: 4px; color: #d2edf7; border: 0; border-radius: 8px; background: #ffffff12; font-size: 11px; }
 .scan-section-undo svg { width: 18px; height: 18px; }
+.scan-section-undo:disabled { opacity: .5; cursor: default; }
 .scan-read-receipt { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 10px 16px; border: 1px solid #49b5f8; border-radius: 13px; color: white; background: #076fbd; font: inherit; font-size: 14px; font-weight: 800; }
 .scan-read-receipt svg { width: 19px; height: 19px; }
 .scan-read-receipt:disabled { color: #b9dcf0; border-color: #ffffff24; background: #ffffff12; opacity: .65; cursor: default; }
@@ -54,7 +49,7 @@
 .scan-section-dialog > img { display: block; width: 100%; height: auto; border-radius: 10px; }
 .scan-section-dialog p { margin: 12px 0; color: #b9dcf0; font-size: 13px; line-height: 1.6; }
 .scan-section-dialog .scan-read-receipt { width: 100%; }
-.scan-app :is(.scan-guide-options button,.scan-shutter,.scan-section-preview,.scan-section-undo,.scan-read-receipt):focus-visible { outline: 3px solid #ffe066; outline-offset: 3px; }
+.scan-app :is(.scan-shutter,.scan-section-preview,.scan-section-undo,.scan-read-receipt,.scan-camera-off button):focus-visible { outline: 3px solid #ffe066; outline-offset: 3px; }
 @media (min-width: 900px) { .scan-panorama { max-width: 480px; width: calc(100% - 36px); align-self: center; } }
 .scan-draft-banner { position: relative; z-index: 6; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px 12px; margin: 6px 12px 0; padding: 9px 12px; border-radius: 12px; font-size: 12px; line-height: 1.5; background: #092640ed; color: #fff; }
 .scan-draft-banner button { color: #7ff0ff; min-height: 32px; border: 0; background: none; font: inherit; font-weight: 700; text-decoration: underline; }
@@ -106,8 +101,15 @@
 .scan-done-badge svg { width: 36px; height: 36px; }
 
 .scan-hint, .scan-toast { position: relative; z-index: 6; align-self: center; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 10px; max-width: calc(100% - 32px); margin: 0 16px 10px; padding: 9px 15px; border-radius: 999px; background: #0a1d33b3; border: 1px solid #ffffff21; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); font-size: 12px; font-weight: 600; text-align: center; }
-.scan-hint button { color: #7ff0ff; font-size: 12px; font-weight: 800; text-decoration: underline; }
+.scan-hint { line-height: 1.5; text-wrap: balance; border-radius: 18px; }
 .scan-toast { color: #fff; background: #c0392bd9; }
+.scan-camera-off { position: relative; z-index: 6; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px; margin: 0 16px 12px; padding: 14px 16px; border: 1px solid #ffffff26; border-radius: 18px; background: #0a1d33cc; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.scan-camera-off > span { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px; color: #ffe066; background: #ffffff14; }
+.scan-camera-off > span svg { width: 22px; height: 22px; }
+.scan-camera-off h2 { font-size: 15px; font-weight: 800; letter-spacing: -.2px; }
+.scan-camera-off p { margin-top: 3px; color: #b9dcf0; font-size: 12.5px; line-height: 1.5; }
+.scan-camera-off button { grid-column: 1 / -1; min-height: 44px; border: 1px solid #7ff0ff8c; border-radius: 13px; color: #7ff0ff; background: none; font: inherit; font-size: 13px; font-weight: 800; }
+.scan-camera-off button:disabled { opacity: .5; cursor: default; }
 .scan-controls { position: relative; z-index: 6; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; justify-items: center; gap: 10px; padding: 8px 24px max(22px, env(safe-area-inset-bottom)); }
 .scan-side { display: grid; justify-items: center; gap: 6px; color: #fff; font-size: 11px; font-weight: 700; }
 .scan-side > span { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; background: #ffffff1f; border: 1px solid #ffffff2b; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: background .2s; }
@@ -191,18 +193,14 @@
   .scan-stage { color: #fff; min-height: clamp(560px, calc(100vh - 190px), 760px); border-radius: 26px; border: 1px solid #cfe9f4; box-shadow: 0 12px 32px #4a84951a; }
   .scan-topbar { display: none; }
   .scan-frame { width: clamp(220px, 22vw, 330px); }
-  .scan-frame.guide-receipt { width: 190px; }
   .camera-live .scan-frame { width: min(calc(var(--camera-image-width, 280px) * .86), calc(var(--camera-image-height, 320px) * .9 * var(--guide-ratio))); }
   .scan-retry { border-radius: 18px; margin: 0 18px 18px; }
-  .phase-camera:not(.camera-live) .scan-guide-options { display: flex; background: #fff; border-color: #cfe5f0; }
-  .phase-camera:not(.camera-live) .scan-guide-options button { color: #456178; }
-  .phase-camera:not(.camera-live) .scan-guide-options button[aria-pressed="true"] { color: #fff; background: #076fbd; }
   .phase-camera:not(.camera-live) .scan-panorama { padding: 12px; border-radius: 16px; background: #0a2035; }
   .scan-bot { max-width: 140px; }
   .phase-camera:not(.camera-live) .scan-stage { background: linear-gradient(160deg, #f6fcff, #e1f5fc); }
-  .scan-preview-tag { margin: 17px 0 0; border-color: #cce8f5; background: #f3fbff; color: #3b86ac; font-size: 11px; }
+  .scan-preview-tag { display: block; margin: 17px 0 0; border-color: #cce8f5; background: #f3fbff; color: #3b86ac; }
   .scan-steps li { white-space: normal; font-size: 11px; }
-  .phase-camera:not(.camera-live) :is(.scan-frame-wrap, .scan-hint, .scan-controls, .scan-dots) { display: none; }
+  .phase-camera:not(.camera-live) :is(.scan-frame-wrap, .scan-hint, .scan-camera-off, .scan-controls, .scan-dots) { display: none; }
   .scan-placeholder { position: relative; z-index: 3; flex: 1; margin: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; border: 2px dashed #a8def0; border-radius: 20px; text-align: center; transition: background .2s, border-color .2s; }
   .scan-placeholder > * { flex-shrink: 0; }
   .scan-placeholder.is-dragging { border-color: #00b5e6; background: #d9f3fc; }
@@ -221,7 +219,7 @@
   .scan-controls { grid-template-columns: repeat(4, auto); justify-content: center; gap: 22px; padding-bottom: 24px; }
   .scan-controls .scan-side:nth-of-type(1) { order: 1; }
   .scan-controls .scan-shutter { order: 2; }
-  .scan-controls .scan-side:nth-of-type(2) { order: 3; }
+  .scan-controls .scan-side:nth-of-type(3) { order: 3; }
   .scan-stop-camera { display: grid; order: 4; }
   .scan-progress { width: min(440px, calc(100% - 48px)); align-self: center; margin-bottom: 24px; }
 
@@ -303,6 +301,7 @@
   .scan-sparkle.is-two { animation-delay: .5s; }
   .scan-sparkle.is-three { animation-delay: 1s; }
   .scan-chip { animation: scan-pop .4s cubic-bezier(.2, .9, .3, 1.3) both; }
+  .scan-section-preview { animation: scan-pop .35s cubic-bezier(.16, 1, .3, 1) both; }
   .scan-done-badge { animation: scan-badge .45s cubic-bezier(.2, .9, .3, 1.4) both; }
   .phase-review .scan-panel, .phase-saved .scan-panel { animation: scan-sheet .45s cubic-bezier(.2, .9, .25, 1) both; }
   .scan-placeholder-bill i { animation: scan-glide 3.2s ease-in-out infinite; }
@@ -321,6 +320,6 @@
 @media (min-width: 900px) { .phase-scanning .scan-progress { display: none; } }
 @media (prefers-reduced-motion: reduce) {
   .scan-progress-bar.is-indeterminate span { width: 100%; animation: none; }
-  .scan-frame, .scan-video { transition: none; }
+  .scan-video { transition: none; }
   .scan-flash { display: none; }
 }

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Drag
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Camera, Check, ChevronRight, CircleCheck, ImageUp, Keyboard, Lightbulb, ScanText, Sparkles, Trash2, Upload, X, Zap, ZapOff } from "lucide-react";
+import { Camera, CameraOff, Check, ChevronRight, CircleCheck, ImageUp, Keyboard, Lightbulb, ScanText, Sparkles, Trash2, Upload, X, Zap, ZapOff } from "lucide-react";
 import PageShell from "./PageShell";
 import { BillArt } from "./DashboardArtwork";
 import { usePreviewHousehold } from "../use-preview-household";
@@ -25,14 +25,14 @@ const acceptedTypes = ["image/jpeg", "image/png", "image/webp", "image/heic", "i
 const readingSteps = ["Reading the printed text", "Extracting kWh, amount & dates", "Comparing the bill values"];
 const emptyDraft: BillReviewDraft = { month: "", kwh: "", amount: "", dueDate: "", periodStart: "", periodEnd: "" };
 const sourceLabels = { scan: "Scanned", manual: "Manual", sample: "Sample" };
-
+/** A refused camera stays refused until the person asks again, so permission is requested only once. */
+const restingCamera = (previous: CameraState): CameraState => previous === "blocked" || previous === "unavailable" ? previous : "idle";
 
 export default function ScanScreen() {
   const { household, update, ready, storageError } = usePreviewHousehold();
   const [phase, setPhase] = useState<Phase>("camera");
   const [camera, setCamera] = useState<CameraState>("idle");
   const [cameraReady, setCameraReady] = useState(false);
-  const [guide, setGuide] = useState<"bill" | "receipt" | "panorama">("panorama");
   const [sections,setSections] = useState<string[]>([]);
   const frame = useRef<HTMLDivElement>(null);
   const [cameraSize, setCameraSize] = useState({ width: 0, height: 0 });
@@ -67,7 +67,7 @@ export default function ScanScreen() {
 
   useEffect(() => {
     setDraft(emptyDraft); setPendingDraft(null); setDraftNotice(""); setSource(null); setImage(null); setAi(null); setPhase("camera"); reading.current?.abort(); scanInput.current = null; uploadRequest.current++; setLoadingFile(false); setCameraReady(false);
-    request.current++; stream.current?.getTracks().forEach(track => track.stop()); stream.current = null; setCamera("idle");
+    request.current++; stream.current?.getTracks().forEach(track => track.stop()); stream.current = null; setCamera(restingCamera);
     setSections([]);
     if (objectUrl.current) URL.revokeObjectURL(objectUrl.current); objectUrl.current = "";
     if (!ready) { setLoadedDraftKey(null); return; }
@@ -114,9 +114,13 @@ export default function ScanScreen() {
     }
   }, [releaseCamera]);
 
-  const stopCamera = useCallback(() => { releaseCamera(); setCamera("idle"); }, [releaseCamera]);
+  const stopCamera = useCallback(() => { releaseCamera(); setCamera(restingCamera); }, [releaseCamera]);
 
-  // Camera permission is requested only after choosing the camera action.
+  // Phones open the camera with the scanner. A PC webcam waits for its button.
+  useEffect(() => {
+    if (ready && phase === "camera" && camera === "idle" && window.matchMedia("(max-width: 899px)").matches) void startCamera();
+  }, [ready, phase, camera, startCamera]);
+
   useEffect(() => {
     const sync = () => setOffline(isDeviceOffline());
     sync();
@@ -202,26 +206,18 @@ export default function ScanScreen() {
     uploadRequest.current += 1; setLoadingFile(false);
     const element = video.current;
     if (camera === "live" && cameraReady && element?.videoWidth && element.videoHeight) {
+      if (sections.length >= 4) return;
+      const area=viewfinder.current?.getBoundingClientRect(), bounds=frame.current?.getBoundingClientRect();
+      const crop=area && bounds ? cameraGuideCrop(element.videoWidth,element.videoHeight,area.width,area.height,{left:bounds.left-area.left,top:bounds.top-area.top,width:bounds.width,height:bounds.height}) : null;
+      if (!crop) { setError("Wait for the camera frame to settle, then try again."); return; }
       const canvas = document.createElement("canvas");
-      let crop: ReturnType<typeof cameraGuideCrop> = null;
-      if (guide === "panorama") {
-        if (sections.length >= 4) return;
-        const area=viewfinder.current?.getBoundingClientRect(), bounds=frame.current?.getBoundingClientRect();
-        if (area && bounds) crop=cameraGuideCrop(element.videoWidth,element.videoHeight,area.width,area.height,{left:bounds.left-area.left,top:bounds.top-area.top,width:bounds.width,height:bounds.height});
-        if (!crop) { setError("Wait for the camera frame to settle, then try again."); return; }
-      }
-      canvas.width = crop?.width ?? element.videoWidth; canvas.height = crop?.height ?? element.videoHeight;
+      canvas.width = crop.width; canvas.height = crop.height;
       const context = canvas.getContext("2d");
       if (!context) { setError("This camera photo could not be captured. Try uploading a bill."); return; }
-      if (crop) context.drawImage(element,crop.x,crop.y,crop.width,crop.height,0,0,canvas.width,canvas.height);
-      else context.drawImage(element, 0, 0);
+      context.drawImage(element,crop.x,crop.y,crop.width,crop.height,0,0,canvas.width,canvas.height);
       const photo = canvas.toDataURL("image/jpeg", 0.95);
       setFlash(value => value + 1);
-      if (guide === "panorama") { setError(""); setSections(previous => previous.length < 4 ? [...previous,photo] : previous); return; }
-      setImage({ src: photo });
-      setSource({ name: "Camera photo", kind: "image", url: photo });
-      stopCamera();
-      void readBill(photo);
+      setError(""); setSections(previous => previous.length < 4 ? [...previous,photo] : previous);
     } else if (camera !== "live" && camera !== "starting") void startCamera();
   }
 
@@ -229,7 +225,7 @@ export default function ScanScreen() {
     if (!sections.length || loadingFile || !ready) return;
     const photos=[...sections];
     setImage({src:photos[0]});
-    setSource({name:`Receipt panorama · ${photos.length} ${photos.length===1?"section":"sections"}`,kind:"image",url:photos[0],sections:photos});
+    setSource({name:photos.length===1?"Camera photo":`Camera photo · ${photos.length} sections`,kind:"image",url:photos[0],sections:photos});
     stopCamera(); void readBill(photos);
   }
 
@@ -327,12 +323,13 @@ export default function ScanScreen() {
   const duplicate = phase === "review" ? household.bills.find(bill => bill.month === draft.month) : undefined;
   const recent = sortBillsByMonth(household.bills).slice(-3).reverse();
   const stage = phase === "review" ? 2 : phase === "scanning" ? 1 : 0;
-  const cameraMessage = loadingFile ? "Opening your file…" : camera === "blocked" ? "Camera access is blocked. Upload a photo or enter details manually." : camera === "unavailable" ? "No camera found. Upload a photo or enter details manually." : camera === "live" ? (cameraReady ? guide === "panorama" ? sections.length >= 4 ? "Last section captured. Preview your photos, then read the receipt." : sections.length ? "Move down. Match the previous strip, then capture the next section." : "Include the receipt header. Hold steady and keep the text sharp." : `Fit the whole ${guide} inside the frame` : "Preparing your camera…") : camera === "starting" ? "Opening your camera…" : "Upload your bill, open your camera, or type its details";
+  const refused = camera === "blocked" || camera === "unavailable";
+  const cameraMessage = loadingFile ? "Opening your file…" : camera === "starting" ? "Opening your camera… Tap Allow if your browser asks." : camera !== "live" ? "" : !cameraReady ? "Preparing your camera…" : sections.length >= 4 ? "All 4 sections captured. Check them, then read the receipt." : sections.length ? "Long receipt? Move down, match the strip, then capture again." : "Start at the top of your receipt. Keep the text sharp.";
   const bubble = phase === "camera" ? (live ? "Hold steady!" : "Let’s add your bill!") : phase === "scanning" ? "Reading…" : phase === "failed" ? "Try again" : "Ready to review!";
 
   return (
     <PageShell title="Snap AI" subtitle="Scan your bill and add it to your monthly history" active="Snap AI" className="scan-page">
-      <div className={`scan-app phase-${phase}${live ? " camera-live" : ""}${image ? " has-photo" : ""}${guide === "panorama" ? " mode-panorama" : ""}`}>
+      <div className={`scan-app phase-${phase}${live ? " camera-live" : ""}${image ? " has-photo" : ""}`}>
         <section className={`scan-stage${dragging ? " is-dragging" : ""}`} aria-label="Bill scanner" onDragOver={event => { if (phase === "camera") { event.preventDefault(); setDragging(true); } }} onDragLeave={() => setDragging(false)} onDrop={onDrop}>
           <span className="scan-dots" aria-hidden="true" />
 
@@ -341,16 +338,15 @@ export default function ScanScreen() {
             <div className="scan-title"><strong>Snap AI</strong><span>Scan your electricity bill</span></div>
             {live ? <button type="button" className={`scan-round${torch ? " is-on" : ""}`} disabled={!torchAvailable} aria-label={!torchAvailable ? "Flashlight unavailable on this camera" : torch ? "Turn flashlight off" : "Turn flashlight on"} aria-pressed={torch} onClick={toggleTorch}>{torch ? <Zap aria-hidden="true" /> : <ZapOff aria-hidden="true" />}</button> : <span className="scan-round is-ghost" aria-hidden="true"><Sparkles /></span>}
           </div>
-          <p className="scan-preview-tag" role="note">{offline ? "Offline · upload or enter details manually" : "Scan first · review before saving"}</p>
+          <p className={`scan-preview-tag${offline ? " is-offline" : ""}`} role="note">{offline ? "Offline · upload or enter details manually" : "Scan first · review before saving"}</p>
           {phase === "camera" && draftNotice && <div className="scan-draft-banner"><span>{draftNotice}</span>{pendingDraft && <button type="button" onClick={() => { uploadRequest.current++; setLoadingFile(false); stopCamera(); setDraft(pendingDraft); setPendingDraft(null); setDraftNotice("We restored your unfinished bill."); setPhase("review"); }}>Resume draft</button>}<button type="button" onClick={() => discard.current?.showModal()}>Discard draft</button></div>}
-          {phase === "camera" && <div className="scan-guide-options" aria-label="Capture mode">{([['bill','Bill'],['receipt','Receipt'],['panorama','Panorama']] as const).map(([value,label])=><button type="button" key={value} disabled={loadingFile || sections.length>0} aria-pressed={guide===value} onClick={()=>setGuide(value)}>{label}</button>)}</div>}
 
           <div className="scan-frame-wrap">
             <div ref={viewfinder} className="scan-viewfinder" style={live && cameraSize.width > 0 ? { "--camera-image-width": `${cameraSize.width}px`, "--camera-image-height": `${cameraSize.height}px` } as CSSProperties : undefined}>
               <video ref={video} className={`scan-video${live ? " is-live" : ""}`} playsInline muted autoPlay aria-hidden="true" onLoadedData={measureCamera} onResize={measureCamera} />
               {image && phase !== "camera" && <Image className="scan-photo is-contain" src={image.src} alt="Your bill photo" fill sizes="(min-width: 1200px) 50vw, 100vw" unoptimized />}
-            <div ref={frame} className={`scan-frame guide-${guide}`}>
-              {live && guide === "panorama" && sections.length>0 && sections.length<4 && <div className="scan-overlap" aria-hidden="true"><img src={sections[sections.length-1]} alt=""/><span>Match this strip</span></div>}
+            <div ref={frame} className="scan-frame">
+              {live && sections.length>0 && sections.length<4 && <div className="scan-overlap" aria-hidden="true"><img src={sections[sections.length-1]} alt=""/><span>Match this strip</span></div>}
               {!image && !live && <div className="scan-frame-bill"><BillArt period="Your billing period" kwh="—" amount="—" due="—" /></div>}
               <i className="scan-corner is-tl" /><i className="scan-corner is-tr" /><i className="scan-corner is-bl" /><i className="scan-corner is-br" />
               <div className="scan-track" aria-hidden="true">
@@ -366,14 +362,19 @@ export default function ScanScreen() {
             </div>
           </div>
 
-          {phase === "camera" && <p className="scan-hint" role="status">{cameraMessage}{(camera === "blocked" || camera === "unavailable" || camera === "idle") && <button type="button" disabled={!ready || loadingFile} onClick={() => void startCamera()}>{camera === "idle" ? "Open camera" : "Try camera again"}</button>}</p>}
+          {phase === "camera" && cameraMessage && <p className="scan-hint" role="status">{sections.length>0 && <span className="ws-sr-only">{sections.length} of 4 sections captured. </span>}{cameraMessage}</p>}
+          {phase === "camera" && refused && !loadingFile && <div className="scan-camera-off" role="status">
+            <span aria-hidden="true"><CameraOff /></span>
+            <div><h2>{camera === "blocked" ? "Camera is off" : "No camera found"}</h2><p>{camera === "blocked" ? "Allow camera access in your browser settings, or upload a photo of your bill." : "Upload a photo of your bill, or type its details."}</p></div>
+            <button type="button" disabled={!ready} onClick={() => void startCamera()}>Try camera again</button>
+          </div>}
           {phase === "camera" && error && <p className="scan-toast" role="alert">{error}</p>}
 
-          {phase === "camera" && guide === "panorama" && (live || sections.length>0) && <ReceiptPanorama sections={sections} disabled={!ready || loadingFile} onUndo={()=>setSections(previous=>previous.slice(0,-1))} onRead={readReceipt}/>}
+          {phase === "camera" && sections.length>0 && <ReceiptPanorama sections={sections} disabled={!ready || loadingFile} onUndo={()=>setSections(previous=>previous.slice(0,-1))} onRead={readReceipt}/>}
 
           {phase === "camera" && <div className="scan-controls">
             <button type="button" className="scan-side" disabled={!ready || loadingFile} onClick={() => fileInput.current?.click()}><span><ImageUp aria-hidden="true" /></span>Upload</button>
-            <button type="button" className="scan-shutter" disabled={!ready || loadingFile || camera === "starting" || (live && (!cameraReady || (guide === "panorama" && sections.length >= 4)))} aria-label={live ? guide === "panorama" ? "Capture receipt section" : "Capture bill photo" : "Open bill camera"} onClick={capture}><span /></button>
+            <button type="button" className="scan-shutter" disabled={!ready || loadingFile || camera === "starting" || (live && (!cameraReady || sections.length >= 4))} aria-label={live ? "Capture receipt section" : "Open bill camera"} onClick={capture}><span /></button>
             <button type="button" className="scan-side" disabled={!ready || loadingFile} onClick={enterManually}><span><Keyboard aria-hidden="true" /></span>Type it</button>
             {live && <button type="button" className="scan-side scan-stop-camera" onClick={stopCamera}><span><X aria-hidden="true" /></span>Close camera</button>}
           </div>}
@@ -412,11 +413,11 @@ export default function ScanScreen() {
           {phase === "camera" && <div className="scan-intro">
             <h2>How Snap AI works</h2>
             <ol className="scan-how">
-              <li><span><Camera aria-hidden="true" /></span><div><strong>Capture or upload</strong><p>Use Panorama for a long receipt: capture from top to bottom with an overlap between sections.</p></div></li>
+              <li><span><Camera aria-hidden="true" /></span><div><strong>Capture or upload</strong><p>For a long receipt, capture from top to bottom with an overlap between sections.</p></div></li>
               <li><span><Sparkles aria-hidden="true" /></span><div><strong>WattSnap AI reads it</strong><p>The kWh, amount and dates are filled in for you.</p></div></li>
               <li><span><CircleCheck aria-hidden="true" /></span><div><strong>Review &amp; save</strong><p>Fix anything, then it joins your month-by-month history.</p></div></li>
             </ol>
-            <div className="scan-tips"><h3><Lightbulb aria-hidden="true" /> Tips for a clear scan</h3><ul><li>Lay the bill flat in good light</li><li>For Panorama, overlap each section by the highlighted strip</li><li>Include the header, meter readings, totals and due date</li><li>Preview each section and retake blurred text</li></ul></div>
+            <div className="scan-tips"><h3><Lightbulb aria-hidden="true" /> Tips for a clear scan</h3><ul><li>Lay the bill flat in good light</li><li>For a long receipt, overlap each section by the highlighted strip</li><li>Include the header, meter readings, totals and due date</li><li>Preview each section and retake blurred text</li></ul></div>
             <button type="button" className="ui-secondary scan-manual" disabled={!ready} onClick={enterManually}><Keyboard size={18} aria-hidden="true" /> Enter bill manually</button>
             {recent.length > 0 && <div className="scan-recent"><div className="scan-recent-head"><h3>Recently added</h3><Link href="/bills">View all <ChevronRight size={15} aria-hidden="true" /></Link></div>
               {recent.map(bill => <div key={bill.id} className="scan-recent-row"><span className="scan-recent-icon"><ScanText aria-hidden="true" /></span><div><strong>{billMonth(bill.month)}</strong><small>{bill.kwh} kWh · {pesos(bill.amount)}</small></div><em className={`scan-source is-${bill.source ?? "manual"}`}>{sourceLabels[bill.source ?? "manual"]}</em></div>)}

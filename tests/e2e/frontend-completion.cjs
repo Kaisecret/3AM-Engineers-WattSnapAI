@@ -361,14 +361,13 @@ async function camera(browser) {
     Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async () => { window.__cameraRequests++; throw new DOMException('Denied for isolated test', 'NotAllowedError'); } } });
   });
   const page = await context.newPage(); await page.goto(baseURL + '/bills/new');
-  assert.equal(await page.evaluate(() => window.__cameraRequests), 0, 'Camera never opens without user action');
-  await page.getByRole('button', { name: 'Open camera', exact: true }).click();
-  await page.getByText('Camera access is blocked.', { exact: false }).first().waitFor();
-  assert.equal(await page.evaluate(() => window.__cameraRequests), 1);
+  await page.getByRole('heading', { name: 'Camera is off', exact: true }).waitFor();
+  assert.equal(await page.evaluate(() => window.__cameraRequests), 1, 'A phone asks for the camera once when the scanner opens');
   await page.getByRole('button', { name: 'Type it', exact: true }).click();
   await page.getByLabel('Energy used', { exact: true }).waitFor();
   assert.equal(await page.getByLabel('Energy used', { exact: true }).inputValue(), '');
-  await context.close(); console.log('PASS: user-triggered camera denial and manual fallback without invented values');
+  assert.equal(await page.evaluate(() => window.__cameraRequests), 1, 'A refusal is not asked again without a tap');
+  await context.close(); console.log('PASS: refused camera asked once and manual fallback without invented values');
 }
 
 async function retained(browser) {
