@@ -229,11 +229,50 @@ async function main() {
       await open(page);
       await page.locator('input[type=file]').setInputFiles({ name: 'pending.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF') });
       await page.waitForFunction(() => !!window.resolvePdfValidation);
+      // The scanner shows the file as being read while it is checked, so manual entry starts with Cancel.
+      await page.getByRole('button', { name: 'Cancel', exact: true }).first().click();
       await page.getByRole('button', { name: 'Type it', exact: true }).click();
       await page.getByLabel('Energy used', { exact: true }).fill('120');
       await page.evaluate(() => window.resolvePdfValidation()); await page.waitForTimeout(300);
       assert.equal(calls, 0, 'A cancelled PDF must never be sent for reading');
       assert.equal(await page.getByLabel('Energy used', { exact: true }).inputValue(), '120');
+    });
+    await scenario('a chosen photo leaves the camera at once, before it has finished opening', async page => {
+      await mockCamera(page);
+      await page.route('**/api/ai/bills', route => route.fulfill({ json: { data: reading } }));
+      // A large phone photo takes a while to open. Hold it open until the screen has been checked.
+      await page.addInitScript(() => { HTMLImageElement.prototype.decode = function () { return new Promise(resolve => { window.finishOpeningPhoto = resolve; }); }; });
+      await open(page); await liveCamera(page); await upload(page);
+      await page.waitForFunction(() => !!window.finishOpeningPhoto);
+      await page.locator('.scan-app.phase-scanning').waitFor({ timeout: 1500 });
+      assert.equal(await page.locator('.camera-live').count(), 0, 'The camera view is gone while the photo opens');
+      assert.equal(await page.getByText('Hold steady!', { exact: true }).count(), 0, 'The camera prompt is gone');
+      assert.equal(await page.evaluate(() => window.testCameraStream.getTracks().every(track => track.readyState === 'ended')), true, 'The camera is switched off');
+      assert.equal(await page.getByRole('button', { name: 'Cancel', exact: true }).first().isVisible(), true, 'Opening the photo can be cancelled');
+      await page.evaluate(() => window.finishOpeningPhoto());
+      await page.getByRole('heading', { name: 'Check your bill', exact: true }).waitFor();
+      assert.equal(await page.getByLabel('Energy used', { exact: true }).inputValue(), '33');
+    });
+    await scenario('a photo that cannot be opened returns to the camera with a message', async page => {
+      await mockCamera(page);
+      let calls = 0;
+      await page.route('**/api/ai/bills', route => { calls++; return route.fulfill({ json: { data: reading } }); });
+      await page.addInitScript(() => { HTMLImageElement.prototype.decode = () => Promise.reject(new Error('unreadable')); });
+      await open(page); await liveCamera(page); await upload(page);
+      await page.getByText('That image could not be opened. Try another photo or enter the bill manually.', { exact: true }).waitFor();
+      assert.equal(await page.locator('.scan-app.phase-camera').count(), 1);
+      await page.locator('.camera-live .scan-shutter:not(:disabled)').waitFor();
+      assert.equal(calls, 0, 'An unreadable photo is never sent for reading');
+    });
+    await scenario('an unreadable replacement photo keeps the bill being reviewed', async page => {
+      await page.route('**/api/ai/bills', route => route.fulfill({ json: { data: reading } }));
+      await open(page); await upload(page);
+      await page.getByRole('heading', { name: 'Check your bill', exact: true }).waitFor();
+      await page.evaluate(() => { HTMLImageElement.prototype.decode = () => Promise.reject(new Error('unreadable')); });
+      await upload(page);
+      await page.getByText('That image could not be opened. Try another photo or enter the bill manually.', { exact: true }).waitFor();
+      assert.equal(await page.getByLabel('Energy used', { exact: true }).inputValue(), '33', 'The reviewed values are still there');
+      assert.equal(await page.locator('.scan-photo').count(), 1, 'The earlier photo is still shown');
     });
     await scenario('empty AI output requires rescan or explicit manual entry', async page => {
       await page.route('**/api/ai/bills', route => route.fulfill({ json: { data: { reviewRequired: true, consumptionKwh: null, amountDue: null, billingMonth: null } } }));

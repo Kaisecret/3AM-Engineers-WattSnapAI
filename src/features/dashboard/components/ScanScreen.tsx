@@ -238,21 +238,25 @@ export default function ScanScreen() {
     if (!acceptedTypes.includes(file.type)) { setError("Choose a JPG, PNG, WebP, or PDF bill."); return; }
     if (file.size > 10 * 1024 * 1024) { setError("Choose a file up to 10 MB."); return; }
     if (file.size === 0) { setError("That file could not be opened. Choose a valid bill image or PDF."); return; }
+    // A large photo takes a moment to open. Leave the camera at once, so the wait shows as reading
+    // instead of a camera that looks stuck. A file that cannot be opened returns to where the person was.
+    const before = phase === "scanning" ? "camera" : phase;
+    const refuse = (message: string) => { setLoadingFile(false); setPhase(before); setError(message); };
+    stopCamera(); setLoadingFile(true); setReadingStep(0); setPhase("scanning");
     if (file.type === "application/pdf") {
       let valid = false;
       try { valid = /%PDF-\d\.\d/.test(await file.slice(0, 1024).text()); } catch { /* Report an unreadable file below. */ }
       if (uploadId !== uploadRequest.current) return;
-      if (!valid) { setError("That file could not be opened. Choose a valid bill image or PDF."); return; }
+      if (!valid) { refuse("That file could not be opened. Choose a valid bill image or PDF."); return; }
     }
     const nextUrl = URL.createObjectURL(file);
-    setLoadingFile(true);
     if (file.type.startsWith("image/") && !/hei[cf]/.test(file.type)) {
       const photo = new window.Image();
       photo.src = nextUrl;
       try { await photo.decode(); }
       catch {
         URL.revokeObjectURL(nextUrl);
-        if (uploadId === uploadRequest.current) { setLoadingFile(false); setError("That image could not be opened. Try another photo or enter the bill manually."); }
+        if (uploadId === uploadRequest.current) refuse("That image could not be opened. Try another photo or enter the bill manually.");
         return;
       }
     }
@@ -263,7 +267,6 @@ export default function ScanScreen() {
     setImage(file.type.startsWith("image/") && !/hei[cf]/.test(file.type) ? { src: nextUrl } : null);
     setSource({ name: file.name, kind: file.type.startsWith("image/") ? "image" : "pdf", url: nextUrl });
     setLoadingFile(false);
-    stopCamera();
     void readBill(file);
   }
 
