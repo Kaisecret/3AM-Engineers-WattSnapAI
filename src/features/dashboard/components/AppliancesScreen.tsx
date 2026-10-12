@@ -6,6 +6,8 @@ import { ChevronRight, CircleCheck, Pencil, Plus, SlidersHorizontal, Trash2 } fr
 import { applianceIcons as kindIcons } from "@/features/appliance-registration/components/appliance-picker";
 import ApplianceDialog, { AddApplianceSheet, type AddChoice, type AppliancePhoto } from "@/features/appliance-registration/components/ApplianceDialog";
 import ConfirmRecordRemoval from "@/components/ui/ConfirmRecordRemoval";
+import { readApplianceLabel, type LabelReading } from "@/features/appliance-registration/label-reading";
+import { isDeviceOffline } from "@/features/offline-access/connectivity";
 import PageShell from "./PageShell";
 import { usePreviewHousehold } from "../use-preview-household";
 import { previewStorageFor, usePreviewStorageKey } from "@/features/auth/use-preview-storage-key";
@@ -21,6 +23,7 @@ export default function AppliancesScreen({ startAdding = false }: { startAdding?
   const { household, update, ready, storageError } = usePreviewHousehold();
   const [form, setForm] = useState<{ item?: PreviewAppliance } | null>(null);
   const [photo, setPhoto] = useState<AppliancePhoto | undefined>();
+  const [label, setLabel] = useState<LabelReading | null>(null);
   const [removing, setRemoving] = useState<PreviewAppliance | null>(null);
   const [highlight, setHighlight] = useState("");
   const [error, setError] = useState("");
@@ -33,6 +36,8 @@ export default function AppliancesScreen({ startAdding = false }: { startAdding?
   const capture = useRef<HTMLInputElement>(null);
   const started = useRef(false);
   const photoAttempt = useRef(0);
+  const photoFile = useRef<Blob | null>(null);
+  const labelRead = useRef<AbortController | null>(null);
   const householdKey = usePreviewStorageKey(previewStorageKey);
   const rate = effectiveRate(household.bills);
   const items = [...household.appliances].sort((a, b) => dailyApplianceKwh(b) - dailyApplianceKwh(a));
@@ -49,10 +54,11 @@ export default function AppliancesScreen({ startAdding = false }: { startAdding?
 
   useEffect(() => {
     photoAttempt.current++;
+    labelRead.current?.abort(); photoFile.current = null; setLabel(null);
     success.current?.close(); sheet.current?.close();
     setSaved(null); setForm(null); setPhoto(undefined); setRemoving(null);
     setHighlight(""); setMessage(""); setError(""); started.current = false;
-    return () => { photoAttempt.current++; };
+    return () => { photoAttempt.current++; labelRead.current?.abort(); };
   }, [householdKey]);
 
   useEffect(() => {
@@ -69,7 +75,7 @@ export default function AppliancesScreen({ startAdding = false }: { startAdding?
 
   function startAdd() { setError(""); setMessage(""); sheet.current?.showModal(); }
   function choose(choice: AddChoice) {
-    if (choice === "manual") { setPhoto(undefined); setForm({}); }
+    if (choice === "manual") { stopLabel(); setPhoto(undefined); setForm({}); }
     else (choice === "camera" ? capture : upload).current?.click();
   }
   async function choosePhoto(file?: File) {
@@ -84,9 +90,24 @@ export default function AppliancesScreen({ startAdding = false }: { startAdding?
       const image = new window.Image(); image.src = url; await image.decode();
       if (!current()) { URL.revokeObjectURL(url); return; }
       setError(""); setPhoto({ url, name: file.name }); setForm(current => current ?? {});
+      photoFile.current = file; readLabel();
     } catch { URL.revokeObjectURL(url); if (current()) setError("That photo could not be opened. Try another one or type it in."); }
   }
-  function edit(item: PreviewAppliance) { setError(""); setMessage(""); setPhoto(undefined); setForm({ item }); }
+  /** WattSnap AI reads the chosen label photo into the open form. The person still checks and confirms every value. */
+  function readLabel() {
+    const file = photoFile.current;
+    if (!file) return;
+    labelRead.current?.abort();
+    const controller = new AbortController(); labelRead.current = controller;
+    const fresh = () => !controller.signal.aborted && previewStorageFor(previewStorageKey) === householdKey;
+    if (isDeviceOffline()) { setLabel({ status: "failed", reason: "You’re offline, so the label was not read." }); return; }
+    setLabel({ status: "reading" });
+    readApplianceLabel(file, controller.signal)
+      .then(outcome => { if (fresh()) setLabel(outcome.ok ? { status: "read", data: outcome.data } : { status: "failed", reason: outcome.reason }); })
+      .catch(() => { if (fresh()) setLabel({ status: "failed", reason: "We couldn’t reach WattSnap AI." }); });
+  }
+  function stopLabel() { labelRead.current?.abort(); labelRead.current = null; photoFile.current = null; setLabel(null); }
+  function edit(item: PreviewAppliance) { stopLabel(); setError(""); setMessage(""); setPhoto(undefined); setForm({ item }); }
 
   function save(appliance: Omit<PreviewAppliance, "id">) {
     const editing = form?.item;
@@ -157,8 +178,8 @@ export default function AppliancesScreen({ startAdding = false }: { startAdding?
     <AddApplianceSheet ref={sheet} disabled={!ready} onChoose={choose} />
     <input ref={upload} type="file" className="ws-sr-only" tabIndex={-1} aria-hidden="true" accept={photoTypes.join(",")} onChange={event => void choosePhoto(event.target.files?.[0])} />
     <input ref={capture} type="file" capture="environment" className="ws-sr-only" tabIndex={-1} aria-hidden="true" accept={photoTypes.join(",")} onChange={event => void choosePhoto(event.target.files?.[0])} />
-    <ApplianceDialog open={!!form} item={form?.item} photo={form?.item ? undefined : photo} appliances={household.appliances} rate={rate} ready={ready} storageError={storageError}
-      onSave={save} onClose={() => { setForm(null); setPhoto(undefined); }} onChangePhoto={() => upload.current?.click()} onRemovePhoto={() => setPhoto(undefined)} />
+    <ApplianceDialog open={!!form} item={form?.item} photo={form?.item ? undefined : photo} label={form?.item ? undefined : label ?? undefined} appliances={household.appliances} rate={rate} ready={ready} storageError={storageError}
+      onSave={save} onClose={() => { stopLabel(); setForm(null); setPhoto(undefined); }} onChangePhoto={() => upload.current?.click()} onRemovePhoto={() => { stopLabel(); setPhoto(undefined); }} onReadAgain={readLabel} />
     <dialog ref={success} className="ap-saved-dialog" aria-labelledby="ap-saved-title" aria-describedby="ap-saved-description" onClose={() => setSaved(null)} onClick={event => { if (event.target === event.currentTarget) success.current?.close(); }}>
       <span className="ap-saved-mark" aria-hidden="true"><CircleCheck /></span>
       <h2 id="ap-saved-title">Appliance {saved?.editing ? "updated" : "added"}</h2>

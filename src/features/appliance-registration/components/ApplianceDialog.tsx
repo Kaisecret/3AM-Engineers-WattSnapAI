@@ -2,10 +2,11 @@
 
 import { forwardRef, useEffect, useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
-import { Camera, ChevronRight, Keyboard, Minus, Plus, Upload, X, Zap } from "lucide-react";
+import { Camera, ChevronRight, Info, Keyboard, Minus, Plus, Sparkles, Upload, X, Zap } from "lucide-react";
 import AppliancePicker, { applianceIcons } from "./appliance-picker";
 import { appliancePresets, dailyApplianceKwh, pesos, validateAppliance, type ApplianceKind, type PreviewAppliance } from "@/features/dashboard/preview-data";
-import { applianceFrom, blankDraft, draftFrom, type ApplianceDraft } from "../appliance-draft";
+import { applianceFrom, blankDraft, draftFrom, labelPatch, type ApplianceDraft } from "../appliance-draft";
+import type { LabelReading } from "../label-reading";
 import { typicalUse } from "../typical-use";
 
 export type AppliancePhoto = { url: string; name: string };
@@ -31,9 +32,9 @@ export const AddApplianceSheet = forwardRef<HTMLDialogElement, { disabled: boole
 });
 
 /** Popup form to add or edit one appliance. Nothing is saved until the person checks the values and taps save. */
-export default function ApplianceDialog({ open, item, photo, appliances, rate, ready, storageError, onSave, onClose, onChangePhoto, onRemovePhoto }: {
-  open: boolean; item?: PreviewAppliance; photo?: AppliancePhoto; appliances: PreviewAppliance[]; rate: number; ready: boolean; storageError: string;
-  onSave: (appliance: Omit<PreviewAppliance, "id">) => boolean; onClose: () => void; onChangePhoto: () => void; onRemovePhoto: () => void;
+export default function ApplianceDialog({ open, item, photo, label, appliances, rate, ready, storageError, onSave, onClose, onChangePhoto, onRemovePhoto, onReadAgain }: {
+  open: boolean; item?: PreviewAppliance; photo?: AppliancePhoto; label?: LabelReading; appliances: PreviewAppliance[]; rate: number; ready: boolean; storageError: string;
+  onSave: (appliance: Omit<PreviewAppliance, "id">) => boolean; onClose: () => void; onChangePhoto: () => void; onRemovePhoto: () => void; onReadAgain?: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const opener = useRef<HTMLElement | null>(null);
@@ -42,16 +43,29 @@ export default function ApplianceDialog({ open, item, photo, appliances, rate, r
   const [zoom, setZoom] = useState(false);
   const [error, setError] = useState("");
   const editing = Boolean(item);
+  // What the label reading put in the form, so a different photo can take it back out.
+  const fromLabel = useRef<Partial<Draft>>({});
 
   useEffect(() => {
     const element = dialog.current;
     if (!element) return;
     if (open && !element.open) {
       opener.current = document.activeElement as HTMLElement | null;
-      setDraft(draftFrom(item)); setChecked(false); setZoom(false); setError("");
+      setDraft(draftFrom(item)); setChecked(false); setZoom(false); setError(""); fromLabel.current = {};
       element.showModal();
     } else if (!open && element.open) element.close();
   }, [open, item]);
+
+  // A label reading fills only empty fields. Nothing is saved until the person checks the values.
+  useEffect(() => {
+    if (label?.status === "reading") {
+      const earlier = fromLabel.current; fromLabel.current = {};
+      setDraft(current => { const next = { ...current }; for (const key of Object.keys(earlier) as (keyof Draft)[]) if (current[key] === earlier[key]) Object.assign(next, { [key]: blank[key] }); return next; });
+    } else if (label?.status === "read") {
+      setDraft(current => { const patch = labelPatch(current, label.data); fromLabel.current = patch; return { ...current, ...patch }; });
+      setChecked(false);
+    }
+  }, [label]);
 
   const appliance = applianceFrom(draft);
   const valid = !validateAppliance(appliance);
@@ -60,6 +74,7 @@ export default function ApplianceDialog({ open, item, photo, appliances, rate, r
   const typical = typicalUse(draft.kind);
   const duplicate = !editing && draft.name.trim() ? appliances.find(other => other.name.trim().toLowerCase() === draft.name.trim().toLowerCase()) : undefined;
   const Icon = applianceIcons[draft.kind];
+  const ratings = label?.status === "read" ? [...(label.data.ratedPower ? [{ label: label.data.powerLabel ?? "Power on the label", watts: label.data.ratedPower }] : []), ...(label.data.otherRatings ?? [])] : [];
 
   function change(patch: Partial<Draft>) { setDraft(current => ({ ...current, ...patch })); setChecked(false); setError(""); }
   function pick(kind: ApplianceKind) {
@@ -88,10 +103,22 @@ export default function ApplianceDialog({ open, item, photo, appliances, rate, r
 
       {photo && <div className="ad-photo">
         <button type="button" className="ad-photo-thumb" aria-expanded={zoom} aria-label={zoom ? "Make the photo smaller" : "Make the photo bigger"} onClick={() => setZoom(value => !value)}><Image src={photo.url} alt="" width={120} height={120} unoptimized /></button>
-        <div className="ad-photo-copy"><strong>Your label photo</strong><span>Copy the watts (W) from it</span></div>
+        <div className="ad-photo-copy"><strong>Your label photo</strong><span>{label?.status === "reading" ? "WattSnap AI is reading it" : label?.status === "read" ? "Compare it with the values below" : "Copy the watts (W) from it"}</span></div>
         <button type="button" className="ad-photo-change" onClick={onChangePhoto}>Change</button>
         <button type="button" className="ad-photo-remove" aria-label="Remove photo" onClick={onRemovePhoto}><X aria-hidden="true" /></button>
         {zoom && <Image className="ad-photo-large" src={photo.url} alt="Appliance label photo" width={1000} height={1000} unoptimized />}
+      </div>}
+      {photo && label && <div className={`ad-label is-${label.status}`}>
+        <span className="ad-label-icon" aria-hidden="true">{label.status === "failed" ? <Info /> : <Sparkles />}</span>
+        {label.status === "reading" ? <><div className="ad-label-copy" role="status"><strong>Reading your label…</strong><span>You can keep typing. Only empty fields are filled in.</span></div><span className="ad-label-bar" aria-hidden="true"><i /></span></>
+          : label.status === "read" ? <>
+            <div className="ad-label-copy" role="status"><strong>WattSnap AI read your label</strong><span>{label.data.ratedPower ? "Check the values against your photo, then add your hours a day." : "The watts were not readable. Type them from your photo."}</span></div>
+            {ratings.length > 0 && <div className="ad-label-ratings" role="group" aria-label="Power printed on the label">{ratings.map(rating => <button key={`${rating.label}-${rating.watts}`} type="button" aria-pressed={appliance.watts === rating.watts} onClick={() => change({ power: String(rating.watts), unit: "W", wattageBasis: "nameplate" })}><small>{rating.label}</small><b>{rating.watts.toLocaleString("en-PH")} W</b></button>)}</div>}
+            {(label.data.checks?.length ?? 0) > 0 && <ul className="ad-label-checks">{label.data.checks?.map(check => <li key={check}>{check}</li>)}</ul>}
+          </> : <>
+            <div className="ad-label-copy" role="status"><strong>Label not read</strong><span>{label.reason} Type the watts from your photo.</span></div>
+            {onReadAgain && <button type="button" className="ad-label-retry" onClick={onReadAgain}>Read again</button>}
+          </>}
       </div>}
 
       <AppliancePicker value={draft.kind} onChange={pick} />
