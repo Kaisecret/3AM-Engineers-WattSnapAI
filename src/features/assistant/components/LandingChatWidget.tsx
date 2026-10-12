@@ -2,10 +2,15 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUp, RotateCcw, Sparkles, X } from "lucide-react";
+import { ArrowUp, MapPin, RotateCcw, ScanText, Sparkles, WifiOff, X } from "lucide-react";
 import { landingReply, landingSuggestions } from "../replies";
 import { useChat } from "../use-chat";
 import ChatThread, { BotAvatar } from "./ChatThread";
+
+// Feature, provider and status names a visitor should be able to spot in an answer.
+const terms = ["Snap AI", "Tipid Tips", "Watt-If", "Smart Energy Budget", "ANTECO", "AKELCO", "CAPELCO", "ILECO", "MORE Power", "PEPS", "offline", "Offline", "Possibly Affected", "Affected", "Not Listed"];
+// One icon for each starter question, in the order of landingSuggestions.
+const topicIcons = [Sparkles, ScanText, WifiOff, MapPin];
 
 /** Floating "ask about WattSnap" chat for visitors on the landing page. */
 export function LandingChatWidget() {
@@ -38,8 +43,8 @@ export function LandingChatWidget() {
   const intro = <div className="chat-row is-bot lchat-welcome">
     <BotAvatar />
     <div className="chat-bot-body">
-      <div className="chat-bubble"><p><strong>Hi! I&apos;m WattSnap AI.</strong></p><p>Ask me anything about the app.</p></div>
-      {!messages.length && <div className="chat-suggestions">{landingSuggestions.map(suggestion => <button type="button" key={suggestion} onClick={() => send(suggestion)}>{suggestion}</button>)}</div>}
+      <div className="chat-bubble"><p><strong>Hi! I&apos;m WattSnap AI.</strong></p><p>Ask me anything about the app, or start with one of these.</p></div>
+      {!messages.length && <div className="lchat-topics">{landingSuggestions.map((suggestion, index) => { const Icon = topicIcons[index] ?? Sparkles; return <button type="button" key={suggestion} onClick={() => send(suggestion)}><span><Icon aria-hidden="true" /></span>{suggestion}</button>; })}</div>}
     </div>
   </div>;
 
@@ -51,7 +56,7 @@ export function LandingChatWidget() {
         <button type="button" className="chat-icon-button" onClick={reset} disabled={!messages.length && !typing} aria-label="Start a new chat"><RotateCcw aria-hidden="true" /></button>
         <button type="button" className="chat-icon-button" onClick={close} aria-label="Close chat"><X aria-hidden="true" /></button>
       </header>
-      <ChatThread messages={messages} typing={typing} onSuggest={send} intro={intro} />
+      <ChatThread messages={messages} typing={typing} onSuggest={send} intro={intro} terms={terms} />
       <form className="chat-composer" onSubmit={submit}>
         <div className="chat-input">
           <input ref={input} maxLength={300} value={draft} placeholder="Ask about WattSnap…" aria-label="Message WattSnap AI" onChange={event => setDraft(event.target.value)} />

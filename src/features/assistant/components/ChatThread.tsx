@@ -41,7 +41,7 @@ export interface ActionHandlers {
 }
 
 /** Message list shared by the in-app assistant and the landing page widget. */
-export default function ChatThread({ messages, typing, onSuggest, intro, actions }: { messages: ChatMessage[]; typing: boolean; onSuggest: (text: string) => void; intro?: React.ReactNode; actions?: ActionHandlers }) {
+export default function ChatThread({ messages, typing, onSuggest, intro, actions, terms }: { messages: ChatMessage[]; typing: boolean; onSuggest: (text: string) => void; intro?: React.ReactNode; actions?: ActionHandlers; terms?: string[] }) {
   const thread = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const element = thread.current;
@@ -58,7 +58,7 @@ export default function ChatThread({ messages, typing, onSuggest, intro, actions
       return <div key={message.id} className="chat-row is-bot">
         <BotAvatar />
         <div className={`chat-bot-body${message.actions?.length && actions ? " has-actions" : ""}`}>
-          <div className="chat-bubble"><ChatMessageText value={message.text} /></div>
+          <div className="chat-bubble"><ChatMessageText value={message.text} terms={terms} /></div>
           {message.notice && <p className={`chat-notice is-${message.source ?? "keywords"}`}>{message.source === "gemini" ? <Sparkles aria-hidden="true" /> : message.source === "tinybert" ? <Cpu aria-hidden="true" /> : <CircleAlert aria-hidden="true" />}{message.notice.replace(/\bGemini\b/g, "WattSnap AI")}</p>}
           {!!message.actions?.length && actions && <div className={`chat-actions${message.actions.length > 1 ? " is-multi" : ""}`}>
             {pending.length > 0 && <p className="chat-action-heading">Review {message.actions.length > 1 ? "changes" : "change"}<span>Not saved yet</span></p>}

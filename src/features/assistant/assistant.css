@@ -6,6 +6,7 @@
   --chat-text: #10213a;
   --chat-muted: #587386;
   --chat-accent: #0786cf;
+  --chat-strong: #0a5aa6;
   --chat-accent-soft: #e4f5fd;
   --chat-user: linear-gradient(135deg, #087faa, #1264b4);
   --chat-brand: linear-gradient(135deg, #0b2a5b, #0a64bd 58%, #08b9ec);
@@ -22,6 +23,7 @@ html[data-theme="dark"] .chat-page {
   --chat-text: #edf6fa;
   --chat-muted: #a9c0cc;
   --chat-accent: #79d6f3;
+  --chat-strong: #90dcf5;
   --chat-accent-soft: #1d4152;
   --chat-shadow: 0 6px 18px #00000033;
   --chat-ok: #86e0aa;
@@ -250,7 +252,19 @@ html[data-theme="dark"] .chat-main { background: radial-gradient(130% 55% at 50%
 .lchat-head .chat-head-copy span { color: #cdeeff; }
 .lchat-head .chat-icon-button { color: #fff; background: #ffffff24; }
 .lchat .chat-thread { padding: 16px 14px 6px; }
-.lchat .chat-bubble { font-size: 14px; }
+.lchat .chat-bubble { font-size: 14px; line-height: 1.6; }
+.lchat .chat-bubble strong { color: var(--chat-strong); }
+.lchat .chat-bubble ol { display: grid; gap: 4px; padding-left: 20px; list-style: decimal; }
+.lchat .chat-bubble :is(p, ul, ol) + :is(p, ul, ol) { margin-top: 9px; }
+/* Product names carry a marker stroke, so the eye lands on them first. */
+.chat-term { padding: 0 2px; border-radius: 3px; color: inherit; background: linear-gradient(transparent 58%, #ffe58a 58%); font-weight: 700; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.lchat-welcome .chat-bot-body { max-width: none; flex: 1; min-width: 0; }
+.lchat-topics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.lchat-topics button { display: grid; align-content: start; gap: 9px; min-height: 92px; padding: 12px; border: 1px solid var(--chat-border); border-radius: 16px; color: var(--chat-text); background: var(--chat-surface); box-shadow: var(--chat-shadow); font: inherit; font-size: 13px; font-weight: 700; line-height: 1.35; text-align: left; transition: border-color .2s, transform .15s, box-shadow .2s; }
+.lchat-topics button span { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; color: var(--chat-accent); background: var(--chat-accent-soft); }
+.lchat-topics button svg { width: 17px; height: 17px; }
+.lchat-topics button:active { transform: scale(.98); }
+.lchat .chat-links a { min-height: 40px; padding: 0 12px 0 16px; border-radius: 999px; color: #fff; background: var(--chat-user); box-shadow: 0 6px 14px #0a8fe02e; }
 .lchat .chat-bot-body { max-width: 88%; }
 .lchat .chat-input input { font-size: 15px; }
 .lchat .chat-composer { padding: 8px 12px 10px; }
@@ -267,6 +281,7 @@ html[data-theme="dark"] .chat-main { background: radial-gradient(130% 55% at 50%
   .chat-action-all:hover { filter: brightness(1.06) saturate(1.1); }
   .chat-suggestions button:hover { border-color: #8fd4ee; background: var(--chat-accent-soft); }
   .chat-starters button:hover { transform: translateY(-2px); border-color: #9fdaf1; box-shadow: 0 12px 24px #2a6a841f; }
+  .lchat-topics button:hover { transform: translateY(-2px); border-color: #9fdaf1; box-shadow: 0 12px 24px #2a6a841f; }
   .chat-icon-button:not(:disabled):hover { filter: brightness(.95); }
   .lchat-head .chat-icon-button:not(:disabled):hover { background: #ffffff3d; }
   .chat-send:not(:disabled):hover, .chat-action-confirm:hover { filter: brightness(1.06) saturate(1.1); }
