@@ -28,7 +28,7 @@ const website = { "@context": "https://schema.org", "@type": "WebSite", name: "W
 
 export default function LandingPage() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+    <div className="landing-page" style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(website).replace(/</g, "\\u003c") }} />
       {/* Sticky Navigation Header */}
       <Navbar />

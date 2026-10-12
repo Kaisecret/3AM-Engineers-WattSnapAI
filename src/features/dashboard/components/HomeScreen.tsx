@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, Bell, ChartNoAxesColumnIncreasing, ChevronDown, ChevronRight, Info, LogOut, ReceiptText, ScanText, SendHorizontal, Settings, Sparkles, X, Zap } from "lucide-react";
+import { ArrowDown, ArrowUp, Bell, ChartNoAxesColumnIncreasing, ChevronDown, ChevronRight, Info, ReceiptText, ScanText, SendHorizontal, Sparkles, X, Zap } from "lucide-react";
 import HomeAdvisoryCard from "@/features/advisory-intelligence/components/HomeAdvisoryCard";
 import HomePreparationCard from "@/features/advisory-intelligence/components/HomePreparationCard";
 import HomeTipCard from "@/features/tipid-tips/components/HomeTipCard";
 import HomeSetupProgress from "@/features/onboarding/components/HomeSetupProgress";
 import UserAvatar from "./UserAvatar";
 import LogoutDialog from "./LogoutDialog";
+import HeaderMenu from "./HeaderMenu";
 import AppNavigation from "./AppNavigation";
 import DesktopHomeCards from "./DesktopHomeCards";
 import { usePreviewHousehold } from "../use-preview-household";
@@ -63,7 +64,7 @@ export default function HomeScreen() {
           {openMenu && (
             <div ref={menuRegion} id="ws-header-panel" className="ws-header-panel" role="region" aria-label={openMenu === "profile" ? "Household" : openMenu === "notifications" ? "Notifications" : "About consumption"}>
               <button className="ws-panel-close" aria-label="Close panel" onClick={() => { menuTriggers.current[openMenu]?.focus(); setOpenMenu(null); }}><X size={17} /></button>
-              {openMenu === "profile" ? <><div className="ws-panel-user"><span className="ws-avatar"><UserAvatar photo={household.photo} /></span><div><strong>{household.name}</strong><p>{household.email ?? `${firstName}'s home`}</p></div></div><Link href="/settings"><Settings size={17} /> Household settings</Link><button type="button" className="ws-panel-logout" onClick={() => { setOpenMenu(null); setLogout(true); }}><LogOut size={17} /> Log out</button></> : openMenu === "notifications" ? <><strong>Household advisories</strong><p>Saved reviews do not confirm live power status. Check your provider for current announcements.</p><Link href="/advisories">View advisories <ChevronRight size={16} /></Link></> : <><strong>Your monthly energy use</strong><p>Each bar is one electricity bill from your history; missing months stay missing. Select a month to see its reading. Review a new bill with Snap AI to add the next month.</p><Link href="/bills">Compare all months <ChevronRight size={16} /></Link></>}
+              {openMenu !== "consumption" ? <HeaderMenu panel={openMenu} household={household} onNavigate={() => setOpenMenu(null)} onLogout={() => { setOpenMenu(null); setLogout(true); }} /> : <><strong>Your monthly energy use</strong><p>Each bar is one electricity bill from your history; missing months stay missing. Select a month to see its reading. Review a new bill with Snap AI to add the next month.</p><Link href="/bills">Compare all months <ChevronRight size={16} /></Link></>}
             </div>
           )}
         </header>

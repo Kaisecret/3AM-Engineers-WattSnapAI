@@ -184,3 +184,12 @@ html[data-theme="dark"] .en-details-grid .is-pay dd { color: #89dfef; }
 html[data-theme="dark"] .en-charges i { background: #24475a; }
 html[data-theme="dark"] .en-details-remove { color: #ffb4a8; background: #452523; }
 @media (hover: hover) { html[data-theme="dark"] .en-row:hover { background: #142734; } }
+html[data-theme="dark"] .en-source.is-scan { color: #79daef; }
+html[data-theme="dark"] .en-source.is-manual { color: #c4b5fd; }
+html[data-theme="dark"] .en-details-grid .is-subsidy { color: #8ce2b2; }
+html[data-theme="dark"] .en-compare-diff > div, html[data-theme="dark"] .en-focus { background: #112735; border-color: #3b5968; }
+html[data-theme="dark"] .en-focus.is-example { background: #0f2230; }
+html[data-theme="dark"] .en-compare-track { background: #24475a; }
+html[data-theme="dark"] .en-compare-label, html[data-theme="dark"] .en-compare-diff dt, html[data-theme="dark"] .en-compare-empty, html[data-theme="dark"] .en-focus > div:nth-child(2) > span { color: #c2d4df; }
+html[data-theme="dark"] .en-bar b { background: #192e3dd9; }
+html[data-theme="dark"] .en-labels .is-selected { color: #79daef; }

@@ -324,3 +324,9 @@
   .scan-frame, .scan-video { transition: none; }
   .scan-flash { display: none; }
 }
+
+/* Dark theme: the desktop details panel turns dark in onboarding/accessibility.css. */
+html[data-theme="dark"] .scan-steps .is-current, html[data-theme="dark"] .scan-reading .is-current { color: #79daef; }
+html[data-theme="dark"] .scan-steps .is-done, html[data-theme="dark"] .scan-reading .is-done { color: #8ce2b2; }
+/* The desktop drop area keeps its light surface, so its text keeps the light theme ink instead of inheriting the dark one. */
+html[data-theme="dark"] .scan-placeholder { color: #0d142c; }

@@ -55,9 +55,9 @@
 .adv-card-title { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 800; line-height: 1.3; letter-spacing: -.3px; }
 .adv-status { display: inline-flex; align-items: center; flex: 0 0 auto; gap: 5px; padding: 4px 9px; border-radius: 999px; font-size: 10px; font-weight: 800; white-space: nowrap; }
 .adv-status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-.adv-status-affected { color: #d6403a; background: #ffeceb; }
-.adv-status-possibly-affected { color: #b7791f; background: #fff4d6; }
-.adv-status-not-listed { color: #3a8db5; background: #e6f6fd; }
+.adv-status-affected { color: #c23530; background: #ffeceb; }
+.adv-status-possibly-affected { color: #8a5a12; background: #fff4d6; }
+.adv-status-not-listed { color: #1f6f93; background: #e6f6fd; }
 .adv-card-body { display: flex; gap: 12px; margin: 12px 0; }
 .adv-date-tile { flex: 0 0 auto; display: grid; justify-items: center; align-content: center; width: 52px; height: 62px; border-radius: 14px; background: #f3f9fc; border: 1px solid #e3f0f6; line-height: 1.1; }
 .adv-date-tile small { color: #6f879c; font-size: 10px; font-weight: 700; text-transform: uppercase; }
@@ -74,7 +74,7 @@
 .adv-empty img { width: 104px; height: auto; }
 .adv-empty h3 { margin-top: 6px; color: #1b3452; font-size: 16px; }
 .adv-empty p { margin: 6px 0 14px; font-size: 12.5px; }
-.adv-empty button { padding: 10px 16px; border-radius: 11px; color: #008fc6; background: #e7f8fd; font-weight: 700; }
+.adv-empty button { padding: 10px 16px; border-radius: 11px; color: #006f9e; background: #e7f8fd; font-weight: 700; }
 .adv-source-note { display: flex; gap: 7px; margin-top: 14px; color: #7f93a6; font-size: 11px; line-height: 1.5; }
 .adv-source-note svg { flex: 0 0 auto; width: 14px; height: 14px; margin-top: 1px; }
 
@@ -88,6 +88,8 @@
 .adv-dialog-close svg { width: 19px; }
 .adv-dialog h2 { padding-right: 40px; font-size: 22px; font-weight: 800; line-height: 1.3; letter-spacing: -.7px; }
 .adv-dialog-content > p { margin-top: 5px; color: #7b8ca0; font-size: 13px; line-height: 1.6; }
+.adv-dialog-content > .ui-success { color: #12704a; }
+.adv-dialog-content > .ui-error { color: #b14545; }
 .adv-dialog form { margin-top: 20px; }
 .adv-dialog label { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 700; }
 .adv-dialog input:not([type="checkbox"]) { width: 100%; min-width: 0; height: 48px; padding: 0 13px; border: 1.5px solid #cfe6ef; border-radius: 12px; background: #f6fbfd; color: #1b3452; font: inherit; font-size: 14px; }
@@ -216,3 +218,47 @@
   .adv-dialog[open] { animation: ws-arrive .2s ease-out both; }
 }
 @keyframes adv-sheet { from { transform: translateY(100%); } to { transform: none; } }
+
+/* Dark theme. The page shell turns dark in onboarding/theme.css; every surface and every hard-coded text colour here follows it. */
+html[data-theme="dark"] .adv-intro h1, html[data-theme="dark"] .adv-list-title, html[data-theme="dark"] .adv-empty h3, html[data-theme="dark"] .adv-card-button, html[data-theme="dark"] .adv-date-tile b, html[data-theme="dark"] .adv-card-details > span, html[data-theme="dark"] .adv-complete h2 { color: #edf6fa; }
+html[data-theme="dark"] .adv-intro p, html[data-theme="dark"] .adv-source-note, html[data-theme="dark"] .adv-empty, html[data-theme="dark"] .adv-dialog-content > p:not(.ui-success):not(.ui-error), html[data-theme="dark"] .adv-complete-content > p { color: #c2d4df; }
+html[data-theme="dark"] .adv-card-details em, html[data-theme="dark"] .adv-card-details svg, html[data-theme="dark"] .adv-date-tile small, html[data-theme="dark"] .adv-detail-list dt, html[data-theme="dark"] .adv-dialog-eyebrow { color: #a9c0cc; }
+html[data-theme="dark"] .adv-detail-muted { color: #a9c0cc !important; }
+html[data-theme="dark"] .adv-card { --adv-accent: #5cc4f5; --adv-soft: #1d3c50; background: #192e3d; border-color: #3b5968; box-shadow: none; }
+html[data-theme="dark"] .adv-type-scheduled { --adv-accent: #ff8a7d; --adv-soft: #45282a; }
+html[data-theme="dark"] .adv-type-unscheduled { --adv-accent: #f5b04a; --adv-soft: #3d3120; }
+html[data-theme="dark"] .adv-type-notice { --adv-accent: #5cc4f5; --adv-soft: #1d3c50; }
+html[data-theme="dark"] .adv-type-restored { --adv-accent: #6fd896; --adv-soft: #203f33; }
+html[data-theme="dark"] .adv-card-foot { border-top-color: #3b5968; }
+html[data-theme="dark"] .adv-date-tile { background: #112735; border-color: #3b5968; }
+html[data-theme="dark"] .adv-empty { background: #192e3d; border-color: #3b5968; }
+html[data-theme="dark"] .adv-tabs { background: #192e3d; border-color: #3b5968; }
+html[data-theme="dark"] .adv-tabs button { color: #c2d4df; }
+html[data-theme="dark"] .adv-tab-count { color: #89dfef; background: #203e4c; }
+html[data-theme="dark"] .adv-filters button { color: #c2d4df; background: #192e3d; border-color: #3b5968; }
+html[data-theme="dark"] .adv-filters button span { color: #a9c0cc; }
+/* Selected states stay outside the hover query so they also apply on touch screens. */
+html[data-theme="dark"] .adv-tabs .is-selected { color: #fff; }
+html[data-theme="dark"] .adv-tabs .is-selected .adv-tab-count { color: #0479c2; background: #fff; }
+html[data-theme="dark"] .adv-filters button.is-selected { color: #102d3e; background: #89dfef; border-color: #89dfef; }
+html[data-theme="dark"] .adv-filters button.is-selected span { color: #24475a; }
+html[data-theme="dark"] .adv-dialog { color: #edf6fa; background: #142734; border-color: #3b5968; }
+html[data-theme="dark"] .adv-dialog-close { color: #89dfef; background: #203e4c; }
+html[data-theme="dark"] .adv-detail-head { background: linear-gradient(180deg, var(--adv-soft), #142734); }
+html[data-theme="dark"] .adv-detail-head .adv-event-mark { background: #192e3d; box-shadow: none; }
+html[data-theme="dark"] .adv-detail-list > div { background: #192e3d; border-color: #3b5968; }
+html[data-theme="dark"] .adv-ready { background: #1c3a30; border-color: #2f5c48; }
+html[data-theme="dark"] .adv-ready h3 { color: #8ce2b2; }
+html[data-theme="dark"] .adv-ready label { color: #edf6fa; }
+html[data-theme="dark"] .adv-check { background: #142734; border-color: #5fae86; }
+html[data-theme="dark"] .adv-ready input:checked ~ :not(.adv-check), html[data-theme="dark"] .adv-ready label:has(input:checked) { color: #a9c0cc; }
+html[data-theme="dark"] .adv-ready-sample, html[data-theme="dark"] .adv-ready-hint { color: #a9d9bd; }
+html[data-theme="dark"] .adv-complete { background: radial-gradient(ellipse at 50% 35%, #1b4153, transparent 65%), linear-gradient(180deg, #17394a, #142734 72%, #1c3a30); }
+html[data-theme="dark"] .adv-complete-badge { color: #8ce2b2; background: #24473c; border-color: #2f5c48; }
+html[data-theme="dark"] .adv-review-checklist { color: #89dfef; }
+@media (hover: hover) {
+  html[data-theme="dark"] .adv-card-button:hover { background: #1d3747; }
+  html[data-theme="dark"] .adv-card:hover { box-shadow: 0 10px 22px #00000059; }
+  html[data-theme="dark"] .adv-filters button:not(.is-selected):hover { border-color: #4c8197; color: #89dfef; }
+  html[data-theme="dark"] .adv-tabs button:not(.is-selected):hover { color: #89dfef; background: #203e4c; }
+}

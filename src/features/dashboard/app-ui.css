@@ -56,7 +56,7 @@
 .ui-form input::placeholder { color: #a0afbc; }
 .ui-form > button { margin-top: 5px; }
 .ui-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.ui-success { border-radius: 9px; padding: 11px 14px; font-size: 12px; line-height: 1.5; color: #188655; background: #eafaf1; margin-top: 17px; }
+.ui-success { border-radius: 9px; padding: 11px 14px; font-size: 12px; line-height: 1.5; color: #12704a; background: #eafaf1; margin-top: 17px; }
 .ui-success a { font-weight: 700; text-decoration: underline; }
 .ui-error { margin-top: 15px; padding: 11px 14px; border-radius: 9px; color: #b14545; background: #fff0f0; font-size: 12px; line-height: 1.5; }
 .ui-appliance-list { display: grid; gap: 0; }
@@ -116,7 +116,8 @@
   .ws-home-screen .ws-chart { padding-left: 32px; gap: 26px; }
   .ws-home-screen .ws-bar { max-width: 66px; }
   .ws-home-screen .ws-day-label { font-size: 15px; }
-  .ws-home-screen .ws-financial-row, .ws-home-screen .ws-advisory, .ws-home-screen .ws-tip { display: none; }
+  .ws-home-screen .ws-financial-row, .ws-home-screen .ws-tip { display: none; }
+  .ws-home-screen .ws-advisory { grid-column: 1 / -1; }
   .ws-home-screen .ws-tip.ws-tip-preview { display: flex; grid-column: 1 / -1; min-height: 145px; padding: 24px; }
   .ws-tip-preview .ws-tip-copy { margin-right: 140px; }
   .ws-tip-preview .ws-tip-copy p { font-size: 14px; }

@@ -190,3 +190,6 @@ html[data-theme="dark"] .hs-home-location { background: #142836; border-color: #
 }
 @media (prefers-reduced-motion: no-preference) { .hs-spinner { animation: hs-spin .8s linear infinite; } }
 @keyframes hs-spin { to { transform: rotate(360deg); } }
+html[data-theme="dark"] .hs-form label { color: #c2d4df; }
+html[data-theme="dark"] .hs-field-error { color: #ffb4a8; }
+html[data-theme="dark"] .hs-story-note strong { color: #edf6fa; }

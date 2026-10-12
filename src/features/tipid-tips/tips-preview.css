@@ -20,3 +20,17 @@
 @media (min-width: 600px) { .tt-refresh-actions > .ui-primary, .tt-sample-button { width: auto; }.tt-sample-button { padding-inline: 15px; }.tt-freshness dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }.tt-tip-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; } }
 @media (min-width: 900px) { .tt-toolbar { font-size: 12px; }.tt-toolbar a { font-size: 14px; }.tt-hero { padding: 30px 34px; min-height: 218px; }.tt-hero > div { max-width: calc(100% - 180px); }.tt-hero div > span { font-size: 11px; }.tt-hero h2 { font-size: 35px; }.tt-hero p { font-size: 14px; }.tt-hero img { width: 160px; right: 26px; bottom: 8px; }.tt-inputs h2 { font-size: 20px; }.tt-inputs-heading p { font-size: 13px; }.tt-input-counts { max-width: 580px; }.tt-input-counts a { padding: 17px; }.tt-input-counts strong { font-size: 25px; }.tt-input-counts span { font-size: 11px; }.tt-preview-note { font-size: 11px; }.tt-note, .tt-loading { font-size: 13px; }.tt-freshness h2 { font-size: 18px; }.tt-freshness p { font-size: 13px; }.tt-freshness dt { font-size: 10px; }.tt-freshness dd { font-size: 12px; }.tt-list-heading h2 { font-size: 22px; }.tt-filters button { font-size: 12px; padding-inline: 16px; }.tt-tip-grid { gap: 22px; }.tt-tip h2 { font-size: 21px; }.tt-tip-action { font-size: 14px; }.tt-tip-top > span:nth-child(2), .tt-tip-top small { font-size: 11px; }.tt-tip-reason > span { font-size: 11px; }.tt-tip-reason p { font-size: 12px; }.tt-tip-basis summary, .tt-tip-basis ul { font-size: 12px; }.tt-tip-basis > div { font-size: 11px; }.tt-tip-links a { font-size: 12px; }.tt-next { padding: 23px; }.tt-next h2 { font-size: 16px; }.tt-next p, .tt-next a { font-size: 13px; } }
 @media (prefers-reduced-motion: reduce) { .tt-loading > span { animation: none; } }
+
+/* Dark theme. Tip cards and panels turn dark in onboarding/theme.css; text and inner surfaces follow here. */
+html[data-theme="dark"] .tt-tip h2, html[data-theme="dark"] .tt-input-counts strong, html[data-theme="dark"] .tt-note strong { color: #edf6fa; }
+html[data-theme="dark"] .tt-note, html[data-theme="dark"] .tt-filters { background: #112735; border-color: #3b5968; }
+html[data-theme="dark"] .tt-filters button { color: #c2d4df; }
+html[data-theme="dark"] .tt-filters button[aria-pressed=true] { color: #fff; }
+html[data-theme="dark"] .tt-freshness h2 { color: #8ce2b2; }
+html[data-theme="dark"] .tt-freshness.is-stale h2 { color: #f1d9a0; }
+html[data-theme="dark"] .tt-freshness dt, html[data-theme="dark"] .tt-freshness dd { color: #c2d4df; }
+html[data-theme="dark"] .tt-freshness dl { border-top-color: #3b5968; }
+html[data-theme="dark"] .tt-tip-reason { background: #112735; border-color: #3b5968; }
+html[data-theme="dark"] .tt-tip-reason > span, html[data-theme="dark"] .tt-tip-basis summary { color: #89dfef; }
+html[data-theme="dark"] .tt-tip-top > span:nth-child(2), html[data-theme="dark"] .tt-tip-basis ul, html[data-theme="dark"] .tt-tip-basis > div { color: #c2d4df; }
+html[data-theme="dark"] .tt-tip-basis { border-top-color: #3b5968; }
