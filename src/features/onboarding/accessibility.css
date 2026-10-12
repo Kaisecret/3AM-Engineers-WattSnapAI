@@ -57,8 +57,6 @@
   .tt-page .tt-inputs { padding: 18px 16px; }
   .tt-page .tt-input-counts { gap: 10px; margin-top: 14px; }
   .tt-page .tt-input-counts a { padding: 12px; }
-  .tt-page .tt-refresh-actions { margin-top: 14px; }
-  .tt-page .tt-refresh-actions > .ui-primary { width: 100%; }
 }
 @media (max-width: 359px) {
   .hs-page .hs-provider { gap: 6px; padding: 8px; }

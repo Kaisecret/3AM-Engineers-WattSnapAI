@@ -172,18 +172,17 @@ async function tips(browser) {
   // AI is unavailable here, so the first visit saves labelled basic tips.
   await page.route('**/api/ai/tips', route => route.fulfill({ status: 503, json: { error: 'unavailable' } }));
   await page.goto(`${baseURL}/tips`);
-  await page.getByRole('button', { name: 'Create tips', exact: true }).click();
   await page.getByRole('heading', { name: 'Check My refrigerator door seals', exact: true }).waitFor();
   await page.getByText('Basic tips · based on your records', { exact: true }).waitFor();
   assert.match(await page.locator('.tt-page').innerText(), /Keep the refrigerator powered/);
   await page.evaluate(() => { const home = JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1')); home.appliances[0].name = 'Kitchen refrigerator'; localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify(home)); window.dispatchEvent(new Event('wattsnap-preview-change')); });
-  await page.getByText('Records changed · refresh your tips', { exact: true }).waitFor();
+  // Basic tips are rebuilt on the device as soon as the records change.
+  await page.getByRole('heading', { name: 'Check Kitchen refrigerator door seals', exact: true }).waitFor();
   await context.setOffline(true);
   await page.getByText('Offline · saved tips are available.', { exact: true }).waitFor();
-  assert.equal(await page.getByRole('button', { name: 'Refresh tips', exact: true }).isDisabled(), true, 'New tips need a connection');
-  assert.equal(await page.getByRole('heading', { name: 'Check My refrigerator door seals', exact: true }).count(), 1, 'Saved tips stay readable offline');
+  assert.equal(await page.getByRole('heading', { name: 'Check Kitchen refrigerator door seals', exact: true }).count(), 1, 'Saved tips stay readable offline');
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-tips-ui-preview-v1')).context.applianceCount), 1);
-  await context.setOffline(false); await page.reload(); await page.getByRole('heading', { name: 'Check My refrigerator door seals', exact: true }).waitFor();
+  await context.setOffline(false); await page.reload(); await page.getByRole('heading', { name: 'Check Kitchen refrigerator door seals', exact: true }).waitFor();
   await context.close(); console.log('PASS: relevant local tips, essential-device guidance, stale inputs and offline reading');
 }
 

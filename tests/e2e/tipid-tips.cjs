@@ -73,7 +73,7 @@ async function main() {
     const { generatePreviewTips } = await import('../../src/features/tipid-tips/preview-tips.ts');
     const forecastDate = new Date('2026-10-12T04:00:00Z');
     const recentHome = { ...seed, bills: [{ id: 'aug', month: '2026-08', amount: 1200, kwh: 100, source: 'manual' }, seed.bills[0]] };
-    const oldAdvice = generatePreviewTips(recentHome, forecastDate);
+    const oldAdvice = { ...generatePreviewTips(recentHome, forecastDate), source: 'gemini' };
     const pattern = [138,145,181,224,246,211,186,169,154,142,131,158];
     const fullHome = { ...recentHome, bills: [...pattern.map((kwh,i) => ({ id: `history-${i}`, month: `2025-${String(i+1).padStart(2,'0')}`, kwh, amount: kwh*12, subsidy: 500, source: 'manual' })), ...recentHome.bills] };
     for (const width of [1440, 390]) {
@@ -87,21 +87,25 @@ async function main() {
       fp.on('pageerror', e => errors.push(e.message));
       fp.on('request', r => { if (new URL(r.url()).pathname.startsWith('/api/ai/')) requests.push(r.url()); });
       await fp.clock.setFixedTime(forecastDate);
+      // Tips update themselves; with WattSnap AI unavailable the saved AI advice must stay as it is.
+      await fp.route('**/api/ai/tips', route => route.fulfill({ status: 503, json: { error: 'unavailable' } }));
       await fp.goto(base);
       await fp.getByRole('heading', { name: 'Next-year outlook', exact: true }).waitFor();
       await fp.locator('.tt-forecast-empty summary').click();
       assert.match(await fp.locator('.tt-forecast-empty').innerText(), /2 usable receipts/);
       await fp.evaluate(({ key, home }) => { localStorage.setItem(key, JSON.stringify(home)); window.dispatchEvent(new Event('wattsnap-preview-change')); }, { key: householdKey, home: fullHome });
-      await fp.getByRole('heading', { name: '2027 outlook', exact: true }).waitFor();
+      await fp.getByRole('heading', { name: 'Yearly outlook', exact: true }).waitFor();
       assert.match(await fp.locator('.tt-forecast-selected').innerText(), /246.*kWh/s);
       assert.match(await fp.locator('.tt-forecast-highlights').innerText(), /high: May.*low: Nov/);
       assert.equal(await fp.locator('.tt-forecast-selected').getByText('Estimated bill · before subsidies', { exact: true }).count(), 1);
-      assert.match(await fp.locator('.tt-forecast-stale').innerText(), /Refresh tips to include this outlook/);
+      await fp.getByRole('alert').filter({ hasText: 'Your saved tips are unchanged' }).waitFor();
+      await fp.getByText('Records changed · tips not updated yet', { exact: true }).waitFor();
+      assert.equal(await fp.getByRole('button', { name: /^(Refresh tips|Create tips|Cancel)$/ }).count(), 0, 'No refresh button');
       assert.deepEqual(await fp.evaluate(key => JSON.parse(localStorage.getItem(key)), tipsKey), oldAdvice, 'New outlook preserves saved advice');
       assert.equal(await fp.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
       await fp.screenshot({ path: path.join(output, `synced-outlook-${width}.png`), fullPage: true });
       await fp.reload();
-      await fp.getByRole('heading', { name: '2027 outlook', exact: true }).waitFor();
+      await fp.getByRole('heading', { name: 'Yearly outlook', exact: true }).waitFor();
       await fc.setOffline(true);
       await fp.getByRole('button', { name: 'August 2027', exact: true }).click();
       assert.match(await fp.locator('.tt-forecast-selected').innerText(), /169.*kWh/s);
@@ -109,7 +113,7 @@ async function main() {
       await fp.evaluate(({ key, home }) => { localStorage.setItem(key, JSON.stringify(home)); window.dispatchEvent(new Event('wattsnap-preview-change')); }, { key: householdKey, home: editedHome });
       await fp.waitForFunction(() => document.querySelector('.tt-forecast-selected')?.textContent.includes('175'));
       // A stored ready forecast cannot hide a missing month after a bill is removed.
-      const readyAdvice = generatePreviewTips(fullHome, forecastDate);
+      const readyAdvice = { ...generatePreviewTips(fullHome, forecastDate), source: 'gemini' };
       await fp.evaluate(({ householdKey, tipsKey, home, advice }) => {
         localStorage.setItem(tipsKey, JSON.stringify(advice)); window.dispatchEvent(new Event('wattsnap-tips-change'));
         localStorage.setItem(householdKey, JSON.stringify(home)); window.dispatchEvent(new Event('wattsnap-preview-change'));
@@ -118,7 +122,7 @@ async function main() {
       await fp.locator('.tt-forecast-empty summary').click();
       assert.match(await fp.locator('.tt-forecast-empty').innerText(), /13 usable receipts/);
       assert.deepEqual(await fp.evaluate(key => JSON.parse(localStorage.getItem(key)), tipsKey), readyAdvice);
-      assert.deepEqual(requests, [], 'Recalculating the outlook makes no AI calls');
+      assert.ok(requests.length > 0 && requests.every(url => new URL(url).pathname === '/api/ai/tips'), 'Only the automatic tips update calls AI; the outlook is calculated on the device');
       assert.deepEqual(errors, []);
       await fc.close();
       console.log(`PASS: ${width}px current bill history overrides old advice for sync, edits, removal, reload and offline outlook`);
@@ -134,8 +138,8 @@ async function main() {
         await route.fulfill({ json: { ok: true, data: reply } });
       });
       await page.goto(base);
-      await page.getByRole('button', { name: 'Create tips', exact: true }).click();
       await page.getByText('Your new tips are ready.', { exact: true }).waitFor();
+      assert.equal(await page.getByRole('button', { name: /^(Refresh tips|Create tips|Cancel)$/ }).count(), 0, 'Tips need no refresh button');
       assert.equal(await page.locator('.tt-tip').count(), 4);
       assert.equal(await page.locator('.tt-tip-basis[open]').count(), 0);
       assert.equal(await page.locator('.tt-tip-detail').first().isVisible(), false);
@@ -153,34 +157,38 @@ async function main() {
       await page.screenshot({ path: path.join(output, name + '.png'), fullPage: true });
       await page.unroute('**/api/ai/tips');
       await page.route('**/api/ai/tips', route => route.fulfill({ status: 429, json: { error: 'busy' } }));
-      await page.getByRole('button', { name: 'Refresh tips', exact: true }).click();
+      // Changed records start an update. While WattSnap AI is busy the saved AI tips stay, with a way to try again.
+      await page.evaluate(key => { const data = JSON.parse(localStorage.getItem(key)); data.appliances[1].hours = 9; localStorage.setItem(key, JSON.stringify(data)); window.dispatchEvent(new Event('wattsnap-preview-change')); }, householdKey);
       await page.getByRole('alert').filter({ hasText: 'Your saved tips are unchanged' }).waitFor();
+      await page.getByText('Records changed · tips not updated yet', { exact: true }).waitFor();
       assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)), tipsKey), original);
       await page.unroute('**/api/ai/tips');
       let pending;
       await page.route('**/api/ai/tips', route => { pending = route; });
-      await page.getByRole('button', { name: 'Refresh tips', exact: true }).click();
-      await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-      await page.getByText('Cancelled. Your saved tips are unchanged.', { exact: true }).waitFor();
-      if (pending) await pending.abort().catch(() => {});
-      assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)), tipsKey), original);
+      await page.getByRole('button', { name: 'Try again', exact: true }).click();
+      await page.getByText('Updating your tips…', { exact: true }).waitFor();
+      await page.getByText('Records changed · updating your tips', { exact: true }).waitFor();
+      while (!pending) await page.waitForTimeout(20);
+      await pending.fulfill({ json: { ok: true, data: reply } });
+      await page.getByText('Your new tips are ready.', { exact: true }).waitFor();
+      const updated = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), tipsKey);
+      assert.equal(updated.source, 'gemini'); assert.notEqual(updated.inputSignature, original.inputSignature);
       await context.setOffline(true);
       await page.getByText('Offline · saved tips are available.', { exact: true }).waitFor();
-      assert.equal(await page.getByRole('button', { name: 'Refresh tips', exact: true }).isDisabled(), true);
       assert.equal(await page.locator('.tt-tip').count(), 4);
       await context.setOffline(false);
       await page.unroute('**/api/ai/tips');
       await page.reload(); await page.getByText('AI tips · based on your records', { exact: true }).waitFor();
-      assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)), tipsKey), original);
+      assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)), tipsKey), updated);
       assert.deepEqual(errors, []);
-      await context.close(); console.log('PASS: ' + name + ' generation, disclosure, filters, failure, cancellation, offline, reload, layout');
+      await context.close(); console.log('PASS: ' + name + ' automatic generation, disclosure, filters, failure, retry, offline, reload, layout');
     }
     // First-time cloud failure yields labeled basic tips, rather than an empty screen.
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
     await context.addInitScript(({ key, data }) => localStorage.setItem(key, JSON.stringify(data)), { key: householdKey, data: seed });
     const page = await context.newPage();
     await page.route('**/api/ai/tips', route => route.fulfill({ status: 503, json: { error: 'unavailable' } }));
-    await page.goto(base); await page.getByRole('button', { name: 'Create tips', exact: true }).click();
+    await page.goto(base);
     await page.getByText('Basic tips · based on your records', { exact: true }).waitFor();
     assert.equal((await page.evaluate(key => JSON.parse(localStorage.getItem(key)), tipsKey)).source, 'local-rule');
     await page.screenshot({ path: path.join(output, 'basic-fallback.png'), fullPage: true });
@@ -190,35 +198,36 @@ async function main() {
     await raceContext.addInitScript(({ key, data }) => { if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(data)); }, { key: householdKey, data: seed });
     const racePage = await raceContext.newPage();
     await racePage.route('**/api/ai/tips', route => route.fulfill({ json: { ok: true, data: reply } }));
-    await racePage.goto(base); await racePage.getByRole('button', { name: 'Create tips', exact: true }).click();
+    await racePage.goto(base);
     await racePage.getByText('Your new tips are ready.', { exact: true }).waitFor();
     const before = await racePage.evaluate(key => JSON.parse(localStorage.getItem(key)), tipsKey);
     await racePage.unroute('**/api/ai/tips');
     let waiting;
     await racePage.route('**/api/ai/tips', route => { waiting = route; });
+    const changeWatts = watts => racePage.evaluate(({ key, watts }) => { const data = JSON.parse(localStorage.getItem(key)); data.appliances[0].watts = watts; localStorage.setItem(key, JSON.stringify(data)); window.dispatchEvent(new Event('wattsnap-preview-change')); }, { key: householdKey, watts });
     const requested = racePage.waitForRequest('**/api/ai/tips');
-    await racePage.getByRole('button', { name: 'Refresh tips', exact: true }).click(); await requested;
+    await changeWatts(110); await requested;
     const otherTab = await raceContext.newPage(); await otherTab.goto(base);
     const newer = { ...before, generatedAt: '2026-10-12T12:00:00Z', tips: before.tips.map(tip => ({ ...tip, title: 'Newer cross-tab title' })) };
     await otherTab.evaluate(({ key, newer }) => { localStorage.setItem(key, JSON.stringify(newer)); window.dispatchEvent(new Event('wattsnap-tips-change')); }, { key: tipsKey, newer });
     await racePage.getByRole('heading', { name: 'Newer cross-tab title', exact: true }).first().waitFor();
-    await waiting.fulfill({ json: { ok: true, data: reply } });
-    await racePage.getByRole('alert').filter({ hasText: 'Saved tips changed in another tab' }).waitFor();
-    assert.deepEqual(await racePage.evaluate(key => JSON.parse(localStorage.getItem(key)), tipsKey), newer);
+    // The other tab's tips are kept, and because they are still older than the records the update starts again.
     const requestedAgain = racePage.waitForRequest('**/api/ai/tips');
-    await racePage.getByRole('button', { name: 'Refresh tips', exact: true }).click(); await requestedAgain;
-    await racePage.evaluate(key => { const data = JSON.parse(localStorage.getItem(key)); data.appliances[0].watts = 120; localStorage.setItem(key, JSON.stringify(data)); window.dispatchEvent(new Event('wattsnap-preview-change')); }, householdKey);
-    await racePage.getByText('Records changed · refresh your tips', { exact: true }).waitFor();
-    await waiting.fulfill({ json: { ok: true, data: reply } });
-    await racePage.getByRole('alert').filter({ hasText: 'Your records changed' }).waitFor();
+    await waiting.fulfill({ json: { ok: true, data: reply } }); await requestedAgain;
     assert.deepEqual(await racePage.evaluate(key => JSON.parse(localStorage.getItem(key)), tipsKey), newer);
-    // Switching the device-local account cancels the previous household request.
+    // An answer for records that changed during the request is dropped, and the newer records get their own update.
+    await changeWatts(120);
+    await racePage.getByText('Records changed · updating your tips', { exact: true }).waitFor();
     const finalRequest = racePage.waitForRequest('**/api/ai/tips');
-    await racePage.getByRole('button', { name: 'Refresh tips', exact: true }).click(); await finalRequest;
+    await waiting.fulfill({ json: { ok: true, data: reply } }); await finalRequest;
+    assert.deepEqual(await racePage.evaluate(key => JSON.parse(localStorage.getItem(key)), tipsKey), newer);
+    assert.equal(await racePage.getByRole('alert').count(), 0, 'Dropped answers need no error');
+    // Switching the device-local account cancels the previous household request.
     await racePage.evaluate(() => { localStorage.setItem('wattsnap-preview-session-v1', JSON.stringify({ version: 1, identity: { id: 'other-household', name: 'Other home', email: '' } })); window.dispatchEvent(new Event('wattsnap-preview-session-change')); });
-    await racePage.getByRole('button', { name: 'Create tips', exact: true }).waitFor();
+    await racePage.getByText('Basic tips saved on this device.', { exact: true }).waitFor();
     await waiting.abort().catch(() => {});
-    assert.equal(await racePage.evaluate(key => localStorage.getItem(key + ':household:other-household'), tipsKey), null);
+    const other = await racePage.evaluate(key => JSON.parse(localStorage.getItem(key + ':household:other-household')), tipsKey);
+    assert.equal(other.source, 'local-rule', 'The other household only gets its own basic tips'); assert.equal(other.context.applianceCount, 0);
     assert.deepEqual(await racePage.evaluate(key => JSON.parse(localStorage.getItem(key)), tipsKey), newer);
     await raceContext.close(); console.log('PASS: concurrent tips, record edits, and account switches preserve saved advice');
     // Complete last year + partial current year: actual history, computed outlook and AI advice.
@@ -233,21 +242,38 @@ async function main() {
       const fp = await fc.newPage(), errors = []; fp.on('pageerror', e => errors.push(e.message));
       await fp.route('**/api/ai/tips', route => { assert.equal(route.request().postDataJSON().bills.length,18); return route.fulfill({ json: { ok: true, data: forecastReply } }); });
       await fp.goto(base); if (dark) await fp.evaluate(() => document.documentElement.dataset.theme='dark');
-      await fp.getByRole('heading', { name: `${localYear+1} outlook`, exact: true }).waitFor();
+      await fp.getByRole('heading', { name: 'Yearly outlook', exact: true }).waitFor();
       assert.match(await fp.locator('.tt-forecast-selected').innerText(), /240.*kWh/s);
       assert.match(await fp.locator('.tt-forecast-selected').innerText(), /2,880/);
       assert.match(await fp.locator('.tt-forecast-highlights').innerText(), /high: May.*low: Nov/);
       await fp.getByRole('button', { name: `June ${localYear+1}`, exact: true }).click();
       assert.match(await fp.locator('.tt-forecast-selected').innerText(), /204.*May fall/s);
       await fp.getByRole('button', { name: `May ${localYear+1}`, exact: true }).click();
-      await fp.getByRole('button', { name: 'Create tips', exact: true }).click(); await fp.getByText('Your new tips are ready.', { exact: true }).waitFor();
+      // The year switch shows recorded years beside the estimate.
+      const yearSwitch = fp.getByRole('group', { name: 'Outlook year' });
+      assert.deepEqual(await yearSwitch.getByRole('button').evaluateAll(buttons => buttons.map(button => button.getAttribute('aria-label') + ':' + button.getAttribute('aria-pressed'))), [`${localYear-1} recorded:false`, `${localYear} recorded:false`, `${localYear+1} estimate:true`]);
+      assert.equal(await fp.locator('.tt-forecast-estimate, .tt-forecast-legend').count(), 0, 'The switch replaces the legend and the estimate badge');
+      await yearSwitch.getByRole('button', { name: `${localYear-1} recorded`, exact: true }).click();
+      assert.match(await fp.locator('.tt-forecast-heading').innerText(), /Recorded electricity use & bill/);
+      assert.match((await fp.locator('.tt-forecast-selected').innerText()).replace(/\s+/g, ' '), new RegExp(`May ${localYear-1} 200 kWh Recorded bill · before subsidies ₱2,400\\.00 Higher vs Apr`));
+      assert.match(await fp.locator('.tt-forecast-highlights').innerText(), /Highest: May.*Lowest: Nov.*12 of 12 months recorded/s);
+      assert.equal(await fp.locator('.tt-forecast-method').count(), 0, 'The estimate method belongs to the estimate');
+      await yearSwitch.getByRole('button', { name: `${localYear} recorded`, exact: true }).click();
+      await fp.getByRole('button', { name: `July ${localYear}`, exact: true }).click();
+      assert.match(await fp.locator('.tt-forecast-selected').innerText(), /No receipt/);
+      assert.match(await fp.locator('.tt-forecast-highlights').innerText(), /6 of 12 months recorded/);
+      assert.equal(await fp.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,name+' no overflow with a recorded year');
+      await fp.screenshot({ path:path.join(output,name+'-recorded.png'),fullPage:true });
+      await yearSwitch.getByRole('button', { name: `${localYear+1} estimate`, exact: true }).click();
+      await fp.getByRole('button', { name: `May ${localYear+1}`, exact: true }).click();
+      await fp.getByText('Your new tips are ready.', { exact: true }).waitFor();
       assert.equal(await fp.locator('.tt-tip').count(),6);
       const stored = await fp.evaluate(key=>JSON.parse(localStorage.getItem(key)),tipsKey);
       assert.equal(stored.forecast.months[4].kwh,240); assert.equal(stored.forecast.months[4].amount,2880);
       assert.equal(await fp.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,name+' no overflow');
       await fp.evaluate(async()=>{await document.fonts.ready; window.scrollTo(0,0);}); await fp.screenshot({ path:path.join(output,name+'.png'),fullPage:true });
       await fp.locator('.tt-forecast-method summary').click(); assert.match(await fp.locator('.tt-forecast-method').innerText(),/before subsidies/);
-      await fp.reload(); await fp.getByRole('heading',{name:`${localYear+1} outlook`,exact:true}).waitFor();
+      await fp.reload(); await fp.getByRole('heading',{name:'Yearly outlook',exact:true}).waitFor();
       assert.deepEqual(await fp.evaluate(key=>JSON.parse(localStorage.getItem(key)),tipsKey),stored);
       await fc.setOffline(true); await fp.getByText('Offline · saved tips are available.',{exact:true}).waitFor();
       assert.equal(await fp.locator('.tt-forecast').isVisible(),true);

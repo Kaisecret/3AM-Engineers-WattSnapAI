@@ -11,7 +11,7 @@ export const setupSteps = [
   { id: "provider", label: "Select Electricity Provider", detail: "Confirm the provider printed on your electricity bill.", href: "/onboarding?step=provider", action: "Choose your provider" },
   { id: "bill", label: "Scan Your First Electricity Bill", detail: "Add a bill, check its values, and save your review.", href: "/bills/new", action: "Add your first bill" },
   { id: "appliance", label: "Register Your First Appliance", detail: "Save its rated watts, quantity, and usual operating hours.", href: "/appliances/new", action: "Add an appliance" },
-  { id: "tips", label: "Explore Personalized Tipid Tips", detail: "Create tips from your saved records, then confirm you reviewed them.", href: "/tips", action: "Explore your tips" },
+  { id: "tips", label: "Explore Personalized Tipid Tips", detail: "Open your tips, then confirm you reviewed them.", href: "/tips", action: "Explore your tips" },
 ] as const;
 
 export function normalizeSetup(value: unknown): SetupState {

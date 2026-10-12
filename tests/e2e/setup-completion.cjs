@@ -90,7 +90,7 @@ async function main() {
       await page.screenshot({path:path.join(output,'complete-'+width+'.png'),fullPage:true});
       await page.goto(base+'/dashboard'); await page.getByText('Saved household dashboard',{exact:true}).waitFor();
       assert.equal(await page.locator('.setup-progress-card').count(),0,'Completed setup stays hidden on dashboard');
-      await page.goto(base+'/tips'); await page.getByText('Records changed · refresh your tips',{exact:true}).waitFor();
+      await page.goto(base+'/tips'); await page.getByText('Basic tips · based on your records',{exact:true}).waitFor();
       await page.locator('.tt-setup summary').click(); await page.getByText('Tips reviewed',{exact:true}).waitFor();
       assert.equal(await page.getByRole('button',{name:'I’ve reviewed these tips',exact:true}).count(),0);
       await context.setOffline(true); await page.getByText('Offline · saved tips are available.',{exact:true}).waitFor();
