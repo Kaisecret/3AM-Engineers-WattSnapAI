@@ -6,7 +6,9 @@
 /* Status hero */
 .adv-hero { position: relative; isolation: isolate; overflow: hidden; display: flex; min-height: 200px; padding: 18px; border-radius: 22px; color: #fff; box-shadow: 0 12px 28px #0a8fd826; }
 .adv-hero.is-alert { background: linear-gradient(130deg, #ff9a3d 0%, #f97316 45%, #e8414b 100%); box-shadow: 0 12px 28px #f9731633; }
-.adv-hero.is-clear { background: linear-gradient(130deg, #22c55e, #0ea5a4 60%, #0891d1); }
+.adv-hero.is-clear { background: linear-gradient(125deg, #04b4ea 0%, #0b93ec 60%, #2563eb 100%); box-shadow: 0 12px 28px #0a8fd833; }
+.adv-hero.is-clear :is(.adv-hero-eyebrow, .adv-hero-when) { color: #e6f8ff; }
+.adv-hero.is-clear .adv-hero-art { filter: drop-shadow(0 10px 14px #00336640); }
 .adv-hero::before { content: ""; position: absolute; z-index: -1; width: 240px; height: 240px; right: -80px; top: -100px; border-radius: 50%; background: radial-gradient(circle, #ffffff40, transparent 70%); }
 .adv-hero::after { content: ""; position: absolute; z-index: -1; width: 170px; height: 170px; left: 30%; bottom: -120px; border-radius: 50%; background: #ffffff14; }
 .adv-hero-copy { position: relative; z-index: 1; flex: 1; min-width: 0; max-width: calc(100% - 92px); }
@@ -15,7 +17,7 @@
 .adv-location > svg { flex: 0 0 auto; width: 15px; height: 15px; }
 .adv-location > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .adv-location em { flex: 0 0 auto; padding: 3px 8px; border-radius: 999px; color: #c2410c; background: #fff; font-size: 10.5px; font-style: normal; font-weight: 800; }
-.adv-hero.is-clear .adv-location em { color: #0f766e; }
+.adv-hero.is-clear .adv-location em { color: #0479c2; }
 .adv-hero-eyebrow { margin-top: 14px; color: #fff4e6; font-size: 12px; font-weight: 700; }
 .adv-hero h2 { margin-top: 3px; font-size: 21px; font-weight: 800; line-height: 1.22; letter-spacing: -.6px; }
 .adv-hero-when { display: flex; align-items: flex-start; gap: 6px; margin-top: 8px; color: #fff3e8; font-size: 12px; font-weight: 600; line-height: 1.45; }

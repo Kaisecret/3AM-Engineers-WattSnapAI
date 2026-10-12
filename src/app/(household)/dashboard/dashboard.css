@@ -271,25 +271,25 @@
 .ws-chart-note { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-top: 12px; padding-top: 10px; border-top: 1px dashed #e3eef4; color: #7a93a8; font-size: 10.5px; line-height: 1.4; }
 .ws-chart-note i { width: 14px; height: 10px; border-radius: 2px; border: 1px dashed #9fd6ea; background: repeating-linear-gradient(135deg, #eef9fd 0 3px, #d6f0f9 3px 6px); }
 .ws-chart-note a { color: #0a8fd0; font-weight: 700; text-decoration: underline; }
-.ws-assistant-card { position: relative; isolation: isolate; overflow: hidden; padding: 16px; border-radius: 18px; color: #fff; background: linear-gradient(135deg, #0b2a5b 0%, #0a58b0 55%, #08b4ea 100%); box-shadow: 0 10px 24px #0b3d7a2e; transition: transform .2s, box-shadow .2s; }
-.ws-assistant-card::before { content: ""; position: absolute; z-index: -1; width: 220px; height: 220px; right: -70px; top: -90px; border-radius: 50%; background: radial-gradient(circle, #5fe0ff59, transparent 70%); }
+.ws-assistant-card { position: relative; isolation: isolate; overflow: hidden; padding: 16px; border-radius: 18px; color: #fff; background: linear-gradient(125deg, #04b4ea 0%, #0b93ec 60%, #2563eb 100%); box-shadow: 0 12px 28px #0a8fd833; transition: transform .2s, box-shadow .2s; }
+.ws-assistant-card::before { content: ""; position: absolute; z-index: -1; width: 220px; height: 220px; right: -70px; top: -90px; border-radius: 50%; background: radial-gradient(circle, #ffffff38, transparent 70%); }
 .ws-assistant-copy > :not(.ws-assistant-input, .ws-assistant-prompts) { max-width: 66%; }
-.ws-assistant-tag { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 999px; background: #ffffff1f; color: #c6f1ff; font-size: 10px; font-weight: 800; letter-spacing: .2px; }
+.ws-assistant-tag { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 999px; background: #ffffff29; color: #fff; font-size: 10px; font-weight: 800; letter-spacing: .2px; }
 .ws-assistant-tag svg { width: 13px; height: 13px; color: #ffe066; }
 .ws-assistant-card h2 { margin-top: 8px; font-size: 17px; font-weight: 800; line-height: 1.25; letter-spacing: -.5px; }
 .ws-assistant-link::after { content: ""; position: absolute; z-index: 1; inset: 0; border-radius: inherit; }
-.ws-assistant-card p { margin-top: 4px; color: #d3efff; font-size: 11.5px; line-height: 1.45; }
+.ws-assistant-card p { margin-top: 4px; color: #e6f8ff; font-size: 11.5px; line-height: 1.45; }
 .ws-assistant-input { position: relative; display: flex; align-items: center; justify-content: space-between; height: 42px; margin-top: 13px; padding: 0 5px 0 15px; border-radius: 999px; background: #fff; color: #8aa0b2; font-size: 12px; box-shadow: 0 6px 14px #00163a33; }
 .ws-assistant-input span { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: #fff; background: linear-gradient(130deg, #06ceef, #0094ec); }
 .ws-assistant-input svg { width: 16px; height: 16px; }
 .ws-assistant-prompts { position: relative; z-index: 2; display: flex; gap: 6px; margin: 10px -16px -2px 0; padding-right: 16px; overflow-x: auto; scrollbar-width: none; }
 .ws-assistant-prompts::-webkit-scrollbar { display: none; }
-.ws-assistant-prompts a { flex: 0 0 auto; padding: 7px 11px; border-radius: 999px; border: 1px solid #ffffff38; background: #ffffff1a; color: #fff; font-size: 11px; font-weight: 700; white-space: nowrap; transition: background .2s; }
-.ws-assistant-mascot { position: absolute; z-index: 0; right: -6px; top: -4px; width: 124px; height: auto; filter: drop-shadow(0 10px 14px #00163a66); }
-.ws-assistant-card :focus-visible { outline-color: #9ce9ff; }
+.ws-assistant-prompts a { flex: 0 0 auto; padding: 7px 11px; border-radius: 999px; border: 1px solid #ffffff52; background: #ffffff26; color: #fff; font-size: 11px; font-weight: 700; white-space: nowrap; transition: background .2s; }
+.ws-assistant-mascot { position: absolute; z-index: 0; right: -6px; top: -4px; width: 124px; height: auto; filter: drop-shadow(0 10px 14px #00336640); }
+.ws-assistant-card :focus-visible { outline-color: #fff; }
 @media (hover: hover) {
-  .ws-assistant-card:hover { transform: translateY(-2px); box-shadow: 0 14px 28px #0b3d7a3d; }
-  .ws-assistant-prompts a:hover { background: #ffffff33; }
+  .ws-assistant-card:hover { transform: translateY(-2px); box-shadow: 0 16px 32px #0a8fd84d; }
+  .ws-assistant-prompts a:hover { background: #ffffff40; }
 }
 @media (prefers-reduced-motion: no-preference) {
   .ws-assistant-mascot { animation: ws-float 3.2s ease-in-out infinite; }
