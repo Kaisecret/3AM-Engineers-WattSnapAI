@@ -59,6 +59,23 @@ async function main() {
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
       await card.screenshot({path:path.join(output,`summary-${width}.png`)});
     });
+    for(const width of [320,390,1440])await scenario(`appliance rows show whole names, costs and side-by-side actions at ${width}px`,width,async page=>{
+      await page.addInitScript(()=>localStorage.setItem('wattsnap-ui-preview-v1',JSON.stringify({name:'Test home',budget:0,bills:[{id:'b1',month:'2026-09',kwh:109,amount:1738.14,source:'manual'}],appliances:[{id:'a1',name:'Electric fan',kind:'fan',watts:20,hours:2,quantity:1,days:30,source:'manual',wattageBasis:'nameplate'},{id:'a2',name:'Washing machine (front load)',kind:'washer',watts:20,hours:1,quantity:1,days:30,source:'manual',wattageBasis:'nameplate'}]})));
+      await page.goto(base+'/appliances');await page.locator('.ap-list > li').nth(1).waitFor();
+      const rows=await page.locator('.ap-list > li').evaluateAll(items=>items.map(item=>{
+        const box=element=>element.getBoundingClientRect(),row=box(item),panel=box(item.closest('.ap-list-panel')),name=item.querySelector('h3'),cost=box(item.querySelector('.ap-item-cost')),buttons=[...item.querySelectorAll('.ap-item-actions button')].map(box);
+        const track=box(item.querySelector('.ap-share i')),fill=box(item.querySelector('.ap-share i span'));
+        return {wholeName:name.scrollWidth<=name.clientWidth+1,nameRight:box(name).right,valueLeft:box(item.querySelector('.ap-item-top strong')).left,iconTop:box(item.querySelector('.ap-icon')).top-box(item.querySelector('.ap-item-main')).top,costInside:cost.left>=row.left-1&&cost.right<=row.right+1,sameLine:Math.abs(buttons[0].top-buttons[1].top)<2,touch:buttons.every(button=>button.width>=44&&button.height>=44),buttonsInside:buttons.every(button=>button.right<=panel.right-4),filled:fill.width/track.width,height:row.height};
+      }));
+      for(const row of rows){
+        assert.ok(row.wholeName,'Appliance name is never cut off');assert.ok(row.nameRight<=row.valueLeft,'Name and monthly use do not collide');
+        assert.ok(Math.abs(row.iconTop)<=2,'Icon lines up with the name');assert.ok(row.costInside,'Cost stays inside the row');
+        assert.ok(row.sameLine&&row.touch&&row.buttonsInside,`Edit and remove sit side by side inside the panel as comfortable touch targets (${JSON.stringify(row)})`);
+      }
+      assert.ok(Math.abs(rows[0].filled-2/3)<.03&&Math.abs(rows[1].filled-1/3)<.03,`Bars share one track so shares compare (${rows.map(row=>row.filled)})`);
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+      await page.locator('.ap-list-panel').screenshot({path:path.join(output,`rows-${width}.png`)});
+    });
     for(const width of [320,390,768,1440])await scenario(`appliance form and save popup fit at ${width}px`,width,async page=>{
       await page.goto(base+'/appliances/new');
       await page.getByRole('button',{name:/^Type it in/}).click();
