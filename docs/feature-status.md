@@ -18,7 +18,7 @@ An ANTECO receipt shows the total kWh and the amount, for example **192 kWh and 
 | 4 | Appliance registration | The bill does not say which device costs the most | Appliances → Add appliance | 🟡 | One popup: take or upload a label photo, or type it in, then a short form with icon types and typical-watts guidance. AI does not read the label photo yet. |
 | 5 | Appliance estimate | Manual calculation is hard | Appliances | ✅ | – Shows kWh and pesos per device, and how much of the latest bill the devices explain. |
 | 6 | Change detection | Increases go unnoticed until the bill is high | Home, Energy | ✅ | – Changes of 20% or more are flagged. |
-| 7 | Tipid Tips | Saving advice is generic | Tips | 🟡 | Tips come from fixed local rules, not Gemini. They do target your top devices. |
+| 7 | Tipid Tips | Saving advice is generic | Tips | ✅ | – The app picks the tips and computes every figure from your records; Gemini rewrites the wording when online. Includes which devices to switch off an hour earlier first, estimated peso cost per device, a budget tip and a subsidy tip. |
 | 8 | Advisories and location match | Long provider posts, unclear if your barangay is affected | Advisories | 🟡 | ANTECO's Facebook page is collected automatically and read by Gemini (caption and images); advisories that list your area are saved for you with a link to the post. Screenshot or pasted text still works, and there the user types the details. No sharing from other apps. No notification when the app is closed. Needs the set-up in `docs/14-anteco-advisory-ingestion.md`. |
 | 9 | Offline access | Brownouts often cut mobile data too | Whole app | 🟡 | Records stay on the device, but pages need a connection to open. Offline shows a notice. This was a security choice (no signed-in page shown after logout). |
 | 10 | Watt-If simulator | Savings are unknown until habits change | Simulator | ✅ | – |
@@ -30,7 +30,7 @@ Gemini 3.5 Flash-Lite is wired into the server (`src/lib/gemini/`, needs `GEMINI
 - **WattSnap AI in the app** (`/api/ai/assistant`, signed-in accounts only) answers questions and can **make changes for you**: set the monthly budget or subsidy, add, change or remove appliances, save a monthly bill, and open a page. Every change appears on a card and is saved only when you tap **Confirm** (or **Confirm all**). Records stay in the browser; the chat sends a summary of them with each message.
 - **The landing page chat** (`/api/ai/landing`, public) answers questions about WattSnap only. It gets no household data and cannot change anything. Each visitor gets 8 questions per 10 minutes.
 
-When Gemini is not set, busy, over its limit or offline, both chats fall back to the built-in answers. In the app, such an answer says why underneath (for example "Basic answer · Gemini did not accept the API key"). To check a deployment, open `/api/ai/assistant` (shows whether the key is set and which model is used), or, while logged in, `/api/ai/assistant?check=1` (makes one real call to Gemini and reports `reachable` or the problem). Vercel only gives a new environment variable to deployments made after it was added, so redeploy after adding or changing `GEMINI_API_KEY`. Each account can send 20 messages per 5 minutes, and limits are kept per server instance (best effort). **Snap AI** reads bills with `/api/ai/bills` (signed-in accounts, 10 photos per 10 minutes) using **Gemini 3.5 Flash** and the same `GEMINI_API_KEY` (`GEMINI_SCAN_MODEL` can name another model). If that model is not available on the key or is out of quota, it uses the chat model instead. The `appliances` and `tips` routes also need a signed-in account but **no screen calls them yet**, so Add appliance and Tips still work as described above. The `advisories` route is still a placeholder. ANTECO's Facebook posts are read by a separate server route, `/api/advisories/ingest`, which only Vercel Cron and the project's Gmail script can call (`CRON_SECRET`); it uses `APIFY_API_TOKEN` and the same `GEMINI_API_KEY`.
+When Gemini is not set, busy, over its limit or offline, both chats fall back to the built-in answers. In the app, such an answer says why underneath (for example "Basic answer · Gemini did not accept the API key"). To check a deployment, open `/api/ai/assistant` (shows whether the key is set and which model is used), or, while logged in, `/api/ai/assistant?check=1` (makes one real call to Gemini and reports `reachable` or the problem). Vercel only gives a new environment variable to deployments made after it was added, so redeploy after adding or changing `GEMINI_API_KEY`. Each account can send 20 messages per 5 minutes, and limits are kept per server instance (best effort). **Snap AI** reads bills with `/api/ai/bills` (signed-in accounts, 10 photos per 10 minutes) using **Gemini 3.5 Flash** and the same `GEMINI_API_KEY` (`GEMINI_SCAN_MODEL` can name another model). If that model is not available on the key or is out of quota, it uses the chat model instead. The Tips screen calls the `tips` route (signed-in accounts, 10 requests per 10 minutes): Gemini rewrites the wording of the app's own tips, and the app keeps its wording when Gemini is unavailable. The switch-off, budget and subsidy tips are never sent to Gemini. The `appliances` route also needs a signed-in account; Add appliance calls it to read a label photo. The `advisories` route is still a placeholder. ANTECO's Facebook posts are read by a separate server route, `/api/advisories/ingest`, which only Vercel Cron and the project's Gmail script can call (`CRON_SECRET`); it uses `APIFY_API_TOKEN` and the same `GEMINI_API_KEY`.
 
 **Staying signed in.** A login lasts until you tap Log out (the session cookie is kept for 400 days and refreshed automatically). Opening the site, the installed app, or the login and sign-up pages while signed in goes straight into the app, including after the phone's Back button. A weak connection no longer signs you out.
 
@@ -70,7 +70,7 @@ Antique's Provincial Electric Power Subsidy covers up to ₱500 of a household's
 
 Code: `antiquePepsSubsidy`, `monthlySubsidyFor`, `subsidyFor` and `amountPaid` in `src/features/dashboard/preview-data.ts`, tested in `subsidy.test.mjs`. A bill stores `amount` (before subsidy) and an optional `subsidy`; the household stores an optional `monthlySubsidy`.
 
-Not yet: Watt-If and Tipid Tips do not mention that savings stop lowering what you pay once the bill is under ₱500.
+Tipid Tips say so: peso estimates carry a note when the latest bill has a subsidy, and a tip appears when the subsidy covers the whole bill. Not yet: Watt-If does not mention that savings stop lowering what you pay once the bill is under ₱500.
 - **Check the kWh.** Present reading − previous reading should equal KWH USED (10994 − 10802 = 192).
 - **Photo tips for long thermal receipts.** Hold the phone close, lay the receipt flat in good light, and take two photos if it does not fit.
 
@@ -118,7 +118,7 @@ The app calculates watts × hours × quantity × days ÷ 1,000 = kWh, then multi
 1. Appliances page: ranks your biggest users with kWh, pesos and a % share.
 2. It shows how much of your latest bill the devices explain, for example "Your devices explain 41% of your August bill (79 of 192 kWh)". If the devices add up to more than the bill, it asks you to check the hours.
 3. Watt-If tries changes on your own devices before you make them.
-4. Tipid Tips focus on your top devices.
+4. Tipid Tips focus on your top devices, show their estimated cost at your bill's price per kWh, and list which devices to switch off an hour earlier first (never the refrigerator).
 5. "Register your first appliance" is one of the five Home setup steps.
 
 These are estimates, not meter readings. Fridges and air conditioners switch on and off, so label wattage overstates real use.
@@ -127,7 +127,7 @@ These are estimates, not meter readings. Fridges and air conditioners switch on 
 
 ## Remaining work
 
-1. **Use Gemini in more screens.** Snap AI now reads bills. The `appliances` and `tips` routes already call Gemini; Add appliance and Tips still need to call them and put the results into the form. The `advisories` route still needs a Gemini implementation. This covers features 4, 7 and 8.
+1. **Use Gemini in more screens.** Snap AI now reads bills. The Tips screen uses the `tips` route and Add appliance uses the `appliances` route. The `advisories` route still needs a Gemini implementation. This covers feature 8.
 2. **Budget (feature 11):** add a kWh target, a "days left / at risk" forecast, and use device estimates as the proposal describes.
 3. **Offline pages (feature 9):** decide whether signed-in pages should open offline again. The current service worker never caches them, for security after logout.
 4. **Share to WattSnap (feature 8):** accept advisory screenshots shared from Facebook or Messenger (needs a web app share target).

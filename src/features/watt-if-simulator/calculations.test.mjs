@@ -71,3 +71,7 @@ test("browser snapshots reject malformed, invalid, or mismatched originals", () 
   assert.deepEqual(normalizeScenarios([scenario]), [scenario]);
   for (const value of [null, {}, [null], [{ ...scenario, days: "0" }], [{ ...scenario, baseline: [{ ...scenario.baseline[0], hours: 20 }] }], [{ ...scenario, entries: [null] }], [{ ...scenario, entries: [...scenario.entries, ...scenario.entries] }]]) assert.deepEqual(normalizeScenarios(value), []);
 });
+test("a saved scenario for an appliance whose name matches two kinds keeps its signature", () => {
+  // Serialized before any classifier change: the guessed kind "fan" is part of the saved baseline signature.
+  assert.equal(applianceSignature([{ id: "a", name: "Fan-cooled refrigerator", watts: 100, quantity: 1, hours: 16 }]), JSON.stringify([["a", "Fan-cooled refrigerator", "", 100, 1, 16, 30, "fan", "", "approximate"]]));
+});

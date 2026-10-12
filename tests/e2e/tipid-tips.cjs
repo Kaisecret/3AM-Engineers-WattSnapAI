@@ -136,7 +136,7 @@ async function main() {
       await page.goto(base);
       await page.getByRole('button', { name: 'Create tips', exact: true }).click();
       await page.getByText('Your new tips are ready.', { exact: true }).waitFor();
-      assert.equal(await page.locator('.tt-tip').count(), 3);
+      assert.equal(await page.locator('.tt-tip').count(), 4);
       assert.equal(await page.locator('.tt-tip-basis[open]').count(), 0);
       assert.equal(await page.locator('.tt-tip-detail').first().isVisible(), false);
       await page.locator('.tt-tip-basis summary').first().click();
@@ -145,7 +145,7 @@ async function main() {
       const original = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), tipsKey);
       assert.equal(original.source, 'gemini');
       const filters = page.getByRole('group', { name: 'Filter tips' });
-      await filters.getByRole('button', { name: 'Appliances', exact: true }).click(); assert.equal(await page.locator('.tt-tip').count(), 2);
+      await filters.getByRole('button', { name: 'Appliances', exact: true }).click(); assert.equal(await page.locator('.tt-tip').count(), 3);
       await filters.getByRole('button', { name: 'Bills', exact: true }).click(); assert.equal(await page.locator('.tt-tip').count(), 1);
       await filters.getByRole('button', { name: 'All tips', exact: true }).click();
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, name + ' has no horizontal overflow');
@@ -167,7 +167,7 @@ async function main() {
       await context.setOffline(true);
       await page.getByText('Offline · saved tips are available.', { exact: true }).waitFor();
       assert.equal(await page.getByRole('button', { name: 'Refresh tips', exact: true }).isDisabled(), true);
-      assert.equal(await page.locator('.tt-tip').count(), 3);
+      assert.equal(await page.locator('.tt-tip').count(), 4);
       await context.setOffline(false);
       await page.unroute('**/api/ai/tips');
       await page.reload(); await page.getByText('AI tips · based on your records', { exact: true }).waitFor();
@@ -241,7 +241,7 @@ async function main() {
       assert.match(await fp.locator('.tt-forecast-selected').innerText(), /204.*May fall/s);
       await fp.getByRole('button', { name: `May ${localYear+1}`, exact: true }).click();
       await fp.getByRole('button', { name: 'Create tips', exact: true }).click(); await fp.getByText('Your new tips are ready.', { exact: true }).waitFor();
-      assert.equal(await fp.locator('.tt-tip').count(),4);
+      assert.equal(await fp.locator('.tt-tip').count(),6);
       const stored = await fp.evaluate(key=>JSON.parse(localStorage.getItem(key)),tipsKey);
       assert.equal(stored.forecast.months[4].kwh,240); assert.equal(stored.forecast.months[4].amount,2880);
       assert.equal(await fp.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,name+' no overflow');

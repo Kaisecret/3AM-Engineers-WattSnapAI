@@ -1,3 +1,4 @@
+import type { ApplianceLabelExtractionResult } from "../../contracts/extraction";
 import { guessApplianceKind, type ApplianceKind, type PreviewAppliance } from "../dashboard/preview-data";
 
 /** What the Add / Edit appliance popup holds while the person types. */
@@ -11,6 +12,16 @@ export const blankDraft: ApplianceDraft = { kind: "other", name: "", model: "", 
 export function draftFrom(item?: PreviewAppliance): ApplianceDraft {
   if (!item) return blankDraft;
   return { kind: item.kind ?? guessApplianceKind(item.name), name: item.name, model: item.model ?? "", power: String(item.watts), unit: "W", hours: String(item.hours), quantity: item.quantity, days: String(item.days ?? 30), wattageBasis: item.wattageBasis ?? "approximate" };
+}
+
+/** What a label reading adds to the form: only the fields still empty, so typed values are never replaced. Hours are never read. */
+export function labelPatch(draft: ApplianceDraft, label: ApplianceLabelExtractionResult): Partial<ApplianceDraft> {
+  const patch: Partial<ApplianceDraft> = {};
+  if (draft.kind === "other" && label.applianceType && label.applianceType !== "other") patch.kind = label.applianceType;
+  if (!draft.name.trim() && label.applianceName) patch.name = label.applianceName;
+  if (!draft.model.trim() && label.model) patch.model = label.model;
+  if (!draft.power.trim() && label.ratedPower) { patch.power = String(label.ratedPower); patch.unit = "W"; patch.wattageBasis = "nameplate"; }
+  return patch;
 }
 
 /** kW is converted once; blank fields stay invalid (never zero) so validation asks for them. */

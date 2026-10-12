@@ -83,7 +83,7 @@ test("forecast tips and facts persist without allowing Gemini to change the proj
   assert.equal(basis.forecast.targetYear, 2027);
   assert.ok(basis.tips.find(t => t.id === "bill-forecast"));
   assert.match(basis.tips.find(t => t.id === "bill-forecast").facts.join(" "), /May.*240.*kWh/);
-  const reply = basis.tips.map(t => ({ id: t.id, title: "Prepare for higher use", action: "Check unused appliance hours before the projected peak month.", explanation: "These are estimates based on saved records.", assumptions: [] }));
+  const reply = basis.tips.filter(t => t.id !== "budget-gap").map(t => ({ id: t.id, title: "Prepare for higher use", action: "Check unused appliance hours before the projected peak month.", explanation: "These are estimates based on saved records.", assumptions: [] }));
   const merged = mergeGeminiTips(basis, reply);
   assert.deepEqual(merged.forecast, basis.forecast);
   assert.deepEqual(normalizeTipsSnapshot(JSON.parse(JSON.stringify(merged))), merged);

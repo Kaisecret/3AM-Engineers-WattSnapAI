@@ -75,10 +75,12 @@ export const appliancePresets: { kind: ApplianceKind; name: string; watts: numbe
   { kind: "iron", name: "Flat iron", watts: 1000, hours: 0.5 },
   { kind: "other", name: "", watts: 0, hours: 0 },
 ];
+/** Names that mean refrigeration. The guess order below is part of saved Watt-If signatures, so safety checks test this directly. */
+export const refrigerationName = /fridge|refrigerator|\bref\b|freezer/i;
 const kindKeywords: [ApplianceKind, RegExp][] = [
   ["aircon", /air ?con|aircon|\bac\b|split type|window type/i],
   ["fan", /\bfan\b|electric fan|bentilador/i],
-  ["fridge", /fridge|refrigerator|\bref\b|freezer/i],
+  ["fridge", refrigerationName],
   ["tv", /\btv\b|television/i],
   ["rice-cooker", /rice|cooker/i],
   ["washer", /wash|laundry/i],

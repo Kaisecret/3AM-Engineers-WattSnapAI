@@ -76,6 +76,66 @@ async function main() {
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
       await page.locator('.ap-list-panel').screenshot({path:path.join(output,`rows-${width}.png`)});
     });
+    // What the label reader answers for a floor-type air conditioner plate with a cooling input and a larger rated input.
+    const labelReading={reviewRequired:true,unknownFields:[],applianceName:'Floor type air conditioner',applianceType:'aircon',model:'ET36FS/M-INT',ratedPower:4100,powerUnit:'W',powerLabel:'Standard rating conditions cooling input',otherRatings:[{label:'Rated input',watts:5400}],checks:[]};
+    async function labelPhoto(page){
+      const base64=await page.evaluate(()=>{const canvas=document.createElement('canvas');canvas.width=600;canvas.height=800;const ctx=canvas.getContext('2d');ctx.fillStyle='#ddd';ctx.fillRect(0,0,600,800);ctx.fillStyle='#111';ctx.font='28px Arial';ctx.fillText('INPUT 4100W',60,120);return canvas.toDataURL('image/png').split(',')[1];});
+      await page.locator('input[type=file]').first().setInputFiles({name:'label.png',mimeType:'image/png',buffer:Buffer.from(base64,'base64')});
+    }
+    const saved=page=>page.evaluate(()=>JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1')).appliances);
+    for(const width of [320,390])await scenario(`label photo is read by AI, fills empty fields and still needs confirmation at ${width}px`,width,async page=>{
+      let sent,answer;await page.route('**/api/ai/appliances',async route=>{sent=route.request().postDataJSON();await new Promise(resolve=>answer=resolve);await route.fulfill({json:{ok:true,data:labelReading}});});
+      await page.goto(base+'/appliances/new');await page.getByRole('dialog',{name:'Add an appliance',exact:true}).waitFor();await labelPhoto(page);
+      const dialog=page.getByRole('dialog',{name:'Add appliance',exact:true});await dialog.getByText('Reading your label…',{exact:true}).waitFor();
+      await dialog.getByLabel('Name',{exact:true}).fill('Sala aircon');
+      while(!answer)await page.waitForTimeout(40);
+      assert.ok(sent.imageBase64.length>500&&/^image\//.test(sent.mimeType),'The photo itself is sent for reading');
+      answer();await dialog.getByText('WattSnap AI read your label',{exact:true}).waitFor();
+      assert.equal(await dialog.getByLabel('Name',{exact:true}).inputValue(),'Sala aircon','A name typed while reading is kept');
+      assert.equal(await dialog.getByLabel('Power',{exact:true}).inputValue(),'4100');
+      assert.equal(await dialog.getByLabel(/^Model/).inputValue(),'ET36FS/M-INT');
+      assert.equal(await dialog.getByRole('radio',{name:'Air conditioner',exact:true}).isChecked(),true);
+      assert.equal(await dialog.getByRole('radio',{name:'The label',exact:true}).getAttribute('aria-checked'),'true');
+      const cooling=dialog.getByRole('button',{name:/cooling input\s*4,100 W/}),rated=dialog.getByRole('button',{name:/Rated input\s*5,400 W/});
+      assert.equal(await cooling.getAttribute('aria-pressed'),'true');
+      await rated.click();assert.equal(await dialog.getByLabel('Power',{exact:true}).inputValue(),'5400','The other printed rating is one tap away');
+      await cooling.click();assert.equal(await dialog.getByLabel('Power',{exact:true}).inputValue(),'4100');
+      assert.equal(await dialog.evaluate(element=>element.scrollWidth<=element.clientWidth+1),true,'The form does not overflow sideways');
+      await dialog.locator('.ad-label').scrollIntoViewIfNeeded();await page.screenshot({path:path.join(output,`label-read-${width}.png`)});
+      await dialog.getByLabel('Hours a day',{exact:true}).fill('8');
+      await dialog.getByRole('button',{name:'Add appliance',exact:true}).click();await dialog.getByText(/I checked these values/).first().waitFor();
+      assert.equal((await saved(page)).length,0,'Nothing is saved before the person confirms the values');
+      await dialog.getByRole('checkbox').check();await dialog.getByRole('button',{name:'Add appliance',exact:true}).click();
+      await page.getByRole('dialog',{name:'Appliance added',exact:true}).waitFor();
+      const [appliance]=await saved(page);
+      assert.deepEqual({name:appliance.name,kind:appliance.kind,watts:appliance.watts,model:appliance.model,hours:appliance.hours,wattageBasis:appliance.wattageBasis},{name:'Sala aircon',kind:'aircon',watts:4100,model:'ET36FS/M-INT',hours:8,wattageBasis:'nameplate'});
+    });
+    await scenario('an unread label keeps manual entry and can be read again',390,async page=>{
+      let calls=0;await page.route('**/api/ai/appliances',route=>++calls===1?route.fulfill({status:502,json:{error:'We couldn’t read that nameplate. Please try another photo or type the values.',problem:'unavailable'}}):route.fulfill({json:{ok:true,data:labelReading}}));
+      await page.goto(base+'/appliances/new');await page.getByRole('dialog',{name:'Add an appliance',exact:true}).waitFor();await labelPhoto(page);
+      const dialog=page.getByRole('dialog',{name:'Add appliance',exact:true});await dialog.getByText('Label not read',{exact:true}).waitFor();
+      assert.equal(await dialog.getByLabel('Power',{exact:true}).inputValue(),'');assert.equal(await dialog.getByLabel('Name',{exact:true}).isEnabled(),true,'The person can still type the values');
+      await page.screenshot({path:path.join(output,'label-failed-390.png')});
+      await dialog.getByRole('button',{name:'Read again',exact:true}).click();await dialog.getByText('WattSnap AI read your label',{exact:true}).waitFor();
+      assert.equal(calls,2);assert.equal(await dialog.getByLabel('Power',{exact:true}).inputValue(),'4100');
+    });
+    await scenario('an offline label photo is not sent and asks for typed values',390,async(page,context)=>{
+      let calls=0;await page.route('**/api/ai/appliances',route=>{calls++;return route.fulfill({json:{ok:true,data:labelReading}});});
+      await page.goto(base+'/appliances/new');await page.getByRole('dialog',{name:'Add an appliance',exact:true}).waitFor();await context.setOffline(true);await labelPhoto(page);
+      const dialog=page.getByRole('dialog',{name:'Add appliance',exact:true});await dialog.getByText('Label not read',{exact:true}).waitFor();
+      assert.match(await dialog.locator('.ad-label').innerText(),/offline/i);assert.equal(calls,0);
+    });
+    await scenario('a new label photo replaces values the earlier label filled in',390,async page=>{
+      let calls=0;await page.route('**/api/ai/appliances',route=>route.fulfill({json:{ok:true,data:++calls===1?labelReading:{reviewRequired:true,unknownFields:[],applianceName:'Stand fan',applianceType:'fan',model:null,ratedPower:55,powerUnit:'W',powerLabel:'Rated power',otherRatings:[],checks:[]}}}));
+      await page.goto(base+'/appliances/new');await page.getByRole('dialog',{name:'Add an appliance',exact:true}).waitFor();await labelPhoto(page);
+      const dialog=page.getByRole('dialog',{name:'Add appliance',exact:true});await dialog.getByText('WattSnap AI read your label',{exact:true}).waitFor();
+      await dialog.getByLabel('Hours a day',{exact:true}).fill('6');await labelPhoto(page);
+      await dialog.getByRole('button',{name:/Rated power\s*55 W/}).waitFor();
+      assert.equal(await dialog.getByLabel('Power',{exact:true}).inputValue(),'55');assert.equal(await dialog.getByLabel('Name',{exact:true}).inputValue(),'Stand fan');
+      assert.equal(await dialog.getByLabel(/^Model/).inputValue(),'','A model from the earlier label is not kept');
+      assert.equal(await dialog.getByRole('radio',{name:'Electric fan',exact:true}).isChecked(),true);
+      assert.equal(await dialog.getByLabel('Hours a day',{exact:true}).inputValue(),'6','Typed hours are kept');
+    });
     for(const width of [320,390,768,1440])await scenario(`appliance form and save popup fit at ${width}px`,width,async page=>{
       await page.goto(base+'/appliances/new');
       await page.getByRole('button',{name:/^Type it in/}).click();

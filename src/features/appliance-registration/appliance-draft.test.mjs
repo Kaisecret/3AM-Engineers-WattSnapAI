@@ -9,7 +9,7 @@ registerHooks({ resolve(specifier, context, nextResolve) {
     throw error;
   }
 } });
-const { applianceFrom, blankDraft, draftFrom } = await import("./appliance-draft.ts");
+const { applianceFrom, blankDraft, draftFrom, labelPatch } = await import("./appliance-draft.ts");
 const { dailyApplianceKwh, validateAppliance } = await import("../dashboard/preview-data.ts");
 
 const pump = { ...blankDraft, name: " Water pump ", power: "1", unit: "kW", hours: "8", days: "30" };
@@ -32,4 +32,15 @@ test("editing starts from the saved values in watts", () => {
   const draft = draftFrom({ id: "a", name: "Bedroom fan", watts: 60, hours: 8, quantity: 2, days: 15 });
   assert.deepEqual(draft, { kind: "fan", name: "Bedroom fan", model: "", power: "60", unit: "W", hours: "8", quantity: 2, days: "15", wattageBasis: "approximate" });
   assert.equal(draftFrom(), blankDraft);
+});
+
+const label = { reviewRequired: true, unknownFields: [], applianceName: "Floor type air conditioner", applianceType: "aircon", model: "ET36FS/M-INT", ratedPower: 4100, powerUnit: "W" };
+
+test("a label reading fills only the fields the person left empty", () => {
+  assert.deepEqual(labelPatch(blankDraft, label), { kind: "aircon", name: "Floor type air conditioner", model: "ET36FS/M-INT", power: "4100", unit: "W", wattageBasis: "nameplate" });
+  assert.deepEqual(labelPatch({ ...blankDraft, kind: "fan", name: "Sala aircon", power: "0.9", unit: "kW" }, label), { model: "ET36FS/M-INT" }, "Typed values are never replaced");
+});
+
+test("an unread label value leaves its field for the person to type", () => {
+  assert.deepEqual(labelPatch(blankDraft, { ...label, applianceName: null, applianceType: "other", model: null, ratedPower: null }), {});
 });

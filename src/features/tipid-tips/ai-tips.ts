@@ -1,6 +1,6 @@
 import type { PreviewHousehold } from "../dashboard/preview-data";
 import type { TipsGenerationRequest } from "../../lib/gemini/types";
-import { readTipRecommendations } from "../../lib/gemini/tips-reading";
+import { figuresSupported, readTipRecommendations } from "../../lib/gemini/tips-reading";
 import type { PreviewTipsSnapshot } from "./types";
 
 export function createTipsRequest(household: PreviewHousehold): TipsGenerationRequest {
@@ -13,7 +13,9 @@ export function createTipsRequest(household: PreviewHousehold): TipsGenerationRe
 export function mergeGeminiTips(basis: PreviewTipsSnapshot, value: unknown): PreviewTipsSnapshot {
   const copy = new Map(readTipRecommendations(value, basis).map(tip => [tip.id, tip]));
   return { ...basis, source: "gemini", tips: basis.tips.map(tip => {
-    const next = copy.get(tip.id)!;
+    const next = copy.get(tip.id);
+    // App-owned tips, and copy quoting a figure the app did not supply, keep the app's wording.
+    if (!next || !figuresSupported(next, tip)) return tip;
     return { ...tip, title: next.title, action: next.action, reason: next.explanation, assumptions: [...new Set([...tip.assumptions, ...next.assumptions])] };
   }) };
 }
