@@ -38,7 +38,12 @@
 .bg-bill.is-near strong { color: #fde68a; }
 .bg-bill.is-over strong { color: #fecdd3; }
 .bg-bill > svg { flex: 0 0 auto; width: 16px; height: 16px; color: #cfe7ff; }
-.bg-note { margin-top: 7px; color: #d6ebff; font-size: 11.5px; line-height: 1.45; }
+.bg-facts { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; list-style: none; color: #fff; font-size: 11.5px; font-weight: 600; }
+.bg-facts li, .bg-facts a { display: inline-flex; align-items: center; gap: 5px; }
+.bg-facts a { margin: -6px 0; padding: 6px 0; color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.bg-facts svg { flex: 0 0 auto; width: 14px; height: 14px; color: #cfe7ff; }
+.bg-facts .is-close svg { color: #86efac; }
+.bg-facts :is(.is-under, .is-over) svg { color: #fde68a; }
 .bg-wallet-art { position: absolute; z-index: -1; right: -6px; top: 50px; width: 104px; height: auto; filter: drop-shadow(0 10px 14px #00205566); }
 
 .bg-set { padding: 20px; }
@@ -119,7 +124,7 @@
   .bg-wallet-art { top: auto; bottom: -18px; right: 20px; width: 150px; }
   .bg-meter { max-width: calc(100% - 150px); }
   .bg-meter-labels { max-width: calc(100% - 150px); font-size: 12.5px; }
-  .bg-wallet-foot, .bg-bill, .bg-note { max-width: calc(100% - 150px); }
+  .bg-wallet-foot, .bg-bill, .bg-facts { max-width: calc(100% - 150px); }
   .bg-set { padding: 26px; }
   .bg-set-head h2 { font-size: 20px; }
   .bg-set-head p { font-size: 14px; }

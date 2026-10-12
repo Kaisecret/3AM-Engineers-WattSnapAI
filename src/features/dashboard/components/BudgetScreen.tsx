@@ -2,7 +2,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Check, ChevronRight, CircleCheck, Eye, EyeOff, Lightbulb, ReceiptText, Sparkles, TrendingDown, TriangleAlert, Wallet } from "lucide-react";
+import { Check, ChevronRight, CircleCheck, Eye, EyeOff, HandCoins, Lightbulb, ReceiptText, Sparkles, TrendingDown, TriangleAlert, Wallet } from "lucide-react";
 import PageShell from "./PageShell";
 import { usePreviewHousehold } from "../use-preview-household";
 import { amountPaid, averageKwh, billMonth, budgetPresets, budgetStatus, deviceEstimate, effectiveRate, latestBill, monthName, monthlySeries, parseAmount, pesos, shortMonth, suggestedBudget, validateBudget, type BudgetStatus } from "../preview-data";
@@ -73,7 +73,10 @@ export default function BudgetScreen() {
         <p className="bg-wallet-left">{budget <= 0 ? "Set a budget to compare your spending" : devices ? devices.pay > budget ? <>Over by <b>{money(devices.pay - budget)}</b> with your devices</> : <><b>{money(budget - devices.pay)}</b> left after your devices</> : <Link href={devicesPrompt.href}>{devicesPrompt.text}</Link>}</p>
         <div className="bg-meter" role="progressbar" aria-label="Budget used by your device estimate" aria-valuenow={Math.round(used)} aria-valuemin={0} aria-valuemax={Math.max(100, Math.ceil(used))}><span style={{ width: `${Math.min(used, 100)}%` }} /></div>
         <div className="bg-meter-labels"><span>{Math.round(used)}% used</span><span>{devices ? <>≈ {money(devices.pay)} estimated</> : "No estimate yet"}</span></div>
-        {budget > 0 && devices && coverage && latest && <p className="bg-note">Estimate for the devices you listed{devices.subsidy > 0 && <>, after {money(devices.subsidy)} subsidy</>}, not a meter reading. {coverage.status === "over" ? <>They add up to more than your {monthName(latest.month)} bill, so check the hours you entered.</> : <>They explain {coverage.percent}% of your {monthName(latest.month)} bill{coverage.status === "under" && ", so the real bill may be higher"}.</>}</p>}
+        {budget > 0 && devices && coverage && latest && <ul className="bg-facts">
+          <li className={`is-${coverage.status}`}>{coverage.status === "close" ? <><CircleCheck aria-hidden="true" /> Close to your {monthName(latest.month)} bill</> : <Link href="/appliances"><TriangleAlert aria-hidden="true" /> {coverage.status === "over" ? <>Higher than your {monthName(latest.month)} bill</> : <>Covers only {coverage.percent}% of your {monthName(latest.month)} bill</>}</Link>}</li>
+          {devices.subsidy > 0 && <li><HandCoins aria-hidden="true" /> {money(devices.subsidy)} subsidy applied</li>}
+        </ul>}
         <div className="bg-wallet-foot">
           <span className="bg-status">{status === "on-track" ? <CircleCheck aria-hidden="true" /> : <TriangleAlert aria-hidden="true" />}{budget <= 0 ? "Budget not set" : devices ? statusCopy[status].label : "Waiting for your devices"}</span>
           <span className="bg-avg">Avg paid {money(recent.length ? recent.reduce((sum, bill) => sum + amountPaid(bill), 0) / recent.length : 0)}</span>
