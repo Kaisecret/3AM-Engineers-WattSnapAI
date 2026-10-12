@@ -22,7 +22,7 @@ function setup(t, value) {
     assert.match(body.systemInstruction.parts[0].text, /Keep refrigerators powered/);
     assert.match(body.systemInstruction.parts[0].text, /220 characters/);
     const context = JSON.parse(body.contents[0].parts[0].text);
-    assert.deepEqual(context.tips.map(tip => tip.id), ["first-bill", "appliance-fan"]);
+    assert.deepEqual(context.tips.map(tip => tip.id), ["first-bill", "appliance-fan"]); // The fan also yields an app-owned switch-off-plan, which is never sent.
     return Response.json({ candidates: [{ content: { parts: [{ text: JSON.stringify(value) }] } }] });
   };
 }

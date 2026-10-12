@@ -15,7 +15,7 @@ import { billReadingInstruction, billResponseSchema, readBillReading } from "./b
 import { applianceReadingInstruction, applianceResponseSchema, readApplianceReading } from "./appliance-reading";
 import { advisoryReadingInstruction, advisoryResponseSchema } from "./advisory-reading";
 import type { BillImage } from "../ai/bill-images-request";
-import { tipsReadingInstruction, tipsResponseSchema, readTipRecommendations } from "./tips-reading";
+import { tipsReadingInstruction, tipsResponseSchema, readTipRecommendations, rewritableTips } from "./tips-reading";
 import { tipsRequestHousehold } from "../ai/tips-request";
 import { generatePreviewTips } from "../../features/tipid-tips/preview-tips";
 
@@ -281,7 +281,7 @@ export async function generateTipsWithGemini(
   request: TipsGenerationRequest,
 ): Promise<TipRecommendation[]> {
   const basis = generatePreviewTips(tipsRequestHousehold(request));
-  const promptText = JSON.stringify({ household: request, forecast: basis.forecast, limitations: basis.context.limitations, tips: basis.tips.map(({ id, title, action, reason, facts, assumptions }) => ({ id, title, action, reason, facts, assumptions })) });
+  const promptText = JSON.stringify({ household: request, forecast: basis.forecast, limitations: basis.context.limitations, tips: rewritableTips(basis).map(({ id, title, action, reason, facts, assumptions }) => ({ id, title, action, reason, facts, assumptions })) });
 
   const responseText = await callGeminiApi({
     systemInstruction: tipsReadingInstruction,
