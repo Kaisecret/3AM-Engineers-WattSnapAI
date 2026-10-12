@@ -1,5 +1,7 @@
 # F12 — Brownout Ready Mode
 
+> Retired. The `/brownout-ready` page was removed and redirects to `/advisories`; the preparation checklist inside an advisory replaces it. Saved plans (`brownout_plans`) are kept. The rest of this page describes the earlier design.
+
 Owner: Dev 4. Reviewer: Dev 1. Goals: G14, G16.
 
 ## Behavior

@@ -4,13 +4,13 @@ import type { AgentAction } from "./agent-actions";
 import type { ChatContext, Reply } from "./replies";
 import type { LocalAgentResult, LocalPending } from "./local-agent";
 import type { HybridResult } from "./hybrid-reply";
-import { isDeviceOffline } from "../offline-access/connectivity";
+import { isNetworkOffline } from "../offline-access/connectivity";
 
 export type ActionState = "pending" | "done" | "cancelled" | "failed";
 /** A change WattSnap AI proposed, waiting for the person to confirm or cancel it. */
 export interface ChatAction { id: number; action: AgentAction; label: string; state: ActionState; note?: string; }
 /** Set when a built-in answer was used because WattSnap AI (Gemini) could not answer. */
-export interface ChatMessage { id: number; role: "user" | "bot"; text: string; reply?: Reply; actions?: ChatAction[]; notice?: string; }
+export interface ChatMessage { id: number; role: "user" | "bot"; text: string; reply?: Reply; actions?: ChatAction[]; notice?: string; source?: "gemini" | "tinybert" | "keywords"; }
 
 interface ChatOptions {
   /** Server route that answers with Gemini. Rule-based `respond` answers when it cannot. */
@@ -24,7 +24,12 @@ interface ChatOptions {
   asyncLocalAgent?: (text: string, context: ChatContext, pending?: LocalPending) => Promise<HybridResult>;
 }
 
-const noticeFor = (problem: string) => problem === "offline-language" ? "Offline · local language model · saved data" : problem === "local-language" ? "Local language model · saved data" : problem === "saved" ? "Saved data · on this device" : problem === "offline" ? "Offline · using saved data" : problem === "busy" ? "Local reply · AI is busy right now" : "Local reply · AI is unavailable right now";
+function noticeFor(source: ChatMessage["source"], problem?: string) {
+  if (source === "gemini") return "WattSnap AI · online";
+  const local = source === "tinybert" ? "TinyBERT" : "local reply";
+  if (problem === "offline") return `${source === "tinybert" ? "TinyBERT · offline" : "Offline"} · saved data`;
+  return `WattSnap AI ${problem === "busy" ? "is busy" : "is unavailable"} · ${local} · saved data`;
+}
 
 const stateWords: Record<ActionState, string> = { pending: "waiting for confirmation", done: "confirmed and saved", cancelled: "cancelled", failed: "could not be saved" };
 // Earlier turns as plain text, including what happened to each proposed change.
@@ -64,33 +69,36 @@ export function useChat(respond: (text: string) => Reply, { endpoint, context, d
     const chat = session.current;
     setMessages(current => [...current, { id: nextId.current++, role: "user", text }]);
 
-    const answer = (reply: Reply, actions: AgentAction[] = [], problem?: string) => {
+    const answer = (reply: Reply, actions: AgentAction[] = [], problem?: string, source?: ChatMessage["source"]) => {
       if (chat !== session.current) return;
       const proposed = actions.map(action => ({ id: nextId.current++, action, label: describeRef.current?.(action) ?? "", state: "pending" as const }));
-      const notice = explainFallback && problem ? noticeFor(problem) : undefined;
-      setMessages(current => [...current, { id: nextId.current++, role: "bot", text: reply.text, reply, ...(proposed.length ? { actions: proposed } : {}), ...(notice ? { notice } : {}) }]);
+      const notice = explainFallback && (source || problem) ? noticeFor(source, problem) : undefined;
+      setMessages(current => [...current, { id: nextId.current++, role: "bot", text: reply.text, reply, ...(proposed.length ? { actions: proposed } : {}), ...(notice ? { notice } : {}), ...(source ? { source } : {}) }]);
     };
     const local = async (problem: string) => {
       if (chat !== session.current) return;
       let result: LocalAgentResult | HybridResult | undefined;
+      let clarification = pending.current;
+      // If the connection drops after Gemini asks for a missing field, recover
+      // only validated grammar state from previous turns. Never replay actions.
+      if (!clarification && localAgentRef.current) {
+        for (const turn of history) {
+          if (turn.role === "bot" && /\([^\n]*(?:confirmed and saved|cancelled)\)/.test(turn.text)) clarification = undefined;
+          else if (turn.role === "user") clarification = localAgentRef.current(turn.text, contextRef.current ?? {}, clarification).pending;
+        }
+      }
       try {
-        result = asyncLocalAgentRef.current ? await asyncLocalAgentRef.current(text,contextRef.current??{},pending.current) : localAgentRef.current?.(text, contextRef.current ?? {}, pending.current);
-      } catch { result = localAgentRef.current?.(text,contextRef.current??{},pending.current); }
+        result = asyncLocalAgentRef.current ? await asyncLocalAgentRef.current(text,contextRef.current??{},clarification) : localAgentRef.current?.(text, contextRef.current ?? {}, clarification);
+      } catch { result = localAgentRef.current?.(text,contextRef.current??{},clarification); }
       if (chat !== session.current) return;
       pending.current = result?.pending;
-      const source = result && "source" in result && result.source === "tinybert" ? (isDeviceOffline() ? "offline-language" : "local-language") : problem;
-      answer(result?.reply ?? respondRef.current(text), result?.actions ?? [], source);
+      const source = result && "source" in result && result.source === "tinybert" ? "tinybert" : "keywords";
+      answer(result?.reply ?? respondRef.current(text), result?.actions ?? [], isNetworkOffline() ? "offline" : problem, source);
     };
 
-    const parsed = localAgentRef.current?.(text, contextRef.current ?? {}, pending.current);
-    if (parsed && (parsed.handled || parsed.pending || parsed.actions.length)) {
-      pending.current = parsed.pending;
-      answer(parsed.reply, parsed.actions, isDeviceOffline() ? "offline" : "saved");
-      return true;
-    }
-    pending.current = undefined;
-
-    if (isDeviceOffline()) {
+    // Cached documents can remain open after reconnecting. Check the current
+    // network for every turn and let the POST establish actual reachability.
+    if (isNetworkOffline()) {
       busy.current = true; setTyping(true);
       void local("offline").finally(() => { if (chat === session.current) { busy.current=false; setTyping(false); } });
       return true;
@@ -115,7 +123,7 @@ export function useChat(respond: (text: string) => Reply, { endpoint, context, d
         if (!response.ok || typeof data?.reply?.text !== "string") throw new Error("No reply");
         if (data.source !== "gemini" && localAgentRef.current) return local(typeof data.problem === "string" ? data.problem : "unavailable");
         pending.current = undefined;
-        answer(data.reply, Array.isArray(data.actions) ? data.actions : [], data.source === "gemini" ? undefined : typeof data.problem === "string" ? data.problem : "unavailable");
+        answer(data.reply, Array.isArray(data.actions) ? data.actions : [], data.source === "gemini" ? undefined : typeof data.problem === "string" ? data.problem : "unavailable", data.source === "gemini" ? "gemini" : "keywords");
       })
       .catch(() => local("server"))
       .finally(() => { clearTimeout(timer); if (chat === session.current) { request.current = null; busy.current = false; setTyping(false); } });

@@ -41,9 +41,10 @@ export function savedHouseholdReply(raw: string, context: ChatContext = {}): Rep
   };
   const selected = periods(text,bills,today);
   const budget = /\bbudget\b|badyet|monthly target|spending limit|natitira|remaining budget/.test(text);
-  const history = /history|kasaysayan|nakaraang mga bill|previous bills|all.*bills|list.*bills|\bbills\b/.test(text) && !/compar|difference|pagkakaiba/.test(text);
+  const reasonComparison = selected.months.length > 0 && /\b(?:why|bakit)\b/.test(text) && /higher|high|lower|low|more|less|mahal|tumaas|bumaba/.test(text);
+  const history = /history|kasaysayan|nakaraang mga bill|previous bills|all.*bills|list.*bills|\bbills\b/.test(text) && !/compar|difference|pagkakaiba/.test(text) && !reasonComparison;
   const due = /due|deadline|kailan.*(?:bayad|bill)|when.*pay/.test(text);
-  const compare = /compar|difference|pagkakaiba/.test(text) && /bill|month|buwan/.test(text);
+  const compare = reasonComparison || (/compar|difference|pagkakaiba/.test(text) && /bill|month|buwan/.test(text));
   const periodQuestion = selected.months.length>0 && /bill|kwh|usage|consumption|konsumo|gastos/.test(text);
   const simpleBill = /latest bill|current bill|last bill|bill amount|magkano.*bill|bill ko|electricity usage|konsumo ko|my usage/.test(text);
   if (budget) {
@@ -61,10 +62,12 @@ export function savedHouseholdReply(raw: string, context: ChatContext = {}): Rep
   if (compare && selected.months.length>0) {
     if (selected.ambiguous) add("household",`Which year for ${selected.ambiguous}? More than one is saved.`,link("View bills","/bills"));
     else {
-      const wanted = selected.months.length===1 ? [bills.filter(bill=>bill.month<selected.months[0]).at(-1)?.month,selected.months[0]] : selected.months.slice(0,2);
+      const earlier = bills.filter(bill=>bill.month<selected.months[0]).at(-1)?.month;
+      const later = reasonComparison && !earlier ? bills.find(bill=>bill.month>selected.months[0])?.month : undefined;
+      const wanted = selected.months.length===1 ? (later ? [selected.months[0],later] : [earlier,selected.months[0]]) : selected.months.slice(0,2);
       const pair = wanted.map(month=>bills.find(bill=>bill.month===month));
       if (!pair[0] || !pair[1]) add("household",`Both billing periods need saved records. ${wanted.filter(month=>month&&!bills.some(bill=>bill.month===month)).map(month=>`No saved bill for ${monthLabel(month!)}.`).join(" ")}`,link("View bills","/bills"));
-      else { const [a,b]=pair; add("household",`${line(a!)}\n${line(b!)}\nDifference (${monthLabel(b!.month)} minus ${monthLabel(a!.month)}): ${number(b!.kwh-a!.kwh)} kWh · ${peso(b!.amount-a!.amount)} before subsidies. Recorded totals do not establish a cause; check the billing-period lengths.`,link("Compare bills","/bills")); }
+      else { const [a,b]=pair; add("household",`${line(a!)}\n${line(b!)}\nDifference (${monthLabel(b!.month)} minus ${monthLabel(a!.month)}): ${number(b!.kwh-a!.kwh)} kWh · ${peso(b!.amount-a!.amount)} before subsidies.${reasonComparison ? `\nEffective average cost before subsidy: ${monthLabel(a!.month)} ${peso(a!.amount/a!.kwh)}/kWh; ${monthLabel(b!.month)} ${peso(b!.amount/b!.kwh)}/kWh. These averages include the saved bill total, rather than a live electricity tariff. Check the original charges and billing-period lengths for the breakdown.` : " Recorded totals do not establish a cause; check the billing-period lengths."}`,link("Compare bills","/bills")); }
     }
   } else if ((periodQuestion || simpleBill || due || selected.ambiguous) && !history) {
     if (selected.ambiguous) add("household",`Which year for ${selected.ambiguous}? More than one is saved.`,link("View bills","/bills"));
@@ -99,7 +102,7 @@ export function savedHouseholdReply(raw: string, context: ChatContext = {}): Rep
   if (/provider|location|household|profile|barangay|municipality|pangalan|address|saan.*(?:bahay|home)/.test(text)) add("household",`Saved household: ${context.name??"not set"}.\nProvider: ${context.provider??"not set"}.\nHome location: ${context.location??"not set"}.`,link("Household settings","/settings"));
   if (/\btips?\b|tipid|save energy|saving advice/.test(text) && context.savedTips !== undefined) add("tips",context.savedTips.tips.length ? `Saved tips (${context.savedTips.generatedAt.slice(0,10)}):\n${context.savedTips.tips.slice(0,5).map(tip=>`• ${tip.title}: ${tip.action}`).join("\n")}${context.savedTips.stale ? "\nYour records changed since these tips were saved. Review their older basis in Tipid Tips." : ""}` : "No tips have been saved yet. Open Tipid Tips to create advice from reviewed household inputs.",link("Open Tipid Tips","/tips"));
   if (/scenarios?|watt.?if|simulator/.test(text)) add("scenarios",context.savedScenarios?.length ? `Saved Watt-If scenarios:\n${context.savedScenarios.map(item=>`• ${item.title}: ${number(item.kwh)} kWh over ${item.days} days${positive(item.cost) ? ` · ${peso(item.cost)}` : ""}${item.stale ? " · older appliance basis" : ""}`).join("\n")}\nThese are estimates and do not change your household inputs.` : "No saved scenarios yet. Open Watt-If for an offline calculation using your entered values.",link("Open Watt-If","/simulator"));
-  if (/checklist|readiness|brownout.ready|handa|preparation|prepared/.test(text)) add("readiness",context.readinessPlans?.length ? `Saved preparation checklists:\n${context.readinessPlans.map(plan=>`• ${plan.title}: ${plan.checked} of ${plan.total} checked · saved ${plan.updatedAt.slice(0,10)}${plan.stale ? " · source or household changed; review first" : ""}`).join("\n")}\nChecklist progress does not confirm live power status.` : "No preparation checklist is saved yet. Review a saved advisory and create a plan in Brownout Ready.",link("Open Brownout Ready","/brownout-ready"));
+  if (/checklist|readiness|brownout.ready|handa|preparation|prepared/.test(text)) add("readiness",context.readinessPlans?.length ? `Saved preparation checklists:\n${context.readinessPlans.map(plan=>`• ${plan.title}: ${plan.checked} of ${plan.total} checked · saved ${plan.updatedAt.slice(0,10)}${plan.stale ? " · source or household changed; review first" : ""}`).join("\n")}\nChecklist progress does not confirm live power status.` : "No preparation checklist is saved yet. Open an advisory that lists your area to use its checklist.",link("Open Advisories","/advisories"));
   if (/advisories|saved advisory|brownout|outage|interruption|walang kuryente/.test(text) && context.savedAdvisories !== undefined) add("advisories",context.savedAdvisories.length ? `Saved provider notices:\n${context.savedAdvisories.slice(-5).reverse().map(item=>`• ${item.title}: ${item.when} · ${item.area} · ${item.status}${item.stale ? " · review changed household match" : ""}`).join("\n")}\nSaved reviews do not confirm a live outage or restoration.` : `No provider notices are saved for ${context.location??"your area"}. Reconnect for new information; an empty cache does not mean there is no outage.`,link("Open Advisories","/advisories"));
   return sections.length ? {text:sections.join("\n\n"),links} : undefined;
 }

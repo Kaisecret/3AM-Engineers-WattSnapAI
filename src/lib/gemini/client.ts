@@ -14,6 +14,9 @@ import type { Reply } from "@/features/assistant/replies";
 import { billReadingInstruction, billResponseSchema, readBillReading } from "./bill-reading";
 import { advisoryReadingInstruction, advisoryResponseSchema } from "./advisory-reading";
 import type { BillImage } from "../ai/bill-images-request";
+import { tipsReadingInstruction, tipsResponseSchema, readTipRecommendations } from "./tips-reading";
+import { tipsRequestHousehold } from "../ai/tips-request";
+import { generatePreviewTips } from "../../features/tipid-tips/preview-tips";
 
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 const DEFAULT_MODEL: GeminiModel = "gemini-3.5-flash-lite";
@@ -288,32 +291,18 @@ Never invent numbers. If wattage cannot be determined, set ratedPower to null.`;
 export async function generateTipsWithGemini(
   request: TipsGenerationRequest,
 ): Promise<TipRecommendation[]> {
-  const systemInstruction = `You are WattSnap AI's Philippine Energy Conservation Specialist.
-Generate 3 to 5 actionable, realistic, and safe electricity-saving recommendations ("Tipid Tips") tailored specifically to the user's registered appliances, billing trends, and household profile.
-Rules:
-- Give tips ONLY relevant to appliances they actually own or their documented bill trends.
-- Use friendly, practical advice suited for the Philippine climate and lifestyle.
-- Never guarantee exact peso savings without explicit assumptions.
-- Return a JSON array of objects with:
-  - "id": string unique identifier (e.g. "tip-aircon-temp")
-  - "title": short snappy title (e.g. "Set aircon to 24°C–25°C")
-  - "explanation": why this saves energy and what the impact is
-  - "action": clear immediate action step
-  - "assumptions": array of brief assumption strings (e.g. ["8 hours daily use", "₱12.50/kWh estimate"])
-  - "origin": "future-model"`;
-
-  const contextData = JSON.stringify(request, null, 2);
-  const promptText = `Generate personalized energy-saving tips based on this household data:\n${contextData}`;
+  const basis = generatePreviewTips(tipsRequestHousehold(request));
+  const promptText = JSON.stringify({ household: request, forecast: basis.forecast, limitations: basis.context.limitations, tips: basis.tips.map(({ id, title, action, reason, facts, assumptions }) => ({ id, title, action, reason, facts, assumptions })) });
 
   const responseText = await callGeminiApi({
-    systemInstruction,
+    systemInstruction: tipsReadingInstruction,
     parts: [{ text: promptText }],
-    jsonMode: true,
+    responseSchema: tipsResponseSchema,
     temperature: 0.3,
+    maxOutputTokens: 4096,
   });
 
-  const parsed = parseJsonOutput<TipRecommendation[]>(responseText, []);
-  return Array.isArray(parsed) ? parsed : [];
+  return readTipRecommendations(parseJsonOutput<unknown>(responseText, null), basis);
 }
 
 // -------------------------------------------------------------

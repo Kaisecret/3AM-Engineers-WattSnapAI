@@ -70,19 +70,53 @@ async function main() {
     await page.locator('input[type=file]').setInputFiles({ name: 'receipt.png', mimeType: 'image/png', buffer: Buffer.from(base64, 'base64') });
   }
   async function mockCamera(page) {
-    await page.addInitScript(()=>Object.defineProperty(navigator.mediaDevices,'getUserMedia',{configurable:true,value:async()=>{
+    await page.addInitScript(()=>{window.cameraRequests=0;Object.defineProperty(navigator.mediaDevices,'getUserMedia',{configurable:true,value:async()=>{
+      window.cameraRequests++;
       const canvas=document.createElement('canvas');canvas.width=1920;canvas.height=1080;
       const ctx=canvas.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,1920,1080);ctx.fillStyle='#111';ctx.font='32px Arial';ctx.fillText('Receipt section',800,300);
       window.testCameraCanvas=canvas;window.testCameraStream=canvas.captureStream(10);setInterval(()=>ctx.fillRect(0,0,1,1),80);return window.testCameraStream;
-    }}));
+    }});});
   }
+  async function refusedCamera(page) {
+    await page.addInitScript(()=>{window.cameraRequests=0;Object.defineProperty(navigator.mediaDevices,'getUserMedia',{configurable:true,value:async()=>{window.cameraRequests++;throw new DOMException('Refused for isolated test','NotAllowedError');}});});
+  }
+  // Phones open the camera by themselves; PCs wait for the webcam button.
+  async function liveCamera(page, width = 390) {
+    if(width>=900)await page.getByRole('button',{name:'Use webcam',exact:true}).click();
+    await page.locator('.camera-live .scan-shutter:not(:disabled)').waitFor();
+  }
+  const namesCaptureMode=page=>page.evaluate(()=>/panorama/i.test(document.querySelector('.scan-app').textContent));
   try {
+    await scenario('phone scanner opens the camera by itself with no capture mode switch',async page=>{
+      await mockCamera(page);await open(page);await liveCamera(page);
+      assert.equal(await page.evaluate(()=>window.cameraRequests),1,'The camera is requested once without a tap');
+      for(const name of ['Bill','Receipt','Panorama','Open camera'])assert.equal(await page.getByRole('button',{name,exact:true}).count(),0,`No ${name} button`);
+      assert.equal(await namesCaptureMode(page),false,'The capture mode is never named');
+      assert.equal(await page.getByRole('button',{name:'Read receipt',exact:true}).count(),0,'Read receipt waits for the first capture');
+      await page.screenshot({path:path.join(output,'camera-auto-390.png')});
+    });
+    await scenario('refused camera is asked once and keeps upload and manual entry',async page=>{
+      await refusedCamera(page);await page.route('**/api/ai/bills',route=>route.fulfill({json:{data:reading}}));
+      await open(page);await page.getByRole('heading',{name:'Camera is off',exact:true}).waitFor();
+      assert.equal(await page.evaluate(()=>window.cameraRequests),1);
+      await page.screenshot({path:path.join(output,'camera-off-390.png')});
+      await page.getByRole('button',{name:'Type it',exact:true}).click();await page.getByRole('button',{name:'Use scanner',exact:true}).click();
+      await page.getByRole('heading',{name:'Camera is off',exact:true}).waitFor();await page.waitForTimeout(200);
+      assert.equal(await page.evaluate(()=>window.cameraRequests),1,'A refusal is not asked again without a tap');
+      await page.getByRole('button',{name:'Try camera again',exact:true}).click();await page.waitForFunction(()=>window.cameraRequests===2);
+      await upload(page);await page.getByRole('heading',{name:'Check your bill',exact:true}).waitFor();
+    });
+    await scenario('PC scanner waits for the webcam button',async page=>{
+      await mockCamera(page);await open(page);await page.getByRole('button',{name:'Use webcam',exact:true}).waitFor();await page.waitForTimeout(300);
+      assert.equal(await page.evaluate(()=>window.cameraRequests),0,'A PC webcam never turns on by itself');
+      for(const name of ['Bill','Receipt','Panorama'])assert.equal(await page.getByRole('button',{name,exact:true}).count(),0,`No ${name} button`);
+      assert.equal(await namesCaptureMode(page),false,'The capture mode is never named');
+      await liveCamera(page,1440);assert.equal(await page.evaluate(()=>window.cameraRequests),1);
+    },1440);
     for(const width of [320,390,1440])await scenario(`panorama collects ordered sections before AI reading at ${width}px`,async page=>{
       await mockCamera(page);let calls=0,sent;
       await page.route('**/api/ai/bills',async route=>{calls++;sent=route.request().postDataJSON();await route.fulfill({json:{data:reading}});});
-      await open(page);await page.getByRole('button',{name:'Panorama',exact:true}).click();
-      await page.getByRole('button',{name:width<900?'Open bill camera':'Use webcam',exact:true}).click();
-      await page.waitForFunction(()=>!document.querySelector('.scan-shutter').disabled);
+      await open(page);await liveCamera(page,width);
       await page.getByRole('button',{name:'Capture receipt section',exact:true}).click();
       await page.getByRole('button',{name:'Remove last section',exact:true}).waitFor();assert.equal(calls,0);
       await page.getByRole('button',{name:'Capture receipt section',exact:true}).click();
@@ -95,34 +129,39 @@ async function main() {
       assert.ok(dimensions.every(size=>size.width<1920&&size.height<=1080&&size.height>500),'Crop guide at original camera resolution');
       await page.getByRole('button',{name:'View original',exact:true}).click();const original=page.getByRole('dialog',{name:'Your original bill',exact:true});
       assert.equal(await original.locator('.br-original-section').count(),2);
+      assert.equal(await namesCaptureMode(page),false,'The saved source is never named after a capture mode');
       assert.equal(await page.evaluate(()=>window.testCameraStream.getTracks().every(track=>track.readyState==='ended')),true);
     },width);
     await scenario('panorama undo and manual entry discard unfinished captures',async page=>{
       await mockCamera(page);let calls=0;await page.route('**/api/ai/bills',route=>{calls++;return route.fulfill({json:{data:reading}});});
-      await open(page);await page.getByRole('button',{name:'Panorama',exact:true}).click();await page.getByRole('button',{name:'Open bill camera',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('.scan-shutter').disabled);
-      await page.getByRole('button',{name:'Capture receipt section',exact:true}).click();await page.getByRole('button',{name:'Remove last section',exact:true}).click();
-      assert.equal(await page.locator('.scan-section-preview').count(),0);assert.equal(await page.getByRole('button',{name:'Read receipt',exact:true}).isEnabled(),false);
+      await open(page);await liveCamera(page);
+      await page.getByRole('button',{name:'Capture receipt section',exact:true}).click();await page.getByRole('button',{name:'Remove last section',exact:true}).waitFor();
+      assert.equal(await page.locator('.scan-section-slot').count(),3,'Empty slots show the room left for a long receipt');
+      await page.getByRole('button',{name:'Remove last section',exact:true}).click();
+      assert.equal(await page.locator('.scan-section-preview').count(),0);assert.equal(await page.getByRole('button',{name:'Read receipt',exact:true}).count(),0);
       await page.getByRole('button',{name:'Capture receipt section',exact:true}).click();await page.getByRole('button',{name:'Type it',exact:true}).click();assert.equal(calls,0);
       await page.getByRole('button',{name:'Use scanner',exact:true}).click();assert.equal(await page.locator('.scan-section-preview').count(),0);
     });
     await scenario('panorama caps sections and supports preview plus undo',async page=>{
-      await mockCamera(page);await open(page);await page.getByRole('button',{name:'Open bill camera',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('.scan-shutter').disabled);
+      await mockCamera(page);await open(page);await liveCamera(page);
       for(let i=0;i<4;i++)await page.getByRole('button',{name:'Capture receipt section',exact:true}).click();
-      assert.equal(await page.locator('.scan-section-preview').count(),4);assert.equal(await page.getByRole('button',{name:'Capture receipt section',exact:true}).isEnabled(),false);
+      assert.equal(await page.locator('.scan-section-preview').count(),4);assert.equal(await page.locator('.scan-section-slot').count(),0);assert.equal(await page.getByRole('button',{name:'Capture receipt section',exact:true}).isEnabled(),false);
+      await page.screenshot({path:path.join(output,'camera-full-390.png')});
       await page.getByRole('button',{name:'Preview receipt section 2',exact:true}).click();await page.getByRole('dialog',{name:'Receipt section 2',exact:true}).waitFor();
       await page.getByRole('button',{name:'Back to camera',exact:true}).click();await page.getByRole('button',{name:'Remove last section',exact:true}).click();
       assert.equal(await page.locator('.scan-section-preview').count(),3);assert.equal(await page.getByRole('button',{name:'Capture receipt section',exact:true}).isEnabled(),true);
     });
     await scenario('household switching discards panorama captures and stops the camera',async page=>{
-      await mockCamera(page);await open(page);await page.getByRole('button',{name:'Open bill camera',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('.scan-shutter').disabled);
+      await mockCamera(page);await open(page);await liveCamera(page);
       await page.getByRole('button',{name:'Capture receipt section',exact:true}).click();await page.getByRole('button',{name:'Preview receipt section 1',exact:true}).click();
-      await page.evaluate(()=>{localStorage.setItem('wattsnap-preview-session-v1',JSON.stringify({version:1,identity:{id:'other-household',name:'Other home',email:'other@example.test'}}));window.dispatchEvent(new Event('wattsnap-preview-session-change'));});
+      // The scanner reopens the camera for the next household, so only the earlier stream must end.
+      await page.evaluate(()=>{window.earlierCameraStream=window.testCameraStream;localStorage.setItem('wattsnap-preview-session-v1',JSON.stringify({version:1,identity:{id:'other-household',name:'Other home',email:'other@example.test'}}));window.dispatchEvent(new Event('wattsnap-preview-session-change'));});
       await page.getByRole('dialog',{name:'Receipt section 1',exact:true}).waitFor({state:'hidden'});
-      assert.equal(await page.locator('.scan-section-preview').count(),0);assert.equal(await page.evaluate(()=>window.testCameraStream.getTracks().every(track=>track.readyState==='ended')),true);
+      assert.equal(await page.locator('.scan-section-preview').count(),0);assert.equal(await page.evaluate(()=>window.earlierCameraStream.getTracks().every(track=>track.readyState==='ended')),true);
     });
     await scenario('cancelled panorama reading ignores the later AI response',async page=>{
       await mockCamera(page);let respond;await page.route('**/api/ai/bills',async route=>{await new Promise(resolve=>respond=resolve);await route.fulfill({json:{data:reading}}).catch(()=>{});});
-      await open(page);await page.getByRole('button',{name:'Open bill camera',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('.scan-shutter').disabled);
+      await open(page);await liveCamera(page);
       await page.getByRole('button',{name:'Capture receipt section',exact:true}).click();await page.getByRole('button',{name:'Read receipt',exact:true}).click();await page.locator('.phase-scanning').waitFor();
       await page.getByRole('button',{name:'Cancel',exact:true}).first().click();respond?.();await page.waitForTimeout(150);
       assert.equal(await page.locator('.phase-camera').count(),1);assert.equal(await page.locator('.br-review').count(),0);assert.equal(await page.locator('.scan-section-preview').count(),0);
@@ -255,7 +294,7 @@ async function main() {
       assert.equal(await page.evaluate(key => sessionStorage.getItem(key), draftKey), null);
       assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1')).bills.length), 0);
     }, width);
-    for (const width of [320, 390, 1440]) await scenario(`camera, receipt guide and capture fit at ${width}px`, async page => {
+    for (const width of [320, 390, 1440]) await scenario(`camera, guide and capture fit at ${width}px`, async page => {
       const errors = []; page.on('pageerror', e => errors.push(e.message));
       await page.addInitScript(() => {
         Object.defineProperty(navigator.mediaDevices, 'getUserMedia', { configurable: true, value: async constraints => {
@@ -269,20 +308,21 @@ async function main() {
         } });
       });
       await page.route('**/api/ai/bills', async route => {
-        const body = route.request().postDataJSON(); assert.ok(body.imageBase64.length > 1000);
+        const body = route.request().postDataJSON(); assert.ok(body.images[0].imageBase64.length > 1000);
         await route.fulfill({ json: { data: reading } });
       });
-      await open(page);
-      await page.getByRole('button', { name: width < 900 ? 'Open bill camera' : 'Use webcam', exact: true }).click();
-      await page.getByRole('button', { name: 'Receipt', exact: true }).click();
-      const capture = page.getByRole('button', { name: 'Capture bill photo', exact: true });
-      await capture.waitFor(); await page.waitForFunction(() => !document.querySelector('.scan-shutter').disabled);
+      await open(page); await liveCamera(page, width);
+      const capture = page.getByRole('button', { name: 'Capture receipt section', exact: true });
       assert.equal(await page.locator('.scan-video').evaluate(el => getComputedStyle(el).objectFit), 'contain');
       const bounds = await page.evaluate(() => { const guide = document.querySelector('.scan-frame').getBoundingClientRect(); const view = document.querySelector('.scan-viewfinder').getBoundingClientRect(); const video = document.querySelector('video'); const scale = Math.min(view.width/video.videoWidth,view.height/video.videoHeight); const w=video.videoWidth*scale,h=video.videoHeight*scale; return { fits: guide.left >= view.left+(view.width-w)/2-1 && guide.right <= view.right-(view.width-w)/2+1 && guide.top >= view.top+(view.height-h)/2-1 && guide.bottom <= view.bottom-(view.height-h)/2+1, ratio: guide.width/guide.height }; });
-      assert.ok(bounds.fits, 'Guide stays inside the entire visible camera image'); assert.ok(bounds.ratio < 0.5, 'Narrow receipt guide');
+      assert.ok(bounds.fits, 'Guide stays inside the entire visible camera image'); assert.ok(bounds.ratio > 0.6 && bounds.ratio < 0.75, 'One upright guide for every bill');
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
       await page.screenshot({ path: path.join(output, `camera-${width}.png`) });
-      await capture.click(); await page.getByRole('heading', { name: 'Check your bill', exact: true }).waitFor();
+      await capture.click(); await page.getByRole('button', { name: 'Read receipt', exact: true }).click();
+      await page.getByRole('heading', { name: 'Check your bill', exact: true }).waitFor();
+      const fileActions = await page.locator('.br-actions').evaluate(row => { const box = element => element.getBoundingClientRect(), [replace, remove] = [...row.querySelectorAll('button')].map(box); return { sameLine: Math.abs(replace.top - remove.top) < 2, between: remove.left - replace.right, above: replace.top - box(row.previousElementSibling).bottom, below: box(row.nextElementSibling).top - replace.bottom, height: replace.height }; });
+      assert.ok(fileActions.sameLine && fileActions.between >= 8, `Replace file and Remove file have space between them (${JSON.stringify(fileActions)})`);
+      assert.ok(fileActions.above >= 8 && fileActions.below >= 8 && fileActions.height >= 44, `File actions are spaced from the sections around them (${JSON.stringify(fileActions)})`);
       await page.getByRole('button', { name: 'Save to history', exact: true }).click();
       assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1')).bills.length), 0, 'Scan cannot save without confirmation');
       await page.screenshot({ path: path.join(output, `review-${width}.png`) });

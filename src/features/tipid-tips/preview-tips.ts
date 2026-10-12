@@ -1,6 +1,7 @@
 import { billMonth, dailyApplianceKwh, guessApplianceKind, pesos, shiftMonth, sortBillsByMonth, type PreviewAppliance, type PreviewBill, type PreviewHousehold } from "../dashboard/preview-data";
 import { applianceSignature } from "../watt-if-simulator/calculations";
 import type { PreviewTip, PreviewTipsSnapshot } from "./types";
+import { buildBillForecast, forecastMonthName, forecastTargetYear, normalizeBillForecast } from "./bill-forecast";
 
 export const tipsStorageKey = "wattsnap-tips-ui-preview-v1";
 export const notableChangeThreshold = 20;
@@ -41,13 +42,13 @@ function applianceTip(item: PreviewAppliance, rank: number): PreviewTip {
   const kind = item.kind ?? guessApplianceKind(item.name), monthly = dailyApplianceKwh(item) * 30;
   let title: string, action: string, guidance: PreviewTip["guidance"];
   switch (kind) {
-    case "fridge": title = `Care for ${item.name}`; action = "Keep door openings brief and check that the door seals close properly. Keep the refrigerator powered for food storage."; guidance = fridgeGuidance; break;
-    case "aircon": title = `Review cooling time for ${item.name}`; action = "Cool only the rooms you use and close their doors while cooling. If comfortable, explore a different schedule in Watt-If."; guidance = quickWins; break;
-    case "fan": title = `Match ${item.name} to occupied hours`; action = "Run the fan when someone benefits from its airflow. Compare fewer unused hours in Watt-If."; guidance = quickWins; break;
-    case "lights": title = `Review how you use ${item.name}`; action = "Switch off lights in empty rooms. If you replace older bulbs, compare the actual wattage of suitable LEDs before deciding."; guidance = lightingGuidance; break;
-    case "washer": title = `Check settings for ${item.name}`; action = "When the care labels and washer instructions allow it, consider a cold-water wash. Review your actual running hours in the appliance list."; guidance = quickWins; break;
-    case "tv": case "laptop": case "phone": title = `Check idle time for ${item.name}`; action = "Use the device’s power-saving options and switch it off when it is not needed. Check its instructions before changing standby settings."; guidance = quickWins; break;
-    default: title = `Review the inputs for ${item.name}`; action = "Check rated power and actual running time, including short sessions. Follow the device’s instructions and compare your own assumptions in Watt-If.";
+    case "fridge": title = `Check ${item.name} door seals`; action = "Keep door openings brief and check the seals. Keep the refrigerator powered for food storage."; guidance = fridgeGuidance; break;
+    case "aircon": title = `Use ${item.name} in occupied rooms`; action = "Close doors while cooling. Try a shorter schedule in Watt-If if it stays comfortable."; guidance = quickWins; break;
+    case "fan": title = `Switch off ${item.name} when unused`; action = "Turn the fan off when the room is empty. Compare fewer unused hours in Watt-If."; guidance = quickWins; break;
+    case "lights": title = `Switch off unused ${item.name}`; action = "Turn off lights in empty rooms. When replacing bulbs, compare the wattage of suitable LEDs."; guidance = lightingGuidance; break;
+    case "washer": title = `Try a cold wash with ${item.name}`; action = "Use a cold wash when clothing labels and your washer instructions allow it."; guidance = quickWins; break;
+    case "tv": case "laptop": case "phone": title = `Reduce ${item.name} idle time`; action = "Use power-saving mode and switch off when unused. Follow the device’s standby instructions."; guidance = quickWins; break;
+    default: title = `Check ${item.name} running time`; action = "Check rated watts and daily use, including short sessions. Follow the device’s instructions.";
   }
   return {
     id: `appliance-${item.id}`, category: "appliance", title, action,
@@ -61,23 +62,32 @@ export function generatePreviewTips(household: PreviewHousehold, now = new Date(
   const billContext = billTipContext(household.bills);
   const limits = [...billContext.limitations]; const tips: PreviewTip[] = [];
   const sampleBills = household.bills.some(isSampleBill), sampleAppliances = household.appliances.some(isSampleAppliance);
+  const forecast = buildBillForecast(household.bills, now);
   if (household.bills.length) tips.push({ id: "bill-review", category: "bill", title: household.bills.length > 1 ? "Review your bill comparison" : "Build a comparable bill history", action: "Check the recorded dates and readings. Bill differences alone cannot identify an appliance or prove why consumption changed.", reason: billContext.reason, facts: billContext.facts, assumptions: [`Notable-change review threshold: ${notableChangeThreshold}%; it is not a statistical anomaly test.`, "Appliance estimates are separate from the provider’s metered bill."], sample: sampleBills, link: { label: "Review bill history", href: "/bills" } });
   else tips.push({ id: "first-bill", category: "getting-started", title: "Start with a reviewed bill", action: "Enter a bill and check its consumption, amount, and period. A second comparable bill can then give your tips a change-detection basis.", reason: "No saved bill history is available for this household.", facts: ["0 saved bills."], assumptions: ["No bill trend or peso savings can be inferred yet."], sample: false, link: { label: "Add a bill", href: "/bills/new" } });
+  if (forecast.status === "ready") {
+    const peak = forecast.peakMonth ? forecast.months[forecast.peakMonth-1] : null;
+    const low = forecast.lowMonth ? forecast.months[forecast.lowMonth-1] : null;
+    const unit = forecast.unit === "kwh-30-days" ? "kWh per 30 days" : "kWh per billing month";
+    tips.push({ id: "bill-forecast", category: "bill", title: peak ? `Plan ahead for ${forecastMonthName(peak.month)}` : "Keep your monthly usage steady", action: peak ? `Before ${forecastMonthName(peak.month)}, check unused appliance hours. Set a budget using the estimate, then update it when new bills arrive.` : "Compare each new bill with the monthly outlook. Update your usage habits and budget when the pattern changes.", reason: `The ${forecast.targetYear} outlook repeats your ${forecast.baseYear} monthly pattern${forecast.scale !== 1 ? `, adjusted using ${forecast.matchedMonths} matching months` : ""}. It is a planning estimate.`, facts: [peak ? `Projected high: ${forecastMonthName(peak.month)} ${forecast.targetYear} ≈ ${peak.kwh} ${unit}${peak.amount !== null ? ` · ${pesos(peak.amount)} before subsidies` : ""}.` : "Your projected monthly use is roughly steady.", ...(low ? [`Projected low: ${forecastMonthName(low.month)} ${forecast.targetYear} ≈ ${low.kwh} ${unit}.`] : []), ...(forecast.effectiveRate !== null ? [`Peso scenario uses ${pesos(forecast.effectiveRate)} per kWh from ${forecast.rateMonths.join(", ")}; this is not a future tariff.`] : [])], assumptions: forecast.limitations, sample: false, link: { label: "Review bill history", href: "/bills" } });
+  }
   const positive = [...household.appliances].filter(item => dailyApplianceKwh(item) > 0 && Number.isFinite(dailyApplianceKwh(item) * 30)).sort((a, b) => dailyApplianceKwh(b) - dailyApplianceKwh(a) || a.id.localeCompare(b.id));
   for (const [rank, item] of positive.slice(0, 3).entries()) tips.push(applianceTip(item, rank));
   if (!positive.length) {
     limits.push(household.appliances.length ? "No positive, finite appliance estimate is available; check the saved power and usage inputs." : "No appliances are saved; recommendations cannot name devices you own.");
     tips.push({ id: "appliance-inputs", category: "getting-started", title: household.appliances.length ? "Check your appliance usage inputs" : "Add the appliances you actually use", action: "Review rated watts, quantity, and hours per day. Keep unknown wattage blank until you can check it.", reason: "Appliance-specific recommendations need your own reviewed inputs.", facts: [`${household.appliances.length} saved appliance ${household.appliances.length === 1 ? "entry" : "entries"}.`], assumptions: ["An appliance category does not establish its actual wattage or running time."], sample: sampleAppliances, link: { label: "Review appliances", href: household.appliances.length ? "/appliances" : "/appliances/new" } });
   }
-  return { version: "tips-ui-v1", generatedAt: now.toISOString(), inputSignature: tipsInputSignature(household), origin, context: { billCount: household.bills.length, applianceCount: household.appliances.length, sample: sampleBills || sampleAppliances || origin === "sample", limitations: limits }, tips };
+  return { version: "tips-ui-v1", generatedAt: now.toISOString(), inputSignature: tipsInputSignature(household), origin, forecast, context: { billCount: household.bills.length, applianceCount: household.appliances.length, sample: sampleBills || sampleAppliances || origin === "sample", limitations: limits }, tips };
 }
-export function tipsAreStale(snapshot: PreviewTipsSnapshot, household: PreviewHousehold) { return snapshot.origin === "household" && snapshot.inputSignature !== tipsInputSignature(household); }
+export function tipsAreStale(snapshot: PreviewTipsSnapshot, household: PreviewHousehold, now = new Date()) { return (snapshot.origin === "household" && snapshot.inputSignature !== tipsInputSignature(household)) || (!!snapshot.forecast && snapshot.forecast.targetYear !== forecastTargetYear(now)); }
 const routes = new Set(["/bills", "/bills/new", "/appliances", "/appliances/new", "/simulator"]);
 const guides = new Set([quickWins.href, fridgeGuidance.href, lightingGuidance.href]);
 const stringList = (value: unknown): value is string[] => Array.isArray(value) && value.every(item => typeof item === "string");
 export function normalizeTipsSnapshot(value: unknown): PreviewTipsSnapshot | null {
   if (!value || typeof value !== "object") return null;
   const snapshot = value as PreviewTipsSnapshot;
+  if (snapshot.source !== undefined && snapshot.source !== "gemini" && snapshot.source !== "local-rule") return null;
+  if (snapshot.forecast !== undefined && !normalizeBillForecast(snapshot.forecast)) return null;
   if (snapshot.version !== "tips-ui-v1" || !["household", "sample"].includes(snapshot.origin) || typeof snapshot.generatedAt !== "string" || !Number.isFinite(Date.parse(snapshot.generatedAt)) || typeof snapshot.inputSignature !== "string" || !snapshot.context || !Number.isInteger(snapshot.context.billCount) || snapshot.context.billCount < 0 || !Number.isInteger(snapshot.context.applianceCount) || snapshot.context.applianceCount < 0 || typeof snapshot.context.sample !== "boolean" || !stringList(snapshot.context.limitations) || !Array.isArray(snapshot.tips) || !snapshot.tips.length) return null;
   if (snapshot.tips.some(tip => !tip || typeof tip.id !== "string" || !["appliance", "bill", "getting-started"].includes(tip.category) || typeof tip.title !== "string" || typeof tip.action !== "string" || typeof tip.reason !== "string" || typeof tip.sample !== "boolean" || !stringList(tip.facts) || !stringList(tip.assumptions) || !tip.link || typeof tip.link.label !== "string" || !routes.has(tip.link.href) || (tip.guidance && (typeof tip.guidance.label !== "string" || !guides.has(tip.guidance.href))))) return null;
   if (new Set(snapshot.tips.map(tip => tip.id)).size !== snapshot.tips.length) return null;

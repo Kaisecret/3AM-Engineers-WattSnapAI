@@ -75,17 +75,24 @@ export interface TipsGenerationRequest {
     budget?: number;
   };
   bills?: Array<{
+    id: string;
     month: string;
     amount: number;
     kwh: number;
+    periodStart?: string;
+    periodEnd?: string;
+    source?: "manual" | "scan" | "sample";
   }>;
   appliances?: Array<{
+    id: string;
     name: string;
-    type?: string;
+    type?: ApplianceKind;
     watts: number;
     hours: number;
     quantity: number;
     days?: number;
+    source?: "manual" | "sample";
+    wattageBasis?: "nameplate" | "approximate";
   }>;
 }
 

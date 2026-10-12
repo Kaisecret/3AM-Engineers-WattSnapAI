@@ -28,8 +28,8 @@ Vercel Cron, once a day at 06:00 Manila time       -> GET  /api/advisories/inges
   listed under "More from ANTECO's Facebook page" with a Save button.
 - **AI can misread.** A town or barangay that is not in the app's Antique list is never treated as an exact
   match. Neither is part of a barangay (a sitio, a street, "portion of"): that is "Possibly affected" for the
-  town, not "Affected" for everyone in the barangay. Missing dates and times stay empty, and Brownout Ready
-  still asks the person to open the original post and confirm before a plan is saved.
+  town, not "Affected" for everyone in the barangay. Missing dates and times stay empty, and every
+  advisory links to the original post.
 - **Nothing about a household leaves the device.** Matching happens in the browser.
 
 Code: `src/features/advisory-intelligence/ingest.ts` (rules), `repository.ts` and `service.ts` (database, Apify,
@@ -148,7 +148,7 @@ select pending_ranges, lease_until from public.provider_advisory_state;
 - `queued_left` above zero means the run ran out of time; the next run continues. Run it by hand to finish
   sooner (two minutes apart).
 - A post is read at most 3 times. One that is still `failed` after that stays `failed`: open its `post_url`
-  and add it in the app through Advisories -> Add advisory.
+  to read it on ANTECO's page. The app has no manual way to add an advisory.
 - `failure = images-unavailable` means the post's image links had expired. A later fetch that returns the
   post again refreshes them.
 - A non-empty `pending_ranges` after many posts arrived at once is normal; each run fetches 30 more. A range
@@ -172,4 +172,5 @@ select pending_ranges, lease_until from public.provider_advisory_state;
 - Each run also looks six hours behind the newest post it has, to catch posts that appeared late. If 30 or
   more posts lie inside those six hours, a late post beneath them is not seen. ANTECO posts a few times a day.
 - Meta's terms restrict automated collection, and a Facebook account made for a project can be restricted. If
-  collection stops, the app's own "Add advisory" (paste or screenshot) keeps working.
+  collection stops, no new advisories reach the app: manual "Add advisory" was removed, so there is no in-app
+  fallback. Advisories already saved stay readable.

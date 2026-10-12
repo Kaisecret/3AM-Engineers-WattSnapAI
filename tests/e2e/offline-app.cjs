@@ -74,10 +74,10 @@ async function main(){
     await page.reload();await page.getByRole('textbox',{name:'Message WattSnap AI'}).fill('My budget and appliances');await page.getByRole('button',{name:'Send message',exact:true}).click();
     await page.locator('.chat-row.is-bot').last().getByText(/Desk fan/).waitFor();
     answer=await page.locator('.chat-row.is-bot').last().innerText();assert.ok(answer.includes('2,500.00'));
-    for(const route of ['/dashboard','/bills','/budget','/appliances','/tips','/advisories','/simulator','/brownout-ready','/settings','/setup','/onboarding','/bills/new','/appliances/new','/advisories/new']){
+    for(const route of ['/dashboard','/bills','/budget','/appliances','/tips','/advisories','/simulator','/settings','/setup','/onboarding','/bills/new','/appliances/new']){
      await page.goto(base+route);await page.locator('[data-offline-app=true]').waitFor();await page.locator('main').first().waitFor();
      assert.equal(new URL(page.url()).pathname,route,'offline navigation stays on '+route);
-     const headings={'/dashboard':'Maria!','/bills':'Energy','/budget':'Smart Energy Budget','/appliances':'Appliances','/tips':'Tipid Tips','/advisories':'Advisories','/simulator':'Watt-If simulator','/brownout-ready':'Brownout Ready','/settings':'Household settings','/setup':'Home setup','/onboarding':'Household setup','/bills/new':'Snap AI','/appliances/new':'Add an appliance','/advisories/new':'Add advisory'};
+     const headings={'/dashboard':'Maria!','/bills':'Energy','/budget':'Smart Energy Budget','/appliances':'Appliances','/tips':'Tipid Tips','/advisories':'Advisories','/simulator':'Watt-If simulator','/settings':'Household settings','/setup':'Home setup','/onboarding':'Household setup','/bills/new':'Snap AI','/appliances/new':'Add an appliance'};
      if(route==='/bills/new') await page.locator('.scan-title').getByText('Snap AI',{exact:true}).waitFor();
      else await page.getByRole('heading',{name:headings[route],exact:true}).first().waitFor();
      await page.evaluate(async()=>{await Promise.all([...document.images].map(async image=>{image.loading='eager';await image.decode();if(!image.naturalWidth)throw new Error('Broken offline picture: '+image.src);}));});

@@ -40,10 +40,11 @@ export function deriveSetupProgress(household: PreviewHousehold, tips: PreviewTi
     isProviderChoice(household.provider),
     records.bills.length > 0,
     records.appliances.length > 0,
-    canReviewSetupTips(household, tips) && saved.reviewedTips === tips!.inputSignature,
+    // The first confirmed tips review is a setup milestone, independent of later advice freshness.
+    !!saved.reviewedTips,
   ];
   const steps = setupSteps.map((step, index) => ({ ...step, complete: complete[index] }));
   const count = steps.filter(step => step.complete).length;
   const signature = JSON.stringify([household.name, household.location, household.locality, household.provider, tipsInputSignature(household)]);
-  return { steps, count, percent: count * 20, next: steps.find(step => !step.complete), complete: count === 5, signature, dismissed: count === 5 && saved.acknowledged === signature, celebrate: count === 5 && !saved.acknowledged };
+  return { steps, count, percent: count * 20, next: steps.find(step => !step.complete), complete: count === 5, signature, dismissed: count === 5 && !!saved.acknowledged, celebrate: count === 5 && !saved.acknowledged };
 }

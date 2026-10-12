@@ -183,53 +183,6 @@ async function tips(browser) {
   await context.close(); console.log('PASS: relevant local tips, essential-device guidance, stale inputs and offline refresh');
 }
 
-async function advisories(browser) {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River home', provider: 'custom:River%20cooperative', location: 'Payao, San Jose de Buenavista, Antique', locality: { province: 'Antique', municipality: 'San Jose de Buenavista', barangay: 'Payao' }, bills: [], budget: 0, appliances: [] })); });
-  const page = await context.newPage(); await page.goto(`${baseURL}/advisories/new`);
-  await page.waitForFunction(() => !document.querySelector('input[type=file]').disabled);
-  await page.locator('input[type=file]').setInputFiles({ name: 'notice.png', mimeType: 'image/png', buffer: await fs.readFile('public/assets/branding/wattsnap-icon-192.png') });
-  await page.getByLabel('Areas as written in the original').fill('Payao');
-  await page.getByLabel('Provider named in the advisory').selectOption('other');
-  assert.equal(await page.getByLabel('Provider name', { exact: true }).inputValue(), 'River cooperative');
-  await page.getByLabel('Province for area 1', { exact: true }).fill('Antique');
-  await page.getByLabel('Municipality for area 1', { exact: true }).fill('San Jose de Buenavista');
-  await page.getByLabel('Barangay for area 1', { exact: true }).fill('Payao');
-  await page.getByRole('heading', { name: 'Possibly Affected', exact: true }).waitFor();
-  await page.getByLabel('Scope for area 1', { exact: true }).selectOption('barangay');
-  await page.getByRole('heading', { name: 'Affected', exact: true }).waitFor();
-  await page.getByLabel('Review title (optional)', { exact: true }).fill('My provider notice');
-  await page.getByRole('checkbox', { name: /I checked the original and these fields/ }).check();
-  await page.getByRole('button', { name: 'Save reviewed advisory', exact: true }).click();
-  await page.getByRole('alert').filter({ hasText: 'Choose to keep this original screenshot' }).waitFor();
-  assert.equal(await page.evaluate(() => localStorage.getItem('wattsnap-advisories-ui-preview-v1')), null, 'Photo not saved without explicit choice');
-  await page.getByRole('checkbox', { name: /Keep the original screenshot/ }).check();
-  await page.getByRole('button', { name: 'Save reviewed advisory', exact: true }).click();
-  await page.getByRole('link', { name: 'View saved advisory', exact: true }).click();
-  await page.getByRole('heading', { name: 'My provider notice', exact: true }).waitFor();
-  await page.getByRole('link', { name: 'Correct review fields', exact: true }).click();
-  await page.getByLabel('Review title (optional)', { exact: true }).fill('Corrected provider notice');
-  await page.getByRole('checkbox', { name: /I checked the original and these fields/ }).check();
-  await page.getByRole('button', { name: 'Save corrected review', exact: true }).click();
-  await page.getByRole('link', { name: 'View saved advisory', exact: true }).click();
-  await page.getByRole('heading', { name: 'Corrected provider notice', exact: true }).waitFor();
-  await page.getByRole('button', { name: 'Close advisory details', exact: true }).click();
-  await page.goto(`${baseURL}/advisories/new`);
-  await page.getByLabel('Original advisory text', { exact: true }).fill('Official notice: some areas may be affected. Schedule not provided.');
-  await page.getByRole('button', { name: 'Review pasted text', exact: true }).click();
-  await page.getByLabel('Areas as written in the original').fill('Some areas');
-  await page.getByRole('checkbox', { name: /I checked the original and these fields/ }).check();
-  await page.getByRole('button', { name: 'Save reviewed advisory', exact: true }).click();
-  await page.getByRole('link', { name: 'View saved advisory', exact: true }).waitFor();
-  await page.reload(); await page.goto(`${baseURL}/advisories`);
-  await page.locator('.adv-card').first().waitFor();
-  assert.equal(await page.locator('.adv-card').count(), 2);
-  const records = await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-advisories-ui-preview-v1')));
-  assert.equal(records.length, 2); assert.equal(records[0].details.provider, 'custom:River%20cooperative'); assert.equal(records[0].revision, 2);
-  assert.equal(records[1].original.text, 'Official notice: some areas may be affected. Schedule not provided.');
-  await context.close(); console.log('PASS: advisory upload consent, custom provider, exact/ambiguous matches, correction, paste and refresh');
-}
-
 async function storage(browser) {
   const context = await browser.newContext();
   await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River home', bills: [{ id: 'sample-preserved', month: '2026-07', kwh: 100, amount: 1200, source: 'sample' }], budget: 0, appliances: [], futureField: { preserve: true } })); });
@@ -288,7 +241,7 @@ async function responsive(browser) {
     const context = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce' });
     await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River household', provider: 'anteco', location: 'Payao, San Jose de Buenavista, Antique', locality: { province: 'Antique', municipality: 'San Jose de Buenavista', barangay: 'Payao' }, bills: [7, 8, 9].map((month, i) => ({ id: `my-bill-${i}`, month: `2026-0${month}`, kwh: 100 + i * 30, amount: 1200 + i * 350, source: 'manual' })), budget: 2000, appliances: [{ id: 'fan', name: 'Living room electric fan', watts: 55, hours: 8, quantity: 2, days: 30 }, { id: 'fridge', name: 'Kitchen refrigerator', watts: 80, hours: 16, quantity: 1, days: 30 }] })); });
     const page = await context.newPage(); const errors = []; page.on('pageerror', error => errors.push(error.message));
-    for (const route of ['/dashboard', '/bills', '/bills/new', '/appliances', '/appliances/new', '/tips', '/advisories', '/advisories/new', '/onboarding', '/settings', '/simulator', '/brownout-ready', '/assistant', '/setup']) {
+    for (const route of ['/dashboard', '/bills', '/bills/new', '/appliances', '/appliances/new', '/tips', '/advisories', '/onboarding', '/settings', '/simulator', '/assistant', '/setup']) {
       await page.goto(`${baseURL}${route}`); await page.locator('nav[aria-label="Main navigation"]').waitFor({ state: 'attached' });
       await page.waitForFunction(() => !!document.querySelector('.ws-home'));
       const fit = await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1);
@@ -297,7 +250,7 @@ async function responsive(browser) {
       if (route === '/dashboard' && (width === 390 || width === 1440)) { await page.locator('.ws-chart-day').first().waitFor(); await page.evaluate(() => document.fonts.ready.then(() => true)); await page.screenshot({ path: `docs/frontend-review/dashboard-${width}.png`, fullPage: true }); }
       if (route === '/appliances/new' && width === 390) { await page.getByRole('button', { name: 'Add device', exact: true }).click(); await page.getByRole('button', { name: 'Enter manually', exact: true }).click(); await page.screenshot({ path: 'docs/frontend-review/appliance-mobile.png', fullPage: true }); }
     }
-    assert.deepEqual(errors, []); await context.close(); console.log(`PASS: fourteen household pages fit ${width}px without runtime errors`);
+    assert.deepEqual(errors, []); await context.close(); console.log(`PASS: twelve household pages fit ${width}px without runtime errors`);
   }
 }
 
@@ -361,16 +314,16 @@ async function camera(browser) {
     Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async () => { window.__cameraRequests++; throw new DOMException('Denied for isolated test', 'NotAllowedError'); } } });
   });
   const page = await context.newPage(); await page.goto(baseURL + '/bills/new');
-  assert.equal(await page.evaluate(() => window.__cameraRequests), 0, 'Camera never opens without user action');
-  await page.getByRole('button', { name: 'Open camera', exact: true }).click();
-  await page.getByText('Camera access is blocked.', { exact: false }).first().waitFor();
-  assert.equal(await page.evaluate(() => window.__cameraRequests), 1);
+  await page.getByRole('heading', { name: 'Camera is off', exact: true }).waitFor();
+  assert.equal(await page.evaluate(() => window.__cameraRequests), 1, 'A phone asks for the camera once when the scanner opens');
   await page.getByRole('button', { name: 'Type it', exact: true }).click();
   await page.getByLabel('Energy used', { exact: true }).waitFor();
   assert.equal(await page.getByLabel('Energy used', { exact: true }).inputValue(), '');
-  await context.close(); console.log('PASS: user-triggered camera denial and manual fallback without invented values');
+  assert.equal(await page.evaluate(() => window.__cameraRequests), 1, 'A refusal is not asked again without a tap');
+  await context.close(); console.log('PASS: refused camera asked once and manual fallback without invented values');
 }
 
+const seededAdvisory = {"version":"advisory-ui-v1","id":"11111111-1111-4111-8111-111111111111","revision":1,"createdAt":"2026-10-01T00:00:00.000Z","reviewedAt":"2026-10-01T00:00:00.000Z","original":{"kind":"text","name":"Pasted provider announcement","text":"Provider announcement for Payao: planned work on November 10, 2030 from 8am to noon. Check official updates.","capturedAt":"2026-10-01T00:00:00.000Z"},"details":{"type":"scheduled","title":"My preparation notice","provider":"anteco","publisher":"","sourceUrl":"","date":"2030-11-10","startTime":"08:00","endDate":"","endTime":"12:00","expectedRestoration":"","areaText":"Payao","areas":[{"province":"Antique","municipality":"San Jose de Buenavista","barangay":"Payao","scope":"barangay"}],"reason":"","relatedId":""},"match":{"status":"affected","rationale":["The entered provider and the full locality names match your saved household. The reviewed area scope explicitly includes this barangay or the whole municipality.","This compares the entered locality labels. The announcement, locality aliases, and utility coverage have not been independently verified."],"householdSignature":"[\"anteco\",\"Payao, San Jose de Buenavista, Antique\",\"Antique\",\"San Jose de Buenavista\",\"Payao\"]","householdBasis":{"location":"Payao, San Jose de Buenavista, Antique","provider":"anteco","locality":{"province":"Antique","municipality":"San Jose de Buenavista","barangay":"Payao"}},"matchedAt":"2026-10-01T00:00:00.000Z"}};
 async function retained(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
   await context.addInitScript(() => { if (!localStorage.getItem('wattsnap-ui-preview-v1')) localStorage.setItem('wattsnap-ui-preview-v1', JSON.stringify({ name: 'River home', provider: 'anteco', location: 'Payao, San Jose de Buenavista, Antique', locality: { province: 'Antique', municipality: 'San Jose de Buenavista', barangay: 'Payao' }, budget: 1800, bills: [{ id: 'older', month: '2026-07', kwh: 100, amount: 1200 }, { id: 'newer', month: '2026-09', kwh: 150, amount: 1500 }], appliances: [{ id: 'actual-ac', name: 'Living room air conditioner', kind: 'aircon', watts: 1000, hours: 8, quantity: 1, days: 30, source: 'manual' }] })); });
@@ -399,34 +352,17 @@ async function retained(browser) {
   await page.waitForFunction(() => document.querySelectorAll('.chat-row.is-bot').length === 2);
   assert.match(await page.locator('.chat-row.is-bot').last().innerText(), /Living room air conditioner/i);
   await context.setOffline(false); await page.getByRole('button', { name: 'Start a new chat' }).click(); assert.equal(await page.locator('.chat-row').count(), 0);
-  await page.goto(baseURL + '/advisories/new');
-  await page.getByLabel('Original advisory text', { exact: true }).fill('Provider announcement for Payao: planned work on November 10, 2030 from 8am to noon. Check official updates.');
-  await page.getByRole('button', { name: 'Review pasted text', exact: true }).click();
-  await page.getByLabel('Advisory type').selectOption('scheduled');
-  await page.getByLabel('Provider named in the advisory').selectOption('anteco');
-  await page.getByLabel('Review title (optional)').fill('My preparation notice');
-  await page.getByLabel('Interruption date', { exact: true }).fill('2030-11-10');
-  await page.getByLabel('Start time', { exact: true }).fill('08:00'); await page.getByLabel('End time', { exact: true }).fill('12:00');
-  await page.getByLabel('Areas as written in the original').fill('Payao');
-  await page.getByLabel('Province for area 1').fill('Antique'); await page.getByLabel('Municipality for area 1').fill('San Jose de Buenavista'); await page.getByLabel('Barangay for area 1').fill('Payao'); await page.getByLabel('Scope for area 1').selectOption('barangay');
-  await page.getByRole('checkbox', { name: /I checked the original and these fields/ }).check();
-  await page.getByRole('button', { name: 'Save reviewed advisory', exact: true }).click();
-  await page.getByRole('link', { name: 'View saved advisory', exact: true }).click();
-  await page.getByRole('link', { name: 'Prepare with this advisory', exact: true }).click();
-  const save = page.getByRole('button', { name: 'Save preparation plan', exact: true }); assert.equal(await save.isDisabled(), true);
-  await page.getByRole('checkbox', { name: 'I checked the original provider source and the published schedule for this preparation plan.', exact: true }).check();
-  await save.click(); await page.getByRole('region', { name: 'Saved published schedule' }).waitFor();
-  assert.match(await page.locator('.bready-schedule').innerText(), /4 hours/);
-  const checklist = page.getByRole('region', { name: 'Preparation checklist' }); await context.setOffline(true); await checklist.getByRole('checkbox').first().check();
-  await context.setOffline(false); await page.reload(); await checklist.getByRole('checkbox').first().waitFor(); assert.equal(await checklist.getByRole('checkbox').first().isChecked(), true);
-  await page.getByText('Manage this preparation plan', { exact: true }).click(); await page.getByRole('button', { name: 'Remove this plan', exact: true }).click(); await page.getByRole('button', { name: 'Keep plan', exact: true }).click();
-  assert.equal(await page.getByRole('region', { name: 'Preparation checklist' }).count(), 1);
-  await page.getByRole('button', { name: 'Remove this plan', exact: true }).click(); await page.getByRole('button', { name: 'Remove preparation plan', exact: true }).click(); await page.getByRole('heading', { name: 'No preparation plan yet' }).waitFor();
+  // Advisories come from the provider feed. This one is placed in storage as a collected advisory would be.
+  await page.evaluate(record => localStorage.setItem('wattsnap-advisories-ui-preview-v1', JSON.stringify([record])), seededAdvisory);
+  await page.goto(baseURL + '/advisories'); await page.getByRole('button', { name: /View My preparation notice/ }).click();
+  assert.equal(await page.getByRole('link', { name: 'Correct review fields' }).count(), 0); assert.equal(await page.getByRole('link', { name: 'Prepare with this advisory' }).count(), 0);
+  const checklist = page.getByRole('region', { name: 'Brownout ready checklist', exact: true }); await context.setOffline(true); await checklist.getByRole('checkbox').first().check();
+  await context.setOffline(false); await page.reload(); await page.getByRole('button', { name: /View My preparation notice/ }).click(); assert.equal(await checklist.getByRole('checkbox').first().isChecked(), true);
   await page.goto(baseURL + '/advisories'); await page.getByRole('button', { name: /View My preparation notice/ }).click();
   await page.getByText('Manage saved advisory', { exact: true }).click(); await page.getByRole('button', { name: 'Remove saved advisory', exact: true }).click(); await page.getByRole('button', { name: 'Keep advisory', exact: true }).click();
   assert.equal(await page.getByRole('heading', { name: 'My preparation notice', exact: true }).count(), 1);
   await page.getByRole('button', { name: 'Remove saved advisory', exact: true }).click(); await page.getByRole('button', { name: 'Remove advisory and original', exact: true }).click(); await page.getByRole('heading', { name: 'No saved advisories yet' }).waitFor();
-  assert.deepEqual(errors, []); assert.deepEqual(ai, []); await context.close(); console.log('PASS: actual simulator snapshots, offline local assistant, reviewed preparation plans, persistent checklist and confirmed deletion');
+  assert.deepEqual(errors, []); assert.deepEqual(ai, []); await context.close(); console.log('PASS: actual simulator snapshots, offline local assistant, persistent advisory checklist and confirmed deletion');
 }
 
 
@@ -445,7 +381,8 @@ async function polish(browser) {
     await page.getByRole('checkbox', { name: 'I reviewed all the values above.', exact: false }).check(); await page.getByRole('button', { name: 'Save to history', exact: true }).click();
     await page.getByText('No change from September', { exact: true }).waitFor();
     await page.goto(baseURL + '/appliances/new'); await page.getByRole('button', { name: 'Add device', exact: true }).click(); await page.getByRole('button', { name: 'Enter manually', exact: true }).click(); await page.getByRole('button', { name: 'Add photo', exact: true }).waitFor();
-    await page.goto(baseURL + '/brownout-ready'); await page.getByRole('heading', { name: 'No preparation plan yet' }).waitFor(); assert.equal(await page.locator('a[href*="sample="]').count(), 0); assert.equal(await page.getByRole('link', { name: 'Add your provider announcement' }).count(), 1);
+    for (const retired of ['/brownout-ready', '/advisories/new']) { await page.goto(baseURL + retired); await page.waitForURL(baseURL + '/advisories'); }
+    await page.getByRole('heading', { name: 'Advisories', exact: true }).first().waitFor(); assert.equal(await page.getByRole('link', { name: 'Add advisory' }).count(), 0); assert.equal(await page.getByRole('link', { name: 'Brownout Ready Mode' }).count(), 0);
     await page.goto(baseURL + '/'); assert.deepEqual(await page.locator('.post-feature-card').evaluateAll(items => items.map(item => item.getAttribute('href'))), ['/bills/new', '/bills', '/tips', '/advisories']);
     assert.deepEqual(errors, []); await context.close();
   }
@@ -454,5 +391,5 @@ async function polish(browser) {
 
 (async () => {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
-  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history', 'appliances', 'estimates', 'tips', 'advisories', 'storage', 'accessibility', 'camera', 'retained'])) await ({ design, records, household, bills, history, appliances, estimates, tips, advisories, storage, offline, accessibility, responsive, chart, content, camera, retained, polish })[check](browser); } finally { await browser.close(); }
+  try { for (const check of (process.argv.slice(2).length ? process.argv.slice(2) : ['design', 'records', 'household', 'bills', 'history', 'appliances', 'estimates', 'tips', 'storage', 'accessibility', 'camera', 'retained'])) await ({ design, records, household, bills, history, appliances, estimates, tips, storage, offline, accessibility, responsive, chart, content, camera, retained, polish })[check](browser); } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

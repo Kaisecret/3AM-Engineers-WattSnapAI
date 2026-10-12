@@ -12,9 +12,7 @@ import SettingsScreen from "@/features/dashboard/components/SettingsScreen";
 import ChatScreen from "@/features/assistant/components/ChatScreen";
 import TipsScreen from "@/features/tipid-tips/components/TipsScreen";
 import SimulatorScreen from "@/features/watt-if-simulator/components/SimulatorScreen";
-import BrownoutReadyScreen from "@/features/brownout-ready/components/BrownoutReadyScreen";
 import AdvisoriesScreen from "@/features/advisory-intelligence/components/AdvisoriesScreen";
-import AdvisoryIntakeScreen from "@/features/advisory-intelligence/components/AdvisoryIntakeScreen";
 import HouseholdSetupScreen from "@/features/household-profile/components/HouseholdSetupScreen";
 import SetupChecklist from "@/features/onboarding/components/SetupChecklist";
 
@@ -29,9 +27,9 @@ function screen(path: string) {
     case "/settings": return <SettingsScreen />;
     case "/tips": return <TipsScreen />;
     case "/simulator": return <SimulatorScreen />;
-    case "/brownout-ready": return <BrownoutReadyScreen />;
+    // The two retired pages open Advisories, as their online redirects do.
+    case "/brownout-ready": case "/advisories/new":
     case "/advisories": return <AdvisoriesScreen />;
-    case "/advisories/new": return <AdvisoryIntakeScreen />;
     case "/onboarding": return <HouseholdSetupScreen />;
     case "/setup": return <SetupChecklist />;
     default: return <HomeScreen />;
@@ -81,8 +79,14 @@ export default function OfflineApp() {
     window.addEventListener("pageshow", restored);
     window.addEventListener("storage", storage);
     window.addEventListener(displayIdentityEvent, checkScope);
+    // Reachability can recover without a fresh online event (Wi-Fi was connected
+    // throughout). Reopen the verified account so its pending records can sync.
+    const retry = setInterval(() => navigator.onLine ? reconnect() : undefined, 30_000);
+    window.addEventListener("focus", reconnect);
     return () => {
       active = false; probe?.abort();
+      clearInterval(retry);
+      window.removeEventListener("focus", reconnect);
       window.removeEventListener("online", reconnect);
       window.removeEventListener("beforeunload", beforeUnload);
       window.removeEventListener("pageshow", restored);

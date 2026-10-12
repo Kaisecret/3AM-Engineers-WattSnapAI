@@ -63,6 +63,27 @@ test("the seven providers are seeded and unverified", async () => {
   assert.equal((await sql("select count(*)::int as n from public.providers where is_coverage_verified"))[0].n, 0);
 });
 
+test("synced bills retain subsidies, charge groups and meter readings", async () => {
+  const id = "99999999-9999-4999-8999-999999999999";
+  await db.query("insert into public.bills (household_id, id, billing_month, kwh, amount_centavos, source, subsidy_centavos, charges, readings) values ($1, $2, '2040-01-01', 100, 120000, 'scan', 50000, $3::jsonb, $4::jsonb)", [household.a, id, JSON.stringify([{ label: "Distribution", amount: 300 }]), JSON.stringify({ previous: 10, present: 110 })]);
+  const row = (await sql("select subsidy_centavos, charges, readings from public.bills where household_id = $1 and id = $2", [household.a, id]))[0];
+  assert.equal(row.subsidy_centavos, 50000); assert.equal(row.charges[0].amount, 300); assert.equal(row.readings.present, 110);
+  await rejects(db.query("update public.bills set subsidy_centavos = 120001 where household_id = $1 and id = $2", [household.a, id]), "23514");
+  await db.query("delete from public.bills where household_id = $1 and id = $2", [household.a, id]);
+});
+
+test("offline settings columns are writable only for their account owner", async () => {
+  try {
+    await db.exec(`set role authenticated; set request.jwt.claim.sub = '${A}';`);
+    await db.query("update public.households set monthly_subsidy_centavos = 50000, dismissed_provider_advisories = '[\"post-one\"]'::jsonb where id = $1", [household.a]);
+    await db.query("update public.profiles set contact_email = 'contact@example.com' where id = $1", [A]);
+    assert.equal((await sql("select monthly_subsidy_centavos from public.households where id = $1", [household.a]))[0].monthly_subsidy_centavos, 50000);
+    assert.equal((await sql("select contact_email from public.profiles where id = $1", [A]))[0].contact_email, 'contact@example.com');
+    assert.equal((await sql("update public.households set monthly_subsidy_centavos = 0 where id = $1 returning id", [household.b])).length, 0);
+    assert.equal((await sql("select id from public.profiles where id = $1", [B])).length, 0);
+  } finally { await db.exec("reset role; reset request.jwt.claim.sub;"); }
+});
+
 test("out-of-range values are refused", async () => {
   const h = household.a;
   const bill = "insert into public.bills (household_id, billing_month, kwh, amount_centavos, source";

@@ -14,6 +14,7 @@ export interface AdvisoryPreparationProgress { key: string; checked: AdvisoryPre
 export interface SamplePreparationProgress { record: ReviewedAdvisory; checked: AdvisoryPreparationId[]; updatedAt: string; }
 export const preparationStorageKey = "wattsnap-advisory-checklists-ui-v1";
 export const preparationChangeEvent = "wattsnap-advisory-checklists-change";
+export const maxPreparationEntries = 500;
 
 export function preparationKey(record: ReviewedAdvisory, household: PreviewHousehold) {
   return JSON.stringify([record.id, record.revision, householdMatchSignature(household)]);
@@ -27,7 +28,7 @@ function validCheckedItems(value: unknown): value is AdvisoryPreparationId[] {
 export function parsePreparationProgress(raw: string | null): AdvisoryPreparationProgress[] {
   if (raw === null) return [];
   const data: unknown = JSON.parse(raw);
-  if (!data || typeof data !== "object" || !("version" in data) || data.version !== 1 || !("entries" in data) || !Array.isArray(data.entries) || data.entries.length > 200) throw new Error("Invalid checklist history");
+  if (!data || typeof data !== "object" || !("version" in data) || data.version !== 1 || !("entries" in data) || !Array.isArray(data.entries) || data.entries.length > maxPreparationEntries) throw new Error("Invalid checklist history");
   const entries: AdvisoryPreparationProgress[] = [];
   for (const value of data.entries) {
     if (!value || typeof value !== "object" || typeof value.key !== "string" || value.key.length > 3000 || !validCheckedItems(value.checked) || typeof value.updatedAt !== "string" || !Number.isFinite(Date.parse(value.updatedAt))) throw new Error("Invalid checklist progress");

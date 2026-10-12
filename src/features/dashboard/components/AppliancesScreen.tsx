@@ -105,19 +105,21 @@ export default function AppliancesScreen({ startAdding = false }: { startAdding?
   return <PageShell title="Appliances" subtitle="See how your appliances use energy" active="Appliances" className="ap-page">
     <section className="ap-summary" aria-labelledby="ap-summary-title">
       <div className="ap-summary-copy">
-        <p className="ap-eyebrow">Monthly estimate</p>
-        <h2 id="ap-summary-title"><span>{(totalDaily * 30).toFixed(1)}</span> kWh / month</h2>
-        <p className="ap-summary-cost">{rate > 0 ? `≈ ${pesos(totalDaily * 30 * rate)} per month` : "Add a bill to see the cost."}</p>
+        <div className="ap-summary-facts">
+          <h2 id="ap-summary-title" className="ap-summary-title">Monthly estimate</h2>
+          <p className="ap-summary-figure"><strong>{(totalDaily * 30).toFixed(1)}</strong> <span>kWh / month</span></p>
+          <p className="ap-summary-cost">{rate > 0 ? `≈ ${pesos(totalDaily * 30 * rate)} per month` : "Add a bill to see the cost."}</p>
+        </div>
+        <dl className="ap-summary-stats">
+          <div><dt>Appliances</dt><dd>{items.reduce((sum, item) => sum + item.quantity, 0)}</dd></div>
+          <div><dt>Per day</dt><dd>{totalDaily.toFixed(2)} kWh</dd></div>
+        </dl>
         <button type="button" className="ap-add" aria-haspopup="dialog" disabled={!ready} onClick={startAdd}><Plus aria-hidden="true" /> Add appliance</button>
       </div>
-      <dl className="ap-summary-stats">
-        <div><dt>Appliances</dt><dd>{items.reduce((sum, item) => sum + item.quantity, 0)}</dd></div>
-        <div><dt>Per day</dt><dd>{totalDaily.toFixed(2)} <small>kWh</small></dd></div>
-      </dl>
       <Image className="ap-summary-art" src="/assets/branding/actions-5.png" alt="" width={260} height={260} sizes="(min-width: 900px) 170px, 112px" />
     </section>
 
-    {coverage && latest && <p className={`ap-coverage is-${coverage.status}`}>{coverage.status === "over" ? <>Your devices add up to more than your {monthName(latest.month)} bill ({(totalDaily * 30).toFixed(0)} vs {latest.kwh} kWh). Check the hours you entered.</> : <>Your devices explain {coverage.percent}% of your {monthName(latest.month)} bill ({(totalDaily * 30).toFixed(0)} of {latest.kwh} kWh).{coverage.status === "under" && " Add the rest to see the full picture."}</>}<span className="ap-coverage-bar" aria-hidden="true"><i style={{ width: `${Math.min(coverage.percent, 100)}%` }} /></span></p>}
+    {coverage && latest && <p className={`ap-coverage is-${coverage.status}`}>{coverage.status === "over" ? <>Your devices add up to more than your {monthName(latest.month)} bill ({(totalDaily * 30).toFixed(0)} vs {latest.kwh} kWh). Check the hours you entered.</> : <>Your devices explain <strong>{coverage.percent}%</strong> of your {monthName(latest.month)} bill ({(totalDaily * 30).toFixed(0)} of {latest.kwh} kWh).{coverage.status === "under" && " Add the rest to see the full picture."}</>}<span className="ap-coverage-bar" aria-hidden="true"><i style={{ width: `${Math.min(coverage.percent, 100)}%` }} /></span></p>}
 
     {items.some(item => item.source === "sample" || item.id.startsWith("sample-")) && <p className="ap-sample-note">Your list includes sample appliances for this UI preview. Add your own readings or edit their values to explore the estimates.</p>}
 
@@ -130,14 +132,18 @@ export default function AppliancesScreen({ startAdding = false }: { startAdding?
           <span className={`ap-icon is-${kind}`}><Icon aria-hidden="true" /></span>
           <div className="ap-item-main">
             <div className="ap-item-top"><h3>{item.name}</h3><strong>{(daily * 30).toFixed(1)} <small>kWh/mo</small></strong></div>
-            <p>{trim(item.watts)} W · {trim(item.hours)} hrs/day{item.quantity > 1 && ` · ×${item.quantity}`}{rate > 0 && <span>≈ {pesos(daily * 30 * rate)}/30 days</span>}</p>
-            <p className="ap-item-detail">{item.model && `${item.model} · `}{item.source === "sample" || item.id.startsWith("sample-") ? "Sample" : "Manual"} · {item.wattageBasis === "nameplate" ? "Nameplate watts" : "Approximate watts"}</p>
-            {item.days !== undefined && item.days !== 30 && <p className="ap-item-detail">{item.days} days selected · {(daily * item.days).toFixed(2)} kWh for this period</p>}
-            <div className="ap-share" role="img" aria-label={`${share.toFixed(0)} percent of estimated appliance use`}><span style={{ width: `${share > 0 ? Math.max(share, 2) : 0}%` }} /><em>{share.toFixed(0)}%</em></div>
-          </div>
-          <div className="ap-item-actions">
-            <button type="button" className="ui-icon-button ap-edit" disabled={!ready} aria-label={`Edit ${item.name}`} onClick={() => edit(item)}><Pencil size={16} /></button>
-            <button type="button" className="ui-icon-button" disabled={!ready} aria-label={`Remove ${item.name}`} onClick={() => setRemoving(item)}><Trash2 size={16} /></button>
+            <p className="ap-item-specs"><span>{trim(item.watts)} W · {trim(item.hours)} hrs/day{item.quantity > 1 && ` · ×${item.quantity}`}</span>{rate > 0 && <span className="ap-item-cost">≈ {pesos(daily * 30 * rate)}/30 days</span>}</p>
+            <div className="ap-share" role="img" aria-label={`${share.toFixed(0)} percent of estimated appliance use`}><i><span style={{ width: `${share > 0 ? Math.max(share, 2) : 0}%` }} /></i><em>{share.toFixed(0)}%</em></div>
+            <div className="ap-item-foot">
+              <div className="ap-item-notes">
+                <p className="ap-item-detail">{item.model && `${item.model} · `}{item.source === "sample" || item.id.startsWith("sample-") ? "Sample" : "Manual"} · {item.wattageBasis === "nameplate" ? "Nameplate watts" : "Approximate watts"}</p>
+                {item.days !== undefined && item.days !== 30 && <p className="ap-item-detail">{item.days} days selected · {(daily * item.days).toFixed(2)} kWh for this period</p>}
+              </div>
+              <div className="ap-item-actions">
+                <button type="button" className="ui-icon-button ap-edit" disabled={!ready} aria-label={`Edit ${item.name}`} onClick={() => edit(item)}><Pencil size={18} /></button>
+                <button type="button" className="ui-icon-button" disabled={!ready} aria-label={`Remove ${item.name}`} onClick={() => setRemoving(item)}><Trash2 size={18} /></button>
+              </div>
+            </div>
           </div>
         </li>; })}
       </ul> : <div className="ap-empty"><Image src="/assets/branding/actions-7.png" alt="" width={200} height={200} sizes="120px" /><h3>No appliances yet</h3><p>Add one to see what uses the most energy.</p><button type="button" className="ui-primary" aria-haspopup="dialog" disabled={!ready} onClick={startAdd}><Plus size={18} aria-hidden="true" /> Add appliance</button></div>}

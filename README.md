@@ -22,8 +22,8 @@ WattSnap AI aims to turn these records into practical decisions: understand cons
 | Find practical ways to save | Get personalized **Tipid Tips** based on confirmed household information. |
 | Compare changes in daily habits | Use the **Watt-If simulator** to estimate changes in consumption and potential savings. |
 | Plan around a monthly target | Set a **Smart Energy Budget** in kWh or pesos and compare estimated usage with that target. |
-| Understand provider advisories | Upload a screenshot or paste advisory text to extract schedules and affected areas and compare them with the household's saved location. |
-| Prepare for scheduled interruptions | Use **Brownout Ready Mode** for a schedule, estimated duration, countdown, and preparation checklist. |
+| Understand provider advisories | ANTECO's public advisories are collected automatically, read by AI, and compared with the household's saved location. Each one links to the original post. |
+| Prepare for scheduled interruptions | Open an advisory that lists your area for its schedule and a brownout preparation checklist. |
 | Revisit information without internet | Access saved bills, appliance estimates, tips, advisory summaries, and reminders offline. |
 
 ## Who it is for

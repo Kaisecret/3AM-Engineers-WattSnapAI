@@ -23,6 +23,7 @@ export type Database = {
           match: Json
           match_status: string
           original_captured_at: string
+          original_feed: Json | null
           original_image_path: string | null
           original_kind: string
           original_name: string
@@ -40,6 +41,7 @@ export type Database = {
           match: Json
           match_status?: string
           original_captured_at: string
+          original_feed?: Json | null
           original_image_path?: string | null
           original_kind: string
           original_name: string
@@ -57,6 +59,7 @@ export type Database = {
           match?: Json
           match_status?: string
           original_captured_at?: string
+          original_feed?: Json | null
           original_image_path?: string | null
           original_kind?: string
           original_name?: string
@@ -199,6 +202,7 @@ export type Database = {
           amount_centavos: number
           billing_date: string | null
           billing_month: string
+          charges: Json | null
           created_at: string
           due_date: string | null
           household_id: string
@@ -209,14 +213,17 @@ export type Database = {
           period_start: string | null
           provider_custom_name: string | null
           provider_id: string | null
+          readings: Json | null
           source: string
           source_name: string | null
+          subsidy_centavos: number | null
           updated_at: string
         }
         Insert: {
           amount_centavos: number
           billing_date?: string | null
           billing_month: string
+          charges?: Json | null
           created_at?: string
           due_date?: string | null
           household_id: string
@@ -227,14 +234,17 @@ export type Database = {
           period_start?: string | null
           provider_custom_name?: string | null
           provider_id?: string | null
+          readings?: Json | null
           source: string
           source_name?: string | null
+          subsidy_centavos?: number | null
           updated_at?: string
         }
         Update: {
           amount_centavos?: number
           billing_date?: string | null
           billing_month?: string
+          charges?: Json | null
           created_at?: string
           due_date?: string | null
           household_id?: string
@@ -245,8 +255,10 @@ export type Database = {
           period_start?: string | null
           provider_custom_name?: string | null
           provider_id?: string | null
+          readings?: Json | null
           source?: string
           source_name?: string | null
+          subsidy_centavos?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -317,9 +329,11 @@ export type Database = {
         Row: {
           barangay: string | null
           created_at: string
+          dismissed_provider_advisories: Json
           id: string
           location: string | null
           monthly_budget_centavos: number | null
+          monthly_subsidy_centavos: number | null
           municipality: string | null
           name: string | null
           owner_id: string
@@ -331,9 +345,11 @@ export type Database = {
         Insert: {
           barangay?: string | null
           created_at?: string
+          dismissed_provider_advisories?: Json
           id?: string
           location?: string | null
           monthly_budget_centavos?: number | null
+          monthly_subsidy_centavos?: number | null
           municipality?: string | null
           name?: string | null
           owner_id: string
@@ -345,9 +361,11 @@ export type Database = {
         Update: {
           barangay?: string | null
           created_at?: string
+          dismissed_provider_advisories?: Json
           id?: string
           location?: string | null
           monthly_budget_centavos?: number | null
+          monthly_subsidy_centavos?: number | null
           municipality?: string | null
           name?: string | null
           owner_id?: string
@@ -369,6 +387,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_path: string | null
+          contact_email: string | null
           created_at: string
           full_name: string
           id: string
@@ -381,6 +400,7 @@ export type Database = {
         }
         Insert: {
           avatar_path?: string | null
+          contact_email?: string | null
           created_at?: string
           full_name?: string
           id: string
@@ -393,6 +413,7 @@ export type Database = {
         }
         Update: {
           avatar_path?: string | null
+          contact_email?: string | null
           created_at?: string
           full_name?: string
           id?: string
@@ -404,6 +425,159 @@ export type Database = {
           username?: string | null
         }
         Relationships: []
+      }
+      provider_advisories: {
+        Row: {
+          attempts: number
+          created_at: string
+          details: Json | null
+          external_post_id: string
+          failure: string | null
+          id: string
+          model: string | null
+          original_text: string
+          post_url: string
+          posted_at: string
+          provider_id: string
+          read_from_images: boolean
+          schedule_end: string | null
+          source: Json
+          status: string
+          type: string | null
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          details?: Json | null
+          external_post_id: string
+          failure?: string | null
+          id?: string
+          model?: string | null
+          original_text?: string
+          post_url: string
+          posted_at: string
+          provider_id: string
+          read_from_images?: boolean
+          schedule_end?: string | null
+          source?: Json
+          status?: string
+          type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          details?: Json | null
+          external_post_id?: string
+          failure?: string | null
+          id?: string
+          model?: string | null
+          original_text?: string
+          post_url?: string
+          posted_at?: string
+          provider_id?: string
+          read_from_images?: boolean
+          schedule_end?: string | null
+          source?: Json
+          status?: string
+          type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_advisories_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_advisory_runs: {
+        Row: {
+          detected: number
+          error: string | null
+          fetched: number
+          finished_at: string | null
+          id: number
+          inserted: number
+          outcome: string | null
+          provider_id: string
+          queued_left: number
+          started_at: string
+          trigger: string
+        }
+        Insert: {
+          detected?: number
+          error?: string | null
+          fetched?: number
+          finished_at?: string | null
+          id?: never
+          inserted?: number
+          outcome?: string | null
+          provider_id: string
+          queued_left?: number
+          started_at?: string
+          trigger: string
+        }
+        Update: {
+          detected?: number
+          error?: string | null
+          fetched?: number
+          finished_at?: string | null
+          id?: never
+          inserted?: number
+          outcome?: string | null
+          provider_id?: string
+          queued_left?: number
+          started_at?: string
+          trigger?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_advisory_runs_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_advisory_state: {
+        Row: {
+          last_backlog_call: boolean
+          last_fresh_started_at: string | null
+          lease_owner: string | null
+          lease_until: string | null
+          pending_ranges: Json
+          provider_id: string
+        }
+        Insert: {
+          last_backlog_call?: boolean
+          last_fresh_started_at?: string | null
+          lease_owner?: string | null
+          lease_until?: string | null
+          pending_ranges?: Json
+          provider_id: string
+        }
+        Update: {
+          last_backlog_call?: boolean
+          last_fresh_started_at?: string | null
+          lease_owner?: string | null
+          lease_until?: string | null
+          pending_ranges?: Json
+          provider_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_advisory_state_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: true
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       providers: {
         Row: {
@@ -543,9 +717,31 @@ export type Database = {
     }
     Functions: {
       advisory_original_count: { Args: never; Returns: number }
+      claim_advisory_crawl: {
+        Args: { p_owner: string; p_provider: string; p_seconds: number }
+        Returns: {
+          last_backlog_call: boolean
+          pending_ranges: Json
+        }[]
+      }
       is_unique_subset: {
         Args: { allowed: string[]; items: string[] }
         Returns: boolean
+      }
+      prune_provider_advisories: {
+        Args: { p_provider: string }
+        Returns: undefined
+      }
+      store_advisory_batch: {
+        Args: {
+          p_backlog_call: boolean
+          p_fresh_started_at: string
+          p_owner: string
+          p_posts: Json
+          p_provider: string
+          p_ranges: Json
+        }
+        Returns: number
       }
     }
     Enums: {

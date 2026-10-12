@@ -40,15 +40,27 @@ test("missing inputs, sample tips and earlier snapshots cannot complete tips rev
   assert.equal(canReviewSetupTips({ ...home, appliances: [{ ...appliance, hours: 4 }] }, tips), false);
 });
 
-test("record corrections invalidate tips review and completed notification acknowledgment", () => {
+test("completed setup survives record corrections and household renaming", () => {
   const tips = generatePreviewTips(home);
   const reviewed = { version: 1, reviewedTips: tips.inputSignature };
   const progress = deriveSetupProgress(home, tips, reviewed);
   const acknowledged = { ...reviewed, acknowledged: progress.signature };
   assert.equal(deriveSetupProgress(home, tips, acknowledged).dismissed, true);
   const changed = { ...home, appliances: [{ ...appliance, hours: 4 }] };
-  assert.equal(deriveSetupProgress(changed, tips, acknowledged).count, 4);
-  assert.equal(deriveSetupProgress({ ...home, name: "Reyes" }, tips, acknowledged).dismissed, false);
+  assert.equal(canReviewSetupTips(changed, tips), false, "Existing advice still needs a refresh");
+  assert.equal(deriveSetupProgress(changed, tips, acknowledged).count, 5);
+  assert.equal(deriveSetupProgress({ ...home, name: "Reyes" }, tips, acknowledged).dismissed, true);
+});
+
+test("adding bills keeps all five setup steps done without revisiting Tipid Tips", () => {
+  const tips = generatePreviewTips(home);
+  const reviewed = normalizeSetup(JSON.parse(JSON.stringify({ version: 1, reviewedTips: tips.inputSignature })));
+  const updated = { ...home, bills: [...home.bills, { ...bill, id: "next-bill", month: "2026-10", kwh: 180 }] };
+  assert.equal(canReviewSetupTips(updated, tips), false);
+  assert.equal(deriveSetupProgress(updated, tips, reviewed).count, 5);
+  assert.equal(deriveSetupProgress(updated, null, reviewed).count, 5, "The review milestone survives unavailable or cleared tips");
+  assert.equal(deriveSetupProgress(updated, generatePreviewTips(updated), reviewed).count, 5, "Refreshing advice preserves setup completion");
+  assert.equal(deriveSetupProgress(updated, tips, { version: 1 }).count, 4, "Another household still needs its own first review");
 });
 
 test("completion is celebrated once, never again after later edits", () => {

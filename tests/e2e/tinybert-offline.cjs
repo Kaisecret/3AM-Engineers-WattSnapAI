@@ -42,7 +42,7 @@ async function main(){
       await answer.waitFor();return answer;
     }
     let answer=await ask('How much room do I have left to spend?');
-    await answer.getByText(/local language model/).waitFor({timeout:30000});
+    await answer.getByText(/TinyBERT.*offline/).waitFor({timeout:30000});
     assert.match(await answer.innerText(),/2,000\.00/);assert.match(await answer.innerText(),/800\.00/);
     console.log('PASS: cold offline TinyBERT recognizes a budget paraphrase and answers from saved household values');
     answer=await ask('Work out 100 W for 8 hours, 20 days, 2 units');
@@ -56,7 +56,7 @@ async function main(){
     assert.equal(await page.evaluate(id=>JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1:household:'+id)).budget,id),2500);
     console.log('PASS: local changes still require explicit confirmation');
     answer=await ask('quantum bananas?');
-    await answer.getByText(/Try one of these/).waitFor();assert.doesNotMatch(await answer.innerText(),/local language model/);
+    await answer.getByText(/Try one of these/).waitFor();assert.doesNotMatch(await answer.innerText(),/TinyBERT/);
     assert.equal(cloud.length,0,'offline chat never calls Gemini: '+JSON.stringify(cloud));
     assert.equal(external.length,0,'no model, tokenizer or runtime CDN dependency');
     assert.deepEqual(errors,[]);

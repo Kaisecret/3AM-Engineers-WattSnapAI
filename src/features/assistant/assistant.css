@@ -53,6 +53,27 @@ html[data-theme="dark"] .chat-page {
 .chat-notice { display: flex; align-items: center; gap: 5px; margin-top: -2px; padding-left: 4px; color: var(--chat-muted); font-size: 11.5px; line-height: 1.35; }
 .chat-notice svg { flex: 0 0 auto; width: 13px; height: 13px; color: #d97706; }
 
+/* Conversation emphasis stays within messages, including the dark theme. */
+.chat-page .chat-thread { gap: 20px; }
+.chat-page .chat-row.is-bot .chat-bubble { padding: 14px 16px; line-height: 1.65; border-radius: 8px 22px 22px 22px; }
+.chat-page .chat-row.is-user .chat-bubble { padding: 12px 16px; line-height: 1.55; }
+.chat-page .chat-bubble :is(p, ul, ol) { margin: 0; }
+.chat-page .chat-bubble :is(p, ul, ol) + :is(p, ul, ol) { margin-top: 12px; }
+.chat-page .chat-bubble :is(ul, ol) { display: grid; gap: 9px; padding-left: 20px; }
+.chat-page .chat-bubble ol { list-style: decimal; }
+.chat-page .chat-bubble strong { color: #08608e; font-weight: 750; }
+.chat-value { padding: 1px 3px; border-radius: 4px; font-weight: 650; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.chat-value.is-money { color: #075e50; background: #e4f5ee; }
+.chat-value.is-energy { color: #085b8b; background: #e8f3fd; }
+.chat-page .chat-notice { gap: 6px; padding: 2px 4px; font-size: 11px; line-height: 1.5; }
+.chat-notice.is-gemini { color: #08608e; }
+.chat-notice.is-gemini svg { color: currentColor; }
+.chat-notice.is-tinybert svg { color: var(--chat-muted); }
+html[data-theme="dark"] .chat-page .chat-bubble strong { color: #90dcf5; }
+html[data-theme="dark"] .chat-page .chat-value.is-money { color: #b0efd9; background: #25493f; }
+html[data-theme="dark"] .chat-page .chat-value.is-energy { color: #b2e2ff; background: #244456; }
+html[data-theme="dark"] .chat-page .chat-notice.is-gemini { color: #90dcf5; }
+
 /* Links and quick replies */
 .chat-links { display: flex; flex-wrap: wrap; gap: 6px; }
 .chat-links a { display: inline-flex; align-items: center; gap: 3px; min-height: 36px; padding: 0 10px 0 13px; border-radius: 12px; color: var(--chat-accent); background: var(--chat-accent-soft); font-size: 13px; font-weight: 800; transition: filter .2s; }

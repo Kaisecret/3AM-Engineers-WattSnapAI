@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { previewStorageFor, usePreviewStorageKey } from "@/features/auth/use-preview-storage-key";
 import type { PreviewHousehold } from "../dashboard/preview-data";
 import type { ReviewedAdvisory } from "./types";
-import { parsePreparationState, preparationChangeEvent, preparationKey, preparationStorageKey, type AdvisoryPreparationId, type AdvisoryPreparationProgress, type SamplePreparationProgress } from "./preparation-progress";
+import { maxPreparationEntries, parsePreparationState, preparationChangeEvent, preparationKey, preparationStorageKey, type AdvisoryPreparationId, type AdvisoryPreparationProgress, type SamplePreparationProgress } from "./preparation-progress";
 
 export function usePreparationProgress() {
   const storageKey = usePreviewStorageKey(preparationStorageKey);
@@ -27,7 +27,8 @@ export function usePreparationProgress() {
     try { if (previewStorageFor(preparationStorageKey) !== storageKey || localStorage.getItem(storageKey) !== stored.current) throw new Error("Household or saved records changed; reload before saving.");
       const state = parsePreparationState(localStorage.getItem(storageKey)), current = state.entries, key = preparationKey(record, household), previous = current.find(entry => entry.key === key)?.checked ?? [];
       const checked = previous.includes(id) ? previous.filter(item => item !== id) : [...previous, id];
-      const next = [...current.filter(entry => entry.key !== key), { key, checked, updatedAt: new Date().toISOString() }].slice(-200);
+      const next = [...current.filter(entry => entry.key !== key), { key, checked, updatedAt: new Date().toISOString() }];
+      if (next.length > maxPreparationEntries) throw new Error("Checklist history is full");
       localStorage.setItem(storageKey, JSON.stringify({ version: 1, entries: next, sampleChecklist: state.sample })); stored.current = localStorage.getItem(storageKey); setEntries(next); setError(""); window.dispatchEvent(new Event(preparationChangeEvent)); return true;
     } catch { setError("This checklist change could not be saved. Your previous progress is unchanged. Try again when browser storage is available."); return false; }
   }
