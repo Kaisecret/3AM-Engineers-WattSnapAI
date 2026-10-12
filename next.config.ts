@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
   },
   // Keep production builds from replacing assets served by a running dev server.
   distDir: process.env.NODE_ENV === "development" ? ".next-dev" : ".next",
+  // Retired pages: saved links and bookmarks open Advisories.
+  redirects: async () => ["/brownout-ready", "/advisories/new"].map(source => ({ source, destination: "/advisories", permanent: false })),
   webpack(config, { dev, isServer }) {
     if (!dev && !isServer) {
       // Next's client manifest skips concatenated module ID 0.

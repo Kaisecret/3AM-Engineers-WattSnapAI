@@ -10,7 +10,7 @@ import { usePreviewHousehold } from "@/features/dashboard/use-preview-household"
 import { amountPaid, compareWithPrevious, pesos, previewStorageKey, shortMonth } from "@/features/dashboard/preview-data";
 import { usePreviewAdvisories } from "@/features/advisory-intelligence/use-preview-advisories";
 import { usePreviewTips } from "@/features/tipid-tips/use-preview-tips";
-import { usePreviewPlans } from "@/features/brownout-ready/use-preview-plans";
+import { usePreparationProgress } from "@/features/advisory-intelligence/use-preparation-progress";
 import { usePreviewScenarios } from "@/features/watt-if-simulator/use-preview-scenarios";
 import { buildChatContext } from "../context";
 import { isNetworkOffline } from "@/features/offline-access/connectivity";
@@ -36,14 +36,14 @@ const offlineAgent = (text:string,context:ChatContext,pending?:LocalPending) => 
 
 export default function ChatScreen() {
   const { household, update, ready: householdReady, storageError } = usePreviewHousehold(), advisories = usePreviewAdvisories();
-  const tips=usePreviewTips(), plans=usePreviewPlans(), scenarios=usePreviewScenarios();
-  const ready = householdReady && advisories.ready && tips.ready && plans.ready && scenarios.ready;
+  const tips=usePreviewTips(), progress=usePreparationProgress(), scenarios=usePreviewScenarios();
+  const ready = householdReady && advisories.ready && tips.ready && progress.ready && scenarios.ready;
   const [draft, setDraft] = useState("");
   const input = useRef<HTMLTextAreaElement>(null);
   const asked = useRef(false);
   const confirmed = useRef(new Set<number>());
   const [offline, setOffline] = useState(false);
-  const context = useMemo(() => buildChatContext(household, advisories.records, {tips:tips.snapshot,plans:plans.plans,scenarios:scenarios.scenarios,unavailable:[storageError&&"household",advisories.error&&"advisories",tips.error&&"tips",plans.error&&"readiness",scenarios.error&&"scenarios"].filter((item):item is string=>!!item)}), [household,advisories.records,tips.snapshot,plans.plans,scenarios.scenarios,storageError,advisories.error,tips.error,plans.error,scenarios.error]);
+  const context = useMemo(() => buildChatContext(household, advisories.records, {tips:tips.snapshot,preparation:progress.entries,scenarios:scenarios.scenarios,unavailable:[storageError&&"household",advisories.error&&"advisories",tips.error&&"tips",progress.error&&"readiness",scenarios.error&&"scenarios"].filter((item):item is string=>!!item)}), [household,advisories.records,tips.snapshot,progress.entries,scenarios.scenarios,storageError,advisories.error,tips.error,progress.error,scenarios.error]);
   const respond = useCallback((text: string) => householdReply(text, context), [context]);
   const describe = useCallback((action: AgentAction) => describeAgentAction(action, household), [household]);
   const { messages, typing, send, reset, setActionState } = useChat(respond, { endpoint: "/api/ai/assistant", context, describe, explainFallback: true, localAgent: localAgentReply, asyncLocalAgent: offlineAgent });

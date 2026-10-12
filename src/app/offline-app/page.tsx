@@ -12,7 +12,6 @@ import "@/features/dashboard/scan.css";
 import "@/features/assistant/assistant.css";
 import "@/features/tipid-tips/tips-preview.css";
 import "@/features/watt-if-simulator/simulator-preview.css";
-import "@/features/brownout-ready/brownout-preview.css";
 import "../(household)/advisories/advisories.css";
 import "@/features/advisory-intelligence/advisory-workflow.css";
 

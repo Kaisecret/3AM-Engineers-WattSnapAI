@@ -12,9 +12,7 @@ import SettingsScreen from "@/features/dashboard/components/SettingsScreen";
 import ChatScreen from "@/features/assistant/components/ChatScreen";
 import TipsScreen from "@/features/tipid-tips/components/TipsScreen";
 import SimulatorScreen from "@/features/watt-if-simulator/components/SimulatorScreen";
-import BrownoutReadyScreen from "@/features/brownout-ready/components/BrownoutReadyScreen";
 import AdvisoriesScreen from "@/features/advisory-intelligence/components/AdvisoriesScreen";
-import AdvisoryIntakeScreen from "@/features/advisory-intelligence/components/AdvisoryIntakeScreen";
 import HouseholdSetupScreen from "@/features/household-profile/components/HouseholdSetupScreen";
 import SetupChecklist from "@/features/onboarding/components/SetupChecklist";
 
@@ -29,9 +27,9 @@ function screen(path: string) {
     case "/settings": return <SettingsScreen />;
     case "/tips": return <TipsScreen />;
     case "/simulator": return <SimulatorScreen />;
-    case "/brownout-ready": return <BrownoutReadyScreen />;
+    // The two retired pages open Advisories, as their online redirects do.
+    case "/brownout-ready": case "/advisories/new":
     case "/advisories": return <AdvisoriesScreen />;
-    case "/advisories/new": return <AdvisoryIntakeScreen />;
     case "/onboarding": return <HouseholdSetupScreen />;
     case "/setup": return <SetupChecklist />;
     default: return <HomeScreen />;

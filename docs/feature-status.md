@@ -23,7 +23,7 @@ An ANTECO receipt shows the total kWh and the amount, for example **192 kWh and 
 | 9 | Offline access | Brownouts often cut mobile data too | Whole app | 🟡 | Records stay on the device, but pages need a connection to open. Offline shows a notice. This was a security choice (no signed-in page shown after logout). |
 | 10 | Watt-If simulator | Savings are unknown until habits change | Simulator | ✅ | – |
 | 11 | Smart budget | Overspending is noticed only when the bill arrives | Budget | 🟡 | Peso budget with On track / near limit / Over budget works. No kWh target, no "days left / at risk" forecast, and device estimates are not used. |
-| 12 | Brownout Ready | Families are unprepared when an interruption starts | Brownout Ready | ✅ | – Summary from a saved advisory, countdown and preparation checklist. |
+| 12 | Brownout Ready | Families are unprepared when an interruption starts | Advisories | 🟡 | The separate Brownout Ready page was retired. An advisory that lists the household's area shows its schedule and a preparation checklist. No countdown. |
 
 Gemini 3.5 Flash-Lite is wired into the server (`src/lib/gemini/`, needs `GEMINI_API_KEY`; `GEMINI_MODEL` can name another model). Two chats use it:
 
