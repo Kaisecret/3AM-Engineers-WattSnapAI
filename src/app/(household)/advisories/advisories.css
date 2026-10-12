@@ -44,40 +44,43 @@
 
 /* Cards */
 .adv-list { display: grid; gap: 12px; }
-.adv-card { --adv-accent: #0aa6e6; --adv-soft: #e3f6fd; min-width: 0; overflow: hidden; border-radius: 18px; background: #fff; border: 1px solid #e3f0f6; box-shadow: 0 6px 16px #6aa9c40f; }
-.adv-type-scheduled { --adv-accent: #e5483b; --adv-soft: #ffe9e6; }
-.adv-type-unscheduled { --adv-accent: #e88a12; --adv-soft: #fff1d6; }
-.adv-type-notice { --adv-accent: #0a9be6; --adv-soft: #e0f4fd; }
-.adv-type-restored { --adv-accent: #16a34a; --adv-soft: #e1f8e8; }
-.adv-card-button { position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; padding: 14px 14px 0; color: #101733; text-align: left; border-radius: inherit; transition: background .2s; }
-.adv-card-button::before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 4px; border-radius: 0 4px 4px 0; background: var(--adv-accent); }
-.adv-card-top { display: flex; align-items: center; gap: 10px; }
-.adv-event-mark { flex: 0 0 auto; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 11px; color: var(--adv-accent); background: var(--adv-soft); }
-.adv-event-mark > svg { width: 20px; height: 20px; stroke-width: 2.3; }
-.adv-card-title { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 800; line-height: 1.3; letter-spacing: -.3px; }
-.adv-status { display: inline-flex; align-items: center; flex: 0 0 auto; gap: 5px; padding: 4px 9px; border-radius: 999px; font-size: 10px; font-weight: 800; white-space: nowrap; }
+/* A card answers in order: when, what and whether it lists the household, then where and why. The type colours only the date tile and its label. */
+.adv-card { --adv-accent: #0aa6e6; --adv-soft: #e3f6fd; --adv-ink: #0369a1; min-width: 0; overflow: hidden; border-radius: 18px; background: #fff; border: 1px solid #e3f0f6; box-shadow: 0 6px 16px #6aa9c40f; }
+.adv-type-scheduled { --adv-accent: #e5483b; --adv-soft: #ffe9e6; --adv-ink: #b42318; }
+.adv-type-unscheduled { --adv-accent: #e88a12; --adv-soft: #fff1d6; --adv-ink: #92570a; }
+.adv-type-notice { --adv-accent: #0a9be6; --adv-soft: #e0f4fd; --adv-ink: #0369a1; }
+.adv-type-restored { --adv-accent: #16a34a; --adv-soft: #e1f8e8; --adv-ink: #166534; }
+.adv-card-button { display: flex; flex-direction: column; gap: 12px; width: 100%; height: 100%; padding: 14px; color: #101733; text-align: left; border-radius: inherit; transition: background .2s; }
+.adv-card-top { display: flex; align-items: flex-start; gap: 12px; }
+.adv-card-head { display: grid; gap: 7px; flex: 1; min-width: 0; }
+.adv-card-title { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 14.5px; font-weight: 800; line-height: 1.3; letter-spacing: -.2px; overflow-wrap: anywhere; }
+.adv-card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.adv-card-kind { display: inline-flex; align-items: center; gap: 4px; color: var(--adv-ink); font-size: 11.5px; font-weight: 700; }
+.adv-card-kind svg { width: 14px; height: 14px; }
+.adv-status { display: inline-flex; align-items: center; flex: 0 0 auto; gap: 5px; padding: 4px 9px; border-radius: 999px; font-size: 11px; font-weight: 800; white-space: nowrap; }
 .adv-status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .adv-status-affected { color: #d6403a; background: #ffeceb; }
 .adv-status-possibly-affected { color: #b7791f; background: #fff4d6; }
 .adv-status-not-listed { color: #3a8db5; background: #e6f6fd; }
-.adv-card-body { display: flex; gap: 12px; margin: 12px 0; }
-.adv-date-tile { flex: 0 0 auto; display: grid; justify-items: center; align-content: center; width: 52px; height: 62px; border-radius: 14px; background: #f3f9fc; border: 1px solid #e3f0f6; line-height: 1.1; }
-.adv-date-tile small { color: #6f879c; font-size: 10px; font-weight: 700; text-transform: uppercase; }
-.adv-date-tile b { color: #0d2440; font-size: 21px; font-weight: 800; letter-spacing: -.5px; }
-.adv-card-details { display: grid; gap: 6px; min-width: 0; flex: 1; align-content: center; }
-.adv-card-details > span { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; font-weight: 600; line-height: 1.35; color: #1f3550; }
-.adv-card-details em { color: #7a93a8; font-style: normal; font-weight: 500; }
-.adv-card-details svg { flex: 0 0 14px; width: 14px; height: 14px; margin-top: 1px; color: #7a93a8; }
-.adv-detail-muted { color: #6f879c !important; font-weight: 500 !important; }
-.adv-card-foot { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding: 10px 0 12px; border-top: 1px dashed #e3eef4; color: var(--adv-accent); font-size: 12px; font-weight: 800; }
-.adv-card-foot > span { display: inline-flex; align-items: center; gap: 6px; }
-.adv-card-foot svg { width: 16px; height: 16px; }
+.adv-date-tile { flex: 0 0 auto; display: grid; justify-items: center; align-content: center; gap: 1px; width: 54px; min-height: 62px; padding: 7px 0; border-radius: 14px; background: var(--adv-soft); line-height: 1.1; }
+.adv-date-tile small { color: var(--adv-ink); font-size: 10.5px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; }
+.adv-date-tile b { color: #0d2440; font-size: 22px; font-weight: 800; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
+.adv-card-details { display: grid; gap: 7px; min-width: 0; }
+.adv-card-details > span { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; font-weight: 600; line-height: 1.45; color: #1f3550; }
+.adv-card-details svg { flex: 0 0 15px; width: 15px; height: 15px; margin-top: 2px; color: #7a93a8; }
+.adv-card-area, .adv-card-reason { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
+.adv-card-area { -webkit-line-clamp: 3; }
+.adv-card-reason { -webkit-line-clamp: 2; }
+.adv-detail-muted { color: #5d788c !important; font-weight: 500 !important; }
+.adv-card-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin-top: auto; padding-top: 12px; border-top: 1px solid #e9f2f7; }
+.adv-card-more { display: inline-flex; align-items: center; gap: 2px; margin-left: auto; color: #0479c2; font-size: 12.5px; font-weight: 800; }
+.adv-card-more svg { width: 16px; height: 16px; }
 .adv-empty { display: flex; flex-direction: column; align-items: center; padding: 22px 20px; border-radius: 18px; background: #fff; border: 1px solid #e3f0f6; text-align: center; color: #7792a5; }
 .adv-empty img { width: 104px; height: auto; }
 .adv-empty h3 { margin-top: 6px; color: #1b3452; font-size: 16px; }
 .adv-empty p { margin: 6px 0 14px; font-size: 12.5px; }
 .adv-empty button { padding: 10px 16px; border-radius: 11px; color: #008fc6; background: #e7f8fd; font-weight: 700; }
-.adv-source-note { display: flex; gap: 7px; margin-top: 14px; color: #7f93a6; font-size: 11px; line-height: 1.5; }
+.adv-source-note { display: flex; gap: 7px; margin-top: 14px; color: #5d788c; font-size: 12px; line-height: 1.5; }
 .adv-source-note svg { flex: 0 0 auto; width: 14px; height: 14px; margin-top: 1px; }
 
 /* Dialogs: a bottom sheet on phones, a centred card on PCs */
@@ -161,9 +164,9 @@
   .adv-filters { margin-inline: -12px; padding-inline: 12px; }
   .adv-hero h2 { font-size: 18px; }
   .adv-hero-art { width: 96px; }
-  .adv-card-title { font-size: 12px; }
-  .adv-status { padding-inline: 7px; font-size: 9px; }
-  .adv-date-tile { width: 46px; }
+  .adv-card-title { font-size: 13.5px; }
+  .adv-status { padding-inline: 7px; }
+  .adv-date-tile { width: 48px; }
 }
 @media (min-width: 430px) and (max-width: 899px) {
   .adv-main { padding-inline: 22px; }
@@ -171,7 +174,7 @@
   .adv-hero h2 { font-size: 24px; }
   .adv-hero-art { width: 150px; }
   .adv-card-title { font-size: 15px; }
-  .adv-card-details > span { font-size: 13px; }
+  .adv-card-details > span { font-size: 13.5px; }
 }
 @media (min-width: 900px) {
   .adv-main { gap: 18px; padding: 0 0 24px; }
@@ -189,12 +192,10 @@
   .adv-filters button { font-size: 13px; }
   .adv-list-title { font-size: 21px; margin-top: 2px; }
   .adv-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-  .adv-card-button { padding: 18px 20px 0; }
+  .adv-card-button { gap: 14px; padding: 18px 20px; }
   .adv-card-title { font-size: 15px; }
-  .adv-status { font-size: 11px; }
-  .adv-event-mark { width: 40px; height: 40px; }
-  .adv-card-details > span { font-size: 13px; }
-  .adv-card-foot { font-size: 13px; padding-bottom: 14px; }
+  .adv-card-details > span { font-size: 13.5px; }
+  .adv-card-more { font-size: 13px; }
   .adv-empty { grid-column: 1 / -1; }
   .adv-source-note { font-size: 12px; }
   .adv-dialog { inset: 0; width: min(480px, calc(100% - 48px)); max-height: calc(100dvh - 48px); margin: auto; border: 1px solid #e0f1f7; border-radius: 26px; box-shadow: 0 24px 70px #132c5140; }

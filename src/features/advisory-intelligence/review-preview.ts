@@ -92,7 +92,9 @@ export function manilaDay(now = new Date()) { const parts = new Intl.DateTimeFor
 /** A stated end time decides. Without one, the advisory is over once its last day has passed, so an overnight or multi-day interruption stays active until it ends. */
 export function advisoryTab(record: ReviewedAdvisory, now = new Date()) { const end = publishedEnd(record.details), lastDay = record.details.endDate || record.details.date; return record.details.type === "restored" || (end !== null ? end < now.getTime() : Boolean(lastDay && lastDay < manilaDay(now))) ? "history" : "active"; }
 export function timeLabel(time: string) { return timePattern.test(time) ? new Intl.DateTimeFormat("en-PH", { hour: "numeric", minute: "2-digit", timeZone: "UTC" }).format(new Date(`2000-01-01T${time}:00Z`)) : "Unknown"; }
-export function scheduleLabel(details: AdvisoryDetails) { return `${timeLabel(details.startTime)} – ${timeLabel(details.endTime)}${details.endDate && details.endDate !== details.date ? ` (${details.endDate})` : ""} · Asia/Manila`; }
+/** The hours alone, for lists. Details and reviews show `scheduleLabel`, which names the time zone. */
+export function scheduleHours(details: AdvisoryDetails) { return `${timeLabel(details.startTime)} – ${timeLabel(details.endTime)}${details.endDate && details.endDate !== details.date ? ` (${details.endDate})` : ""}`; }
+export function scheduleLabel(details: AdvisoryDetails) { return `${scheduleHours(details)} · Asia/Manila`; }
 export const sampleMatchHousehold: PreviewHousehold = { name: "Example household", bills: [], appliances: [], budget: 1600, provider: "anteco", location: "Payao, San Jose de Buenavista, Antique", locality: { province: "Antique", municipality: "San Jose de Buenavista", barangay: "Payao" } };
 export function sampleAdvisory(kind: AdvisorySample, now = new Date()): { details: AdvisoryDetails; original: AdvisoryOriginal } {
   const tomorrow = new Date(`${manilaDay(now)}T00:00:00Z`); tomorrow.setUTCDate(tomorrow.getUTCDate() + 1); const date = tomorrow.toISOString().slice(0, 10);
