@@ -320,6 +320,9 @@ async function main() {
       await page.screenshot({ path: path.join(output, `camera-${width}.png`) });
       await capture.click(); await page.getByRole('button', { name: 'Read receipt', exact: true }).click();
       await page.getByRole('heading', { name: 'Check your bill', exact: true }).waitFor();
+      const fileActions = await page.locator('.br-actions').evaluate(row => { const box = element => element.getBoundingClientRect(), [replace, remove] = [...row.querySelectorAll('button')].map(box); return { sameLine: Math.abs(replace.top - remove.top) < 2, between: remove.left - replace.right, above: replace.top - box(row.previousElementSibling).bottom, below: box(row.nextElementSibling).top - replace.bottom, height: replace.height }; });
+      assert.ok(fileActions.sameLine && fileActions.between >= 8, `Replace file and Remove file have space between them (${JSON.stringify(fileActions)})`);
+      assert.ok(fileActions.above >= 8 && fileActions.below >= 8 && fileActions.height >= 44, `File actions are spaced from the sections around them (${JSON.stringify(fileActions)})`);
       await page.getByRole('button', { name: 'Save to history', exact: true }).click();
       assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('wattsnap-ui-preview-v1')).bills.length), 0, 'Scan cannot save without confirmation');
       await page.screenshot({ path: path.join(output, `review-${width}.png`) });

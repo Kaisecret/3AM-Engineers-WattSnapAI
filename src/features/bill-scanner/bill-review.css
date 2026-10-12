@@ -47,7 +47,8 @@
 .br-links button + button { color: #a6452c; }
 .br-save-note { display: flex; align-items: flex-start; justify-content: center; gap: 6px; margin-top: 12px; color: #86a1b2; font-size: 9px; line-height: 1.7; text-align: center; }
 .br-save-note > svg { flex: 0 0 auto; }
-.br-actions .ui-primary, .br-actions .ui-secondary { padding-inline: 10px; font-size: 12px; }
+.br-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.br-actions .ui-primary, .br-actions .ui-secondary { flex: 1 1 0; min-height: 44px; padding-inline: 10px; font-size: 12px; }
 .br-original-dialog { width: calc(100% - 28px); max-width: 650px; max-height: 90dvh; overflow-y: auto; margin: auto; padding: 22px; border: 1px solid #cfe8f3; border-radius: 22px; color: #244967; background: white; box-shadow: 0 30px 100px #183e6240; }
 .br-original-dialog::backdrop { background: #09294580; backdrop-filter: blur(4px); }
 .br-original-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 19px; }
