@@ -16,5 +16,7 @@ test("assistant and advisory cards share the Energy card gradient", () => {
   assert.match(energy, /^linear-gradient/);
   assert.equal(background(css("../../app/(household)/dashboard/dashboard.css"), ".ws-assistant-card"), energy);
   assert.equal(background(css("../../app/(household)/advisories/advisories.css"), ".adv-hero.is-clear"), energy);
+  assert.equal(background(css("./appliances.css"), ".ap-summary"), energy);
+  assert.equal(background(css("./settings.css"), ".st-profile"), energy);
   assert.equal(background(css("../advisory-intelligence/advisory-workflow.css"), ".aw-list-page .adv-hero.is-clear"), undefined, "No screen overrides the shared colour");
 });
