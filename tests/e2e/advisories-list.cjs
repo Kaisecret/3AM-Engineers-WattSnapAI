@@ -93,8 +93,11 @@ async function main() {
         assert.match(await card.locator('.adv-date-tile').innerText(), /Oct\s*18\s*Sun/i);
         assert.doesNotMatch(await card.innerText(), /Asia\/Manila|2026-10/);
         assert.match(await card.innerText(), /7:00 AM – 4:00 PM/);
-        assert.ok(await lines(card.locator('.adv-card-area')) <= 3, 'Card areas fold to three lines');
-        assert.ok(await lines(card.locator('.adv-card-reason')) <= 2, 'Card reason folds to two lines');
+        assert.ok(await lines(card.locator('.adv-card-area')) <= 2, 'Card areas fold to two lines');
+        assert.ok(await lines(card.locator('.adv-card-reason')) <= 1, 'Card reason folds to one line');
+        assert.deepEqual(await card.locator('.adv-card-area mark').allInnerTexts(), ['Hamtic'], 'The household town is highlighted in the area wording');
+        const iconColors = await card.locator('.adv-card-details svg').evaluateAll(icons => icons.map(icon => getComputedStyle(icon).color));
+        assert.equal(new Set(iconColors).size, 3, `Time, place and reason icons each have their own colour (${iconColors})`);
         assert.match(await card.locator('.adv-card-foot').innerText(), /View details/);
         assert.equal(await card.locator('.adv-card-button').evaluate(element => getComputedStyle(element, '::before').content), 'none', 'No side stripe on the card');
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true, `${width}px: no page overflow`);
@@ -104,6 +107,15 @@ async function main() {
         await card.locator('.adv-card-button').click();
         const dialog = page.getByRole('dialog'); await dialog.getByText('7:00 AM – 4:00 PM · Asia/Manila', { exact: true }).waitFor();
         assert.match(await dialog.innerText(), /Anini-y, Tobias Fornier, Hamtic/);
+        // Details: one tidy list, every row with its own coloured icon, the household town highlighted, missing values quiet.
+        const rows = dialog.locator('.adv-detail-list > div');
+        assert.equal(await rows.count(), 6);
+        assert.equal(await dialog.locator('.adv-detail-list .adv-detail-icon svg').count(), 6, 'Every detail has an icon');
+        assert.deepEqual(await dialog.locator('.adv-detail-list mark').allInnerTexts(), ['Hamtic']);
+        assert.equal(await dialog.locator('.adv-detail-list dd.is-missing').innerText(), 'Not provided');
+        const detail = await dialog.locator('.adv-detail-list').evaluate(list => { const box = element => element.getBoundingClientRect(), items = [...list.children]; return { aligned: new Set(items.map(item => Math.round(box(item.querySelector('.adv-detail-icon')).left))).size === 1, fits: list.scrollWidth <= list.clientWidth + 1 }; });
+        assert.ok(detail.aligned && detail.fits, `Detail rows line up in one column (${JSON.stringify(detail)})`);
+        await dialog.screenshot({ path: path.join(output, `details-${width}.png`) });
         assert.deepEqual(errors, []);
         console.log(`PASS ${width}px: short feed text, calendar card, folded details and full details in the dialog`);
       } catch (error) { failures.push(width); console.error(`FAIL ${width}px:`, error.message); await page.screenshot({ path: path.join(output, `failure-${width}.png`), fullPage: true }).catch(() => {}); }
