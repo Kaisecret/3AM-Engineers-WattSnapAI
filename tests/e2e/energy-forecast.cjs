@@ -68,7 +68,7 @@ async function main() {
     const art = box(card.querySelector('.en-hero-art'));
     const covered = [...card.querySelectorAll('.en-hero-title, .en-hero-figure, .en-hero-meta, .en-hero-change, .en-hero-budget, .en-hero-button')].filter(item => { const b = box(item); return b.left < art.right && b.right > art.left && b.top < art.bottom && b.bottom > art.top; }).map(item => item.className);
     const bar = card.querySelector('.en-hero-budget-bar'), button = box(card.querySelector('.en-hero-button'));
-    return { covered, art: art.width, fill: bar ? box(bar.firstElementChild).width / box(bar).width : null, buttonWidth: button.width, buttonHeight: button.height, copyWidth: box(card.querySelector('.en-hero-copy')).width };
+    return { covered, height: box(card).height, art: art.width, fill: bar ? box(bar.firstElementChild).width / box(bar).width : null, buttonWidth: button.width, buttonHeight: button.height, copyWidth: box(card.querySelector('.en-hero-copy')).width };
   });
   try {
     for (const width of [1440, 390, 320]) {
@@ -83,6 +83,7 @@ async function main() {
       assert.ok(Math.abs(layout.fill - 0.8) < 0.02, `Budget bar shows the share used (${layout.fill})`);
       assert.ok(layout.buttonHeight >= 44, 'Scan button is a comfortable touch target');
       if (width < 600) assert.ok(layout.buttonWidth >= layout.copyWidth - 1, 'Phone scan button spans the card');
+      if (width < 600) assert.ok(layout.height <= 260, `Phone card stays compact (${layout.height}px at ${width}px)`);
       await hero.screenshot({ path: path.join(output, `hero-${width}.png`) });
       const comparison = page.locator('.en-compare');
       assert.equal(await comparison.locator('details[open]').count(), 0, 'Comparison details start collapsed');
