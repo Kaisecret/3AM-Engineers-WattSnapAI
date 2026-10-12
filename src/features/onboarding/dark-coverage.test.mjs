@@ -36,21 +36,27 @@ function expand(selector) {
 }
 /** A selector split into parts. The last part naming a class is what the rule colours; the parts before it are its context. */
 function subject(selector) {
-  const restriction = /::?[\w-]+(\([^()]*\))?|\[[^\]]*\]/g;
-  const bare = selector.replace(dark, "");
-  const parts = bare.replace(restriction, "").split(/[\s>+~]+/).filter(Boolean);
-  const last = parts.findLastIndex(part => part.includes("."));
+  // :hover, :checked, :has(...), :not(...), [aria-pressed=true], ::placeholder and the like stay with the part they restrict.
+  const found = [];
+  const masked = selector.replace(dark, "").replace(/::?[\w-]+(\([^()]*\))?|\[[^\]]*\]/g, state => `\u0001${found.push(state.replace(/\s+/g, "")) - 1}\u0001`);
+  const parts = masked.split(/[\s>+~]+/).filter(Boolean).map(part => {
+    const name = part.replace(/\u0001\d+\u0001/g, "") || "*";
+    return { name, type: name.match(/^[a-z][\w-]*/i)?.[0] ?? "", classes: name.match(/\.[\w-]+/g) ?? [], states: [...part.matchAll(/\u0001(\d+)\u0001/g)].map(match => found[match[1]]) };
+  });
+  const last = parts.findLastIndex(part => part.classes.length);
   if (last < 0) return null;
-  const names = part => part.match(/\.[\w-]+/g) ?? [];
-  // :hover, :checked, :has(...), :not(...), [aria-pressed=true], ::placeholder and the like, anywhere in the selector.
-  const states = (bare.match(restriction) ?? []).map(state => state.replace(/\s+/g, ""));
-  return { type: parts[last].match(/^[a-z][\w-]*/i)?.[0] ?? "", classes: names(parts[last]), tail: parts.slice(last + 1).join(" "), context: parts.slice(0, last).flatMap(names), states, key: parts.join(" ") };
+  return { target: parts[last], tail: parts.slice(last + 1), context: parts.slice(0, last), key: parts.map(part => part.name).join(" ") };
 }
-// A dark rule reaches a light one only when it colours the same thing: same element type, no class the light rule lacks
-// (so .wi-note strong reaches .wi-note.is-offline strong, where the theme prefix outranks the extra class), the same
-// trailing elements, no ancestor the light rule does not also require, and no state the light rule does not also have
-// (a checked-, pressed- or hover-only dark rule never covers the resting element).
-const reaches = (themed, light) => themed.tail === light.tail && (!themed.type || themed.type === light.type) && themed.classes.every(name => light.classes.includes(name)) && themed.context.every(name => light.context.includes(name)) && themed.states.every(state => light.states.includes(state));
+const within = (few, many) => few.every(item => many.includes(item));
+// One selector part covers another when it names the same element type, no class the other lacks (the theme prefix
+// outranks one extra class, so .wi-note covers .wi-note.is-offline) and no state the other lacks (a checked-, pressed-
+// or hover-only rule never covers the resting element).
+const covers = (themed, light) => (!themed.type || themed.type === light.type) && within(themed.classes, light.classes) && within(themed.states, light.states);
+// A dark rule reaches a light one only when it colours the same thing: its target part covers the light target, the
+// trailing elements are the same with no extra state, and every ancestor it requires is one the light rule requires too.
+const reaches = (themed, light) => covers(themed.target, light.target)
+  && themed.tail.length === light.tail.length && themed.tail.every((part, at) => part.name === light.tail[at].name && within(part.states, light.tail[at].states))
+  && themed.context.every(part => light.context.some(other => covers(part, other)));
 function luminance(value) {
   const named = { white: "#ffffff", black: "#000000" }[value] ?? value;
   if (!/^#[0-9a-f]{3,8}$/i.test(named)) return null;
@@ -124,6 +130,9 @@ test("a dark surface rule does not count as a text colour for its children", () 
   assert.equal(reaches(subject(".adv-filters button.is-selected"), subject(".adv-filters button")), false, "a selected-only rule does not colour the resting button");
   assert.equal(reaches(subject(".tt-filters button[aria-pressed=true]"), subject(".tt-filters button")), false, "a pressed-only rule does not colour the resting button");
   assert.equal(reaches(subject(".scan-text-button:hover"), subject(".scan-text-button")), false, "a hover-only rule does not colour the resting link");
+  assert.equal(reaches(subject(".adv-filters button:hover"), subject(".adv-filters:hover button")), false, "hovering one button is not hovering their container");
+  assert.equal(reaches(subject(".adv-filters:hover button"), subject(".adv-filters button:hover")), false, "a state belongs to the part it is written on");
+  assert.equal(reaches(subject(".adv-card:hover .adv-card-more"), subject(".adv-card .adv-card-more")), false, "a rule that needs a hovered ancestor does not cover the resting one");
   assert.equal(reaches(subject(".adv-ready label"), subject(".adv-ready label:has(input:checked)")), true, "the resting rule also reaches the checked label");
   assert.deepEqual(expand('html[data-theme="dark"] .ws-home :is(.a h2, .b) p'), ['html[data-theme="dark"] .ws-home .a h2 p', 'html[data-theme="dark"] .ws-home .b p']);
 });
