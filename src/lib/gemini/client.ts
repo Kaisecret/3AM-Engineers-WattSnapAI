@@ -12,6 +12,7 @@ import type {
 } from "./types";
 import type { Reply } from "@/features/assistant/replies";
 import { billReadingInstruction, billResponseSchema, readBillReading } from "./bill-reading";
+import { applianceReadingInstruction, applianceResponseSchema, readApplianceReading } from "./appliance-reading";
 import { advisoryReadingInstruction, advisoryResponseSchema } from "./advisory-reading";
 import type { BillImage } from "../ai/bill-images-request";
 import { tipsReadingInstruction, tipsResponseSchema, readTipRecommendations } from "./tips-reading";
@@ -241,48 +242,36 @@ export async function extractBillSectionsWithGemini(images: BillImage[], provide
 // -------------------------------------------------------------
 // 2. APPLIANCE NAMEPLATE EXTRACTION
 // -------------------------------------------------------------
+/** Reads an appliance nameplate photo. The values are checked in appliance-reading.ts and shown for review before anything is saved. */
 export async function extractApplianceWithGemini(
   imageBase64: string,
   mimeType = "image/jpeg",
   nameHint?: string,
 ): Promise<ApplianceLabelExtractionResult> {
-  const cleanData = imageBase64.replace(/^data:image\/[a-zA-Z]+;base64,/, "");
-
-  const systemInstruction = `You are an expert nameplate reader and appliance energy rating analyst (DOE Yellow Energy Guide labels, manufacturer specification plates).
-Extract electrical specifications from the appliance rating sticker/photo into a JSON object.
-Fields:
-- "applianceName": Descriptive appliance name (e.g., "Inverter Refrigerator", "Split-Type Aircon", "Stand Fan").
-- "applianceType": One of ["aircon", "refrigerator", "fan", "lighting", "tv", "laundry", "cooking", "water_heater", "other"].
-- "model": Model number/code printed on label. Use null if unreadable.
-- "ratedPower": Number representing rated power in Watts (W) or kilowatts (kW). E.g. 120 or 0.75. If only Amps (A) and Volts (V) are shown (e.g. 220V, 0.5A), calculate W = V * A. Use null if unknown.
-- "powerUnit": "W" or "kW". Default to "W".
-Never invent numbers. If wattage cannot be determined, set ratedPower to null.`;
-
-  const promptText = `Extract appliance wattage and nameplate details from this photo.${nameHint ? ` Hint: ${nameHint}.` : ""}`;
-
-  const responseText = await callGeminiApi({
-    systemInstruction,
-    parts: [
-      { text: promptText },
-      { inlineData: { mimeType, data: cleanData } },
-    ],
-    jsonMode: true,
-    temperature: 0.1,
+  const parts = [
+    { text: `Read this appliance label.${nameHint ? ` The person calls it "${nameHint}".` : ""}` },
+    { inlineData: { mimeType, data: imageBase64.replace(/^data:[^,]*,/, "") } },
+  ];
+  const read = (model: GeminiModel, schema: boolean, timeoutMs: number) => callGemini({
+    model, systemInstruction: applianceReadingInstruction, parts, responseSchema: schema ? applianceResponseSchema : undefined, jsonMode: true,
+    temperature: null, maxOutputTokens: 4096, timeoutMs, mediaResolution: "MEDIA_RESOLUTION_HIGH",
   });
 
-  const parsed = parseJsonOutput<Partial<ApplianceLabelExtractionResult>>(responseText, {});
-  const unknownFields: string[] = [];
-  if (!parsed.ratedPower) unknownFields.push("ratedPower");
-
-  return {
-    reviewRequired: true,
-    unknownFields,
-    applianceName: parsed.applianceName ?? nameHint ?? null,
-    applianceType: parsed.applianceType ?? "other",
-    model: parsed.model ?? null,
-    ratedPower: typeof parsed.ratedPower === "number" ? parsed.ratedPower : null,
-    powerUnit: parsed.powerUnit ?? "W",
-  };
+  const primary = scanModel(), fallback = geminiModel();
+  let result: GeminiCallResult;
+  try {
+    result = await read(primary, true, 28000);
+  } catch (error) {
+    const problem = geminiProblem(error);
+    // Schema not accepted: same model, plain JSON. Missing, busy or overloaded: the configured fallback.
+    if (problem === "request") result = await read(primary, false, 22000);
+    else if ((problem === "model" || problem === "busy" || (error instanceof GeminiError && error.status === 503)) && fallback !== primary) {
+      console.error(`[wattsnap:ai] appliances: ${primary} unavailable (${problem}), using ${fallback}`);
+      result = await read(fallback, true, 22000);
+    } else throw error;
+  }
+  if (!result.text) throw new GeminiError("Gemini returned no label values.", "empty");
+  return readApplianceReading(parseJsonOutput<Record<string, unknown>>(result.text, {}), nameHint);
 }
 
 // -------------------------------------------------------------

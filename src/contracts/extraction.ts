@@ -41,8 +41,15 @@ export interface ApplianceLabelExtractionResult extends ReviewableExtraction {
   applianceName?: string | null;
   applianceType?: ApplianceKind | null;
   model?: string | null;
+  /** Input power while running. Appliance label readings are always in watts. */
   ratedPower?: number | null;
   powerUnit?: "W" | "kW" | "V" | "VA" | null;
+  /** The label's own words for the line the power was read from. */
+  powerLabel?: string | null;
+  /** Other input power figures printed on the label, e.g. a larger maximum input. */
+  otherRatings?: { label: string; watts: number }[];
+  /** Values that look wrong together, for the person to check. */
+  checks?: string[];
 }
 
 export interface AdvisoryAnalysisResult extends ReviewableExtraction {
