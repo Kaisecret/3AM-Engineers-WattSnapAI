@@ -32,3 +32,10 @@ node scripts/check-frontend-boundaries.cjs
 ```
 
 The existing `npm.cmd run lint` command opens ESLint setup and exits with status 1 when run noninteractively because this repository has no ESLint configuration/dependency. This is an existing verification blocker, not a passing lint result. No dependency or deployment configuration is added to bypass it.
+
+After a fresh production build, the desktop header and Settings regression renders eight actual screen components with isolated household records and the production stylesheets. It checks both themes, six widths, a 200% zoom-equivalent viewport, sticky offsets, menus, keyboard focus and profile save/cancel. Framework adapters replace Next.js routing; it does not exercise server authentication.
+
+```powershell
+$env:SCANNER_TOOLS = 'C:/path/to/external/node_modules' # Contains esbuild and playwright.
+node tests/e2e/desktop-header-settings.cjs
+```

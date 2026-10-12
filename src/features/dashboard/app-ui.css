@@ -79,12 +79,13 @@
   .ws-desktop-today { display: inline; }
   .ws-home { --ws-header-height: 114px; --ws-sidebar-width: clamp(220px, 17.4vw, 315px); padding: 0 clamp(24px, 2.1vw, 38px) 20px calc(var(--ws-sidebar-width) + clamp(24px, 2.1vw, 38px)); background: #effaff; }
   .ws-shell { max-width: 1600px; }
-  .ws-header { padding: 19px 0 23px; }
+  .ws-header { gap: 24px; margin-bottom: 24px; padding: 16px 24px; border-bottom: 1px solid #deeff6; }
   .ws-header > .ws-brand { display: none; }
-  .ws-desktop-heading { display: block; }
-  .ws-desktop-heading h1, .ws-desktop-heading h2 { font-size: clamp(30px, 2.25vw, 40px); font-weight: 800; letter-spacing: -1.3px; line-height: 1.2; }
-  .ws-desktop-heading p { color: #768da4; font-size: clamp(15px, 1.3vw, 23px); line-height: 1.4; margin-top: 3px; letter-spacing: -.5px; }
-  .ws-header-actions { gap: 24px; }
+  .ws-desktop-heading { display: block; flex: 1; min-width: 0; }
+  .ws-desktop-heading h1, .ws-desktop-heading h2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: clamp(26px, 2.25vw, 34px); font-weight: 800; letter-spacing: -.8px; line-height: 1.2; }
+  .ws-desktop-heading p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #768da4; font-size: clamp(14px, 1.1vw, 16px); line-height: 1.5; margin-top: 4px; letter-spacing: 0; }
+  .ws-header-actions { flex-shrink: 0; gap: 24px; }
+  .ws-header-panel { right: 24px; }
   .ws-notification-button { width: 45px; }
   .ws-notification-button > svg { width: 29px; height: 29px; }
   .ws-notification-dot { top: 3px; right: 9px; width: 10px; height: 10px; }

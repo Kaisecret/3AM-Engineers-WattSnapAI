@@ -106,7 +106,7 @@ export default function SettingsScreen() {
       </aside>
 
       <div className="st-main">
-        <section className="ui-panel st-card" aria-labelledby="st-profile-title">
+        <section className="ui-panel st-card st-profile-details" aria-labelledby="st-profile-title">
           <div className="st-card-head"><span className="st-card-icon"><UserRound aria-hidden="true" /></span><div><h2 id="st-profile-title">Profile details</h2><p>How WattSnap greets you and matches advisories to your area.</p></div></div>
           <form className="st-form" onSubmit={saveProfile} noValidate>
             <label><span className="st-label">Household name</span><input value={values.name} maxLength={50} autoComplete="name" required onChange={event => edit({ name: event.target.value })} /></label>

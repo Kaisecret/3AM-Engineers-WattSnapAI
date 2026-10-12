@@ -189,7 +189,7 @@ html[data-theme="dark"] .chat-main { background: radial-gradient(130% 55% at 50%
   .chat-bot-body, .chat-bot-body.has-actions { width: auto; max-width: 92%; }
 }
 @media (min-width: 900px) {
-  .chat-main { position: relative; z-index: auto; inset: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; height: calc(100dvh - 134px); min-height: 520px; background: none; }
+  .chat-main { position: relative; z-index: auto; inset: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; height: calc(100dvh - var(--ws-header-height) - 24px - 20px); min-height: 520px; background: none; }
   html[data-theme="dark"] .chat-main { background: none; }
   .chat-panel { height: 100%; overflow: hidden; border: 1px solid var(--chat-border); border-radius: 26px; background: radial-gradient(120% 50% at 50% 0%, #e2f6fe, var(--chat-surface) 60%); box-shadow: 0 12px 34px #2a6a8414; }
   html[data-theme="dark"] .chat-panel { background: radial-gradient(120% 50% at 50% 0%, #1b4153, #142734 60%); }
