@@ -623,7 +623,8 @@ html[data-theme="dark"] .landing-page { color-scheme: light; color: #0f172a; bac
   height: auto;
   left: -22%;
   top: 18px;
-  animation: hero-art-enter .85s ease-out both, hero-art-float 7s ease-in-out 1s infinite;
+  /* No idle float: browsers resample a moving image with a cheap filter, which blurs the phone screen. */
+  animation: hero-art-enter .85s ease-out both;
   filter: drop-shadow(0 15px 20px rgba(0,131,214,.12));
 }
 .hero-callout {
@@ -658,7 +659,6 @@ html[data-theme="dark"] .landing-page { color-scheme: light; color: #0f172a; bac
 
 @keyframes hero-enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes hero-art-enter { from { opacity: 0; } to { opacity: 1; } }
-@keyframes hero-art-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -8px; } }
 
 .product-tour {
   position: fixed;
