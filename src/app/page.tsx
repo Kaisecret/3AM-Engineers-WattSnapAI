@@ -5,6 +5,7 @@ import { HeroSection } from "@/features/landing/components/HeroSection";
 import { FeaturesSection } from "@/features/landing/components/FeaturesSection";
 import { HowItWorksSection } from "@/features/landing/components/HowItWorksSection";
 import { SpotlightSection } from "@/features/landing/components/SpotlightSection";
+import { TeamSection } from "@/features/landing/components/TeamSection";
 import { TestimonialsSection } from "@/features/landing/components/TestimonialsSection";
 import { AccountCtaBanner } from "@/features/landing/components/AccountCtaBanner";
 import { Footer } from "@/features/landing/components/Footer";
@@ -39,6 +40,7 @@ export default function LandingPage() {
         <div className="post-hero">
           <FeaturesSection />
           <HowItWorksSection />
+          <TeamSection />
           <SpotlightSection />
           <TestimonialsSection />
           <AccountCtaBanner />
