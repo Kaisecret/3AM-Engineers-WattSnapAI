@@ -1,7 +1,7 @@
 import Image, { getImageProps } from "next/image";
 import Link from "next/link";
 import { preload } from "react-dom";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Trophy } from "lucide-react";
 import { GlossyIcon, type GlossyIconName } from "./GlossyIcon";
 import { ProductTour } from "./ProductTour";
 import { CreateAccountLabel } from "./CreateAccountLabel";
@@ -40,6 +40,7 @@ export function HeroSection() {
       <div className="hero-scene" aria-hidden="true" />
       <div className="hero-veil" aria-hidden="true" />
       <div className="hero-inner">
+        <p className="hero-award"><Trophy size={18} aria-hidden="true" />Champion · Cyberian Hackathon 2.0 2026</p>
         <div className="hero-copy">
           <div className="hero-tagline">
             <GlossyIcon name="home" />

@@ -553,6 +553,11 @@ html[data-theme="dark"] .landing-page { color-scheme: light; color: #0f172a; bac
   white-space: nowrap;
 }
 .hero-tagline .glossy-icon { width: 29px; height: 29px; }
+.hero-award { position: absolute; z-index: 5; top: 14px; left: 50%; translate: -50% 0; display: flex; align-items: center; gap: 8px; width: max-content; max-width: 100%; padding: 7px 16px; border: 1px solid #ffd24a; border-radius: 30px; background: linear-gradient(110deg, #fffbe6f2, #fff1bdf2); box-shadow: 0 6px 16px #d9a30022; color: #8a5a00; font-size: 15px; font-weight: 800; white-space: nowrap; }
+.hero-award svg { flex-shrink: 0; color: #e8a100; }
+@media (max-width: 850px) {
+  .hero-award { position: relative; top: auto; left: auto; translate: none; margin: 6px auto 12px; font-size: clamp(11px, 3.3vw, 15px); padding: 6px 12px; }
+}
 .hero-title { width: calc(100% - 20px); margin: 14px 0 0 -23px; line-height: 0; }
 .hero-title img { display: block; width: 100%; height: auto; }
 .hero-description {

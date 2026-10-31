@@ -40,10 +40,10 @@ export default function LandingPage() {
         <div className="post-hero">
           <FeaturesSection />
           <HowItWorksSection />
-          <TeamSection />
           <SpotlightSection />
           <TestimonialsSection />
           <AccountCtaBanner />
+          <TeamSection />
         </div>
       </main>
 
