@@ -618,11 +618,12 @@ html[data-theme="dark"] .landing-page { color-scheme: light; color: #0f172a; bac
 }
 .hero-product-image {
   position: absolute;
-  width: 122%;
+  /* Kept at or below the 1536px source on common laptop scaling so the phone screen stays sharp. */
+  width: 100%;
   max-width: none;
   height: auto;
-  left: -22%;
-  top: 18px;
+  left: -7%;
+  top: 50px;
   /* No idle float: browsers resample a moving image with a cheap filter, which blurs the phone screen. */
   animation: hero-art-enter .85s ease-out both;
   filter: drop-shadow(0 15px 20px rgba(0,131,214,.12));

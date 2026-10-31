@@ -86,8 +86,8 @@ export function HeroSection() {
             alt="The friendly WattSnap robot beside a preview of the electricity assistant app"
             width={1536}
             height={1024}
-            // Desktop art renders at ~67vw (hero 86% × art 64% × image 122%), up to 1312px.
-            sizes="(max-width: 700px) 125vw, (max-width: 1100px) 85vw, (max-width: 1950px) 68vw, 1320px"
+            // Desktop art renders at ~55vw (hero 86% × art 64%), up to 1076px.
+            sizes="(max-width: 700px) 125vw, (max-width: 1100px) 85vw, (max-width: 1950px) 56vw, 1080px"
             priority
             fetchPriority="high"
             quality={90}
